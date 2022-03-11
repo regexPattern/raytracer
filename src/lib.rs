@@ -26,13 +26,31 @@ impl Point {
 
 impl Vector {
     fn new(x: f64, y: f64, z: f64) -> Self {
-        Self { x, y, z, w: 1. }
+        Self { x, y, z, w: 0. }
     }
 
     fn magnitude(&self) -> f64 {
-        let coords = [self.x, self.y, self.z];
+        let coords = [self.x, self.y, self.z, self.w];
         let sum = coords.into_iter().fold(0., |a, b| a + b.powf(2.));
         sum.sqrt()
+    }
+
+    // TODO: Discover if there is a way to turn a Struct made of f64 values
+    // into an interator, without implementing a custom Iterator trait. It
+    // mesk sense that I can't be done, since a Struct can potentially have
+    // fields of multiple types.
+    fn normalize(&self) -> Self {
+        let magnitude = self.magnitude();
+        Vector::new(self.x, self.y, self.z) / magnitude
+    }
+
+    // TODO: Same as with the `normalize()` method.
+    fn dot(self, other: Self) -> f64 {
+        let self_coords = [self.x, self.y, self.z, self.w];
+        let other_coords = [other.x, other.y, other.z, self.w];
+
+        let iter = self_coords.into_iter().zip(other_coords);
+        iter.fold(0., |a, (b, c)| a + (b * c))
     }
 }
 
@@ -200,14 +218,32 @@ mod tuple {
     fn point_constructor_creates_point() {
         let point = Point::new(4.3, -4.2, 3.1);
 
+        assert_eq!(
+            point,
+            Point {
+                x: 4.3,
+                y: -4.2,
+                z: 3.1,
+                w: 1.,
+            }
+        );
         assert_eq!(point, Point::new(4.3, -4.2, 3.1));
     }
 
     #[test]
     fn vector_constructor_creates_vector() {
-        let vector = Point::new(4.3, -4.2, 3.1);
+        let vector = Vector::new(4.3, -4.2, 3.1);
 
-        assert_eq!(vector, Point::new(4.3, -4.2, 3.1));
+        assert_eq!(
+            vector,
+            Vector {
+                x: 4.3,
+                y: -4.2,
+                z: 3.1,
+                w: 0.,
+            }
+        );
+        assert_eq!(vector, Vector::new(4.3, -4.2, 3.1));
     }
 }
 
@@ -407,6 +443,9 @@ mod operations {
 
     #[test]
     fn computing_magnitude_of_vector() {
+        let zero = Vector::new(0., 0., 0.);
+        assert_eq!(zero.magnitude(), 0.);
+
         let vector = Vector::new(1., 0., 0.);
         assert_eq!(vector.magnitude(), 1.);
 
@@ -424,6 +463,34 @@ mod operations {
     }
 
     #[test]
-    fn normalizing_vector() {
+    fn normalizing_vector_returns_unit_vector() {
+        let vector = Vector::new(4., 0., 0.);
+        let norm = vector.normalize();
+        assert_eq!(norm.magnitude(), 1.);
+
+        let vector = Vector::new(1., 2., 3.);
+        let norm = vector.normalize();
+        let magnitude = vector.magnitude();
+        assert_eq!(
+            norm,
+            Vector {
+                x: 1. / magnitude,
+                y: 2. / magnitude,
+                z: 3. / magnitude,
+                w: 0.
+            }
+        );
+
+        let vector = Vector::new(1., 2., 3.);
+        let norm = vector.normalize();
+        assert_eq!(norm.magnitude(), 1.);
+    }
+
+    #[test]
+    fn computing_dot_product_of_vector() {
+        let vector1 = Vector::new(1., 2., 3.);
+        let vector2 = Vector::new(2., 3., 4.);
+
+        assert_eq!(vector1.dot(vector2), 20.);
     }
 }
