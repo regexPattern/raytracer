@@ -86,7 +86,7 @@ impl Add<&Point> for &Vector {
     }
 }
 
-impl Sub for Point {
+impl Sub for &Point {
     type Output = Vector;
 
     fn sub(self, other: Self) -> Vector {
@@ -94,19 +94,19 @@ impl Sub for Point {
     }
 }
 
-impl Sub<Vector> for Point {
-    type Output = Self;
+impl Sub<&Vector> for &Point {
+    type Output = Point;
 
-    fn sub(self, other: Vector) -> Self {
-        Self::new(self.x - other.x, self.y - other.y, self.z - other.z)
+    fn sub(self, other: &Vector) -> Point {
+        Point::new(self.x - other.x, self.y - other.y, self.z - other.z)
     }
 }
 
-impl Sub for Vector {
-    type Output = Self;
+impl Sub for &Vector {
+    type Output = Vector;
 
-    fn sub(self, other: Self) -> Self {
-        Self::new(self.x - other.x, self.y - other.y, self.z - other.z)
+    fn sub(self, other: Self) -> Vector {
+        Vector::new(self.x - other.x, self.y - other.y, self.z - other.z)
     }
 }
 
@@ -315,32 +315,32 @@ mod operations {
 
     #[test]
     fn subtracting_two_points() {
-        let point1 = Point::new(3., 2., 1.);
-        let point2 = Point::new(5., 6., 7.);
+        let point1 = &Point::new(3., 2., 1.);
+        let point2 = &Point::new(5., 6., 7.);
 
         assert_eq!(point1 - point2, Vector::new(-2., -4., -6.));
     }
 
     #[test]
     fn subtracting_vector_from_point() {
-        let point = Point::new(3., 2., 1.);
-        let vector = Vector::new(5., 6., 7.);
+        let point = &Point::new(3., 2., 1.);
+        let vector = &Vector::new(5., 6., 7.);
 
         assert_eq!(point - vector, Point::new(-2., -4., -6.));
     }
 
     #[test]
     fn subtracting_two_vectors() {
-        let vector1 = Vector::new(3., 2., 1.);
-        let vector2 = Vector::new(5., 6., 7.);
+        let vector1 = &Vector::new(3., 2., 1.);
+        let vector2 = &Vector::new(5., 6., 7.);
 
         assert_eq!(vector1 - vector2, Vector::new(-2., -4., -6.));
     }
 
     #[test]
     fn subtracting_vector_from_the_zero_vector() {
-        let zero = Vector::new(0., 0., 0.);
-        let vector = Vector::new(1., -2., 3.);
+        let zero = &Vector::new(0., 0., 0.);
+        let vector = &Vector::new(1., -2., 3.);
 
         assert_eq!(zero - vector, Vector::new(-1., 2., -3.));
     }
