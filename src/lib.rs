@@ -2,7 +2,7 @@
 
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
-#[derive(Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Point {
     pub x: f64,
     pub y: f64,
@@ -10,7 +10,7 @@ pub struct Point {
     pub w: f64,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Vector {
     pub x: f64,
     pub y: f64,
@@ -62,31 +62,31 @@ impl Vector {
     }
 }
 
-impl Add for &Vector {
-    type Output = Vector;
+impl Add for Vector {
+    type Output = Self;
 
-    fn add(self, other: Self) -> Vector {
-        Vector::new(self.x + other.x, self.y + other.y, self.z + other.z)
+    fn add(self, other: Self) -> Self {
+        Self::new(self.x + other.x, self.y + other.y, self.z + other.z)
     }
 }
 
-impl Add<&Vector> for &Point {
+impl Add<Vector> for Point {
+    type Output = Self;
+
+    fn add(self, other: Vector) -> Self {
+        Self::new(self.x + other.x, self.y + other.y, self.z + other.z)
+    }
+}
+
+impl Add<Point> for Vector {
     type Output = Point;
 
-    fn add(self, other: &Vector) -> Point{
+    fn add(self, other: Point) -> Point {
         Point::new(self.x + other.x, self.y + other.y, self.z + other.z)
     }
 }
 
-impl Add<&Point> for &Vector {
-    type Output = Point;
-
-    fn add(self, other: &Point) -> Point {
-        Point::new(self.x + other.x, self.y + other.y, self.z + other.z)
-    }
-}
-
-impl Sub for &Point {
+impl Sub for Point {
     type Output = Vector;
 
     fn sub(self, other: Self) -> Vector {
@@ -94,19 +94,19 @@ impl Sub for &Point {
     }
 }
 
-impl Sub<&Vector> for &Point {
-    type Output = Point;
+impl Sub<Vector> for Point {
+    type Output = Self;
 
-    fn sub(self, other: &Vector) -> Point {
-        Point::new(self.x - other.x, self.y - other.y, self.z - other.z)
+    fn sub(self, other: Vector) -> Self {
+        Self::new(self.x - other.x, self.y - other.y, self.z - other.z)
     }
 }
 
-impl Sub for &Vector {
-    type Output = Vector;
+impl Sub for Vector {
+    type Output = Self;
 
-    fn sub(self, other: Self) -> Vector {
-        Vector::new(self.x - other.x, self.y - other.y, self.z - other.z)
+    fn sub(self, other: Self) -> Self {
+        Self::new(self.x - other.x, self.y - other.y, self.z - other.z)
     }
 }
 
@@ -291,56 +291,56 @@ mod operations {
 
     #[test]
     fn adding_two_vectors() {
-        let vector1 = &Vector::new(3., -2., 5.);
-        let vector2 = &Vector::new(-2., 3., 1.);
+        let vector1 = Vector::new(3., -2., 5.);
+        let vector2 = Vector::new(-2., 3., 1.);
 
         assert_eq!(vector1 + vector2, Vector::new(1., 1., 6.));
     }
 
     #[test]
     fn adding_vector_to_point() {
-        let point = &Point::new(3., -2., 5.);
-        let vector = &Vector::new(-2., 3., 1.);
+        let point = Point::new(3., -2., 5.);
+        let vector = Vector::new(-2., 3., 1.);
 
         assert_eq!(point + vector, Point::new(1., 1., 6.));
     }
 
     #[test]
     fn adding_point_to_vector() {
-        let point = &Point::new(3., -2., 5.);
-        let vector = &Vector::new(-2., 3., 1.);
+        let point = Point::new(3., -2., 5.);
+        let vector = Vector::new(-2., 3., 1.);
 
         assert_eq!(vector + point, Point::new(1., 1., 6.));
     }
 
     #[test]
     fn subtracting_two_points() {
-        let point1 = &Point::new(3., 2., 1.);
-        let point2 = &Point::new(5., 6., 7.);
+        let point1 = Point::new(3., 2., 1.);
+        let point2 = Point::new(5., 6., 7.);
 
         assert_eq!(point1 - point2, Vector::new(-2., -4., -6.));
     }
 
     #[test]
     fn subtracting_vector_from_point() {
-        let point = &Point::new(3., 2., 1.);
-        let vector = &Vector::new(5., 6., 7.);
+        let point = Point::new(3., 2., 1.);
+        let vector = Vector::new(5., 6., 7.);
 
         assert_eq!(point - vector, Point::new(-2., -4., -6.));
     }
 
     #[test]
     fn subtracting_two_vectors() {
-        let vector1 = &Vector::new(3., 2., 1.);
-        let vector2 = &Vector::new(5., 6., 7.);
+        let vector1 = Vector::new(3., 2., 1.);
+        let vector2 = Vector::new(5., 6., 7.);
 
         assert_eq!(vector1 - vector2, Vector::new(-2., -4., -6.));
     }
 
     #[test]
     fn subtracting_vector_from_the_zero_vector() {
-        let zero = &Vector::new(0., 0., 0.);
-        let vector = &Vector::new(1., -2., 3.);
+        let zero = Vector::new(0., 0., 0.);
+        let vector = Vector::new(1., -2., 3.);
 
         assert_eq!(zero - vector, Vector::new(-1., 2., -3.));
     }
@@ -474,11 +474,14 @@ mod operations {
     fn normalizing_vector_returns_unit_vector() {
         let vector = Vector::new(4., 0., 0.);
         let norm = vector.normalize();
+
         assert_eq!(norm.magnitude(), 1.);
 
         let vector = Vector::new(1., 2., 3.);
+
         let norm = vector.normalize();
         let magnitude = vector.magnitude();
+
         assert_eq!(
             norm,
             Vector {
@@ -489,8 +492,8 @@ mod operations {
             }
         );
 
-        let vector = Vector::new(1., 2., 3.);
         let norm = vector.normalize();
+
         assert_eq!(norm.magnitude(), 1.);
     }
 
@@ -506,15 +509,14 @@ mod operations {
     fn computing_cross_product_of_two_vectors() {
         let vector1 = Vector::new(1., 2., 3.);
         let vector2 = Vector::new(2., 3., 4.);
-        assert_eq!(vector1.cross(vector2), Vector::new(-1., 2., -1.));
 
-        let vector1 = Vector::new(1., 2., 3.);
-        let vector2 = Vector::new(2., 3., 4.);
+        assert_eq!(vector1.cross(vector2), Vector::new(-1., 2., -1.));
         assert_eq!(vector2.cross(vector1), Vector::new(1., -2., 1.));
 
         let norm_x = Vector::new(1., 0., 0.);
         let norm_y = Vector::new(0., 1., 0.);
         let norm_z = Vector::new(0., 0., 1.);
+
         assert_eq!(norm_x.cross(norm_y), norm_z);
     }
 }
