@@ -3,33 +3,33 @@
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
 #[derive(Debug, PartialEq)]
-struct Point {
-    x: f64,
-    y: f64,
-    z: f64,
-    w: f64,
+pub struct Point {
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub w: f64,
 }
 
 #[derive(Debug, PartialEq)]
-struct Vector {
-    x: f64,
-    y: f64,
-    z: f64,
-    w: f64,
+pub struct Vector {
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub w: f64,
 }
 
 impl Point {
-    fn new(x: f64, y: f64, z: f64) -> Self {
+    pub fn new(x: f64, y: f64, z: f64) -> Self {
         Self { x, y, z, w: 1. }
     }
 }
 
 impl Vector {
-    fn new(x: f64, y: f64, z: f64) -> Self {
+    pub fn new(x: f64, y: f64, z: f64) -> Self {
         Self { x, y, z, w: 0. }
     }
 
-    fn magnitude(&self) -> f64 {
+    pub fn magnitude(&self) -> f64 {
         let coords = [self.x, self.y, self.z, self.w];
         let sum = coords.into_iter().fold(0., |a, b| a + b.powf(2.));
         sum.sqrt()
@@ -39,13 +39,13 @@ impl Vector {
     // into an interator, without implementing a custom Iterator trait. It
     // mesk sense that I can't be done, since a Struct can potentially have
     // fields of multiple types.
-    fn normalize(&self) -> Self {
+    pub fn normalize(&self) -> Self {
         let magnitude = self.magnitude();
         Vector::new(self.x, self.y, self.z) / magnitude
     }
 
     // TODO: Same as with the `normalize()` method.
-    fn dot(self, other: Self) -> f64 {
+    pub fn dot(self, other: Self) -> f64 {
         let self_coords = [self.x, self.y, self.z, self.w];
         let other_coords = [other.x, other.y, other.z, self.w];
 
@@ -53,10 +53,12 @@ impl Vector {
         iter.fold(0., |a, (b, c)| a + (b * c))
     }
 
-    fn cross(self, other: Self) -> Self {
-        Vector::new((self.y * other.z) - (self.z * other.y),
-                    (self.z * other.x) - (self.x * other.z),
-                    (self.x * other.y) - (self.y * other.x))
+    pub fn cross(self, other: Self) -> Self {
+        Vector::new(
+            (self.y * other.z) - (self.z * other.y),
+            (self.z * other.x) - (self.x * other.z),
+            (self.x * other.y) - (self.y * other.x),
+        )
     }
 }
 
@@ -509,5 +511,10 @@ mod operations {
         let vector1 = Vector::new(1., 2., 3.);
         let vector2 = Vector::new(2., 3., 4.);
         assert_eq!(vector2.cross(vector1), Vector::new(1., -2., 1.));
+
+        let norm_x = Vector::new(1., 0., 0.);
+        let norm_y = Vector::new(0., 1., 0.);
+        let norm_z = Vector::new(0., 0., 1.);
+        assert_eq!(norm_x.cross(norm_y), norm_z);
     }
 }
