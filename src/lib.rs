@@ -52,6 +52,12 @@ impl Vector {
         let iter = self_coords.into_iter().zip(other_coords);
         iter.fold(0., |a, (b, c)| a + (b * c))
     }
+
+    fn cross(self, other: Self) -> Self {
+        Vector::new((self.y * other.z) - (self.z * other.y),
+                    (self.z * other.x) - (self.x * other.z),
+                    (self.x * other.y) - (self.y * other.x))
+    }
 }
 
 impl Add for Vector {
@@ -487,10 +493,21 @@ mod operations {
     }
 
     #[test]
-    fn computing_dot_product_of_vector() {
+    fn computing_dot_product_of_two_vectors() {
         let vector1 = Vector::new(1., 2., 3.);
         let vector2 = Vector::new(2., 3., 4.);
 
         assert_eq!(vector1.dot(vector2), 20.);
+    }
+
+    #[test]
+    fn computing_cross_product_of_two_vectors() {
+        let vector1 = Vector::new(1., 2., 3.);
+        let vector2 = Vector::new(2., 3., 4.);
+        assert_eq!(vector1.cross(vector2), Vector::new(-1., 2., -1.));
+
+        let vector1 = Vector::new(1., 2., 3.);
+        let vector2 = Vector::new(2., 3., 4.);
+        assert_eq!(vector2.cross(vector1), Vector::new(1., -2., 1.));
     }
 }
