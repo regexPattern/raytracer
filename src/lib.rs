@@ -62,26 +62,26 @@ impl Vector {
     }
 }
 
-impl Add for Vector {
-    type Output = Self;
+impl Add for &Vector {
+    type Output = Vector;
 
-    fn add(self, other: Self) -> Self {
-        Self::new(self.x + other.x, self.y + other.y, self.z + other.z)
+    fn add(self, other: Self) -> Vector {
+        Vector::new(self.x + other.x, self.y + other.y, self.z + other.z)
     }
 }
 
-impl Add<Vector> for Point {
-    type Output = Self;
-
-    fn add(self, other: Vector) -> Self {
-        Self::new(self.x + other.x, self.y + other.y, self.z + other.z)
-    }
-}
-
-impl Add<Point> for Vector {
+impl Add<&Vector> for &Point {
     type Output = Point;
 
-    fn add(self, other: Point) -> Point {
+    fn add(self, other: &Vector) -> Point{
+        Point::new(self.x + other.x, self.y + other.y, self.z + other.z)
+    }
+}
+
+impl Add<&Point> for &Vector {
+    type Output = Point;
+
+    fn add(self, other: &Point) -> Point {
         Point::new(self.x + other.x, self.y + other.y, self.z + other.z)
     }
 }
@@ -291,24 +291,24 @@ mod operations {
 
     #[test]
     fn adding_two_vectors() {
-        let vector1 = Vector::new(3., -2., 5.);
-        let vector2 = Vector::new(-2., 3., 1.);
+        let vector1 = &Vector::new(3., -2., 5.);
+        let vector2 = &Vector::new(-2., 3., 1.);
 
         assert_eq!(vector1 + vector2, Vector::new(1., 1., 6.));
     }
 
     #[test]
     fn adding_vector_to_point() {
-        let point = Point::new(3., -2., 5.);
-        let vector = Vector::new(-2., 3., 1.);
+        let point = &Point::new(3., -2., 5.);
+        let vector = &Vector::new(-2., 3., 1.);
 
         assert_eq!(point + vector, Point::new(1., 1., 6.));
     }
 
     #[test]
     fn adding_point_to_vector() {
-        let point = Point::new(3., -2., 5.);
-        let vector = Vector::new(-2., 3., 1.);
+        let point = &Point::new(3., -2., 5.);
+        let vector = &Vector::new(-2., 3., 1.);
 
         assert_eq!(vector + point, Point::new(1., 1., 6.));
     }
