@@ -1,5 +1,7 @@
+#![allow(dead_code)]
+
 use std::cmp::PartialEq;
-use std::ops::{Add, Sub};
+use std::ops::{Add, Sub, Mul, Div, Neg};
 
 #[derive(Debug)]
 struct Point {
@@ -126,6 +128,42 @@ impl Sub<Vector> for Vector {
     }
 }
 
+impl Mul<f64> for Vector {
+    type Output = Self;
+
+    fn mul(self, factor: f64) -> Self {
+        Self {
+            x: self.x * factor,
+            y: self.y * factor,
+            z: self.z * factor,
+        }
+    }
+}
+
+impl Neg for Vector {
+    type Output = Self;
+
+    fn neg(self) -> Self {
+        Self {
+            x: 0.0 - self.x,
+            y: 0.0 - self.y,
+            z: 0.0 - self.z,
+        }
+    }
+}
+
+impl Div<f64> for Vector {
+    type Output = Self;
+
+    fn div(self, factor: f64) -> Self {
+        Self {
+            x: self.x / factor,
+            y: self.y / factor,
+            z: self.z / factor,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -147,21 +185,30 @@ mod tests {
     }
 
     #[test]
-    fn adding_two_vectors() {
-        let vector1 = Vector::new(3.0, -2.0, 5.0);
-        let vector2 = Vector::new(-2.0, 3.0, 1.0);
-        let expected = Vector::new(1.0, 1.0, 6.0);
-
-        assert_eq!(vector1 + vector2, expected);
-    }
-
-    #[test]
     fn adding_point_and_vector() {
         let point = Point::new(3.0, 2.0, 1.0);
         let vector = Vector::new(5.0, 6.0, 7.0);
         let expected = Point::new(8.0, 10.0, 8.0);
 
         assert_eq!(point + vector, expected);
+    }
+
+    #[test]
+    fn adding_vector_and_point() {
+        let point = Point::new(3.0, 2.0, 1.0);
+        let vector = Vector::new(5.0, 6.0, 7.0);
+        let expected = Point::new(8.0, 10.0, 8.0);
+
+        assert_eq!(vector + point, expected);
+    }
+
+    #[test]
+    fn adding_two_vectors() {
+        let vector1 = Vector::new(3.0, -2.0, 5.0);
+        let vector2 = Vector::new(-2.0, 3.0, 1.0);
+        let expected = Vector::new(1.0, 1.0, 6.0);
+
+        assert_eq!(vector1 + vector2, expected);
     }
 
     #[test]
@@ -180,5 +227,38 @@ mod tests {
         let expected = Point::new(-2.0, -4.0, -6.0);
 
         assert_eq!(point - vector, expected);
+    }
+
+    #[test]
+    fn subtracting_two_vectors() {
+        let vector1 = Vector::new(3.0, 2.0, 1.0);
+        let vector2 = Vector::new(5.0, 6.0, 7.0);
+        let expected = Vector::new(-2.0, -4.0, -6.0);
+
+        assert_eq!(vector1 - vector2, expected);
+    }
+
+    #[test]
+    fn negating_vector() {
+        let vector = Vector::new(1.0, -2.0, 3.0);
+        let expected = Vector::new(-1.0, 2.0, -3.0);
+
+        assert_eq!(-vector, expected);
+    }
+
+    #[test]
+    fn multiply_vector_by_scalar() {
+        let vector = Vector::new(1.0, -2.0, 3.0);
+        let expected = Vector::new(3.5, -7.0, 10.5);
+
+        assert_eq!(vector * 3.5, expected);
+    }
+
+    #[test]
+    fn dividing_vector_by_scalar() {
+        let vector = Vector::new(1.0, -2.0, 3.0);
+        let expected = Vector::new(0.5, -1.0, 1.5);
+
+        assert_eq!(vector / 2.0, expected);
     }
 }
