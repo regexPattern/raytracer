@@ -40,10 +40,12 @@ fn main() {
             proj.position.x, proj.position.y
         );
 
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        thread::sleep(std::time::Duration::from_secs(1));
 
         if proj.position.y <= 0. {
             break;
         }
     }
+
+    println!("Ticks: {}", ticks);
 }

@@ -1,7 +1,6 @@
-use std::fmt::{self, Debug};
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Point {
     pub x: f64,
     pub y: f64,
@@ -9,7 +8,7 @@ pub struct Point {
     pub w: f64,
 }
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Vector {
     pub x: f64,
     pub y: f64,
@@ -61,25 +60,6 @@ impl Vector {
     }
 }
 
-impl Debug for Point {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Point {{ x: {:.3}, y: {:.3}, z: {:.3}, w: {:.3} }}",
-            self.x, self.y, self.z, self.w
-        )
-    }
-}
-
-impl Debug for Vector {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Vector {{ x: {:.3}, y: {:.3}, z: {:.3}, w: {:.3} }}",
-            self.x, self.y, self.z, self.w
-        )
-    }
-}
 impl Add for Vector {
     type Output = Self;
 
