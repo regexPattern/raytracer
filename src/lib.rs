@@ -422,4 +422,8 @@ mod operations {
         let vector = Vector::new(-1., -2., -3.);
         assert_eq!(vector.magnitude(), (14. as f64).sqrt());
     }
+
+    #[test]
+    fn normalizing_vector() {
+    }
 }
