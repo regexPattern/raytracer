@@ -1,6 +1,5 @@
-use std::ops::{Add, Div, Mul, Neg, Sub};
-
 use crate::tuple::Tuple;
+use std::ops::{Add, Div, Mul, Neg, Sub};
 
 #[derive(Copy, Clone, Debug)]
 struct Coordinate {
@@ -54,11 +53,23 @@ impl Neg for Coordinate {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-struct Point(Coordinate);
+pub struct Point(Coordinate);
 
 impl Point {
-    fn new(x: f64, y: f64, z: f64) -> Self {
+    pub fn new(x: f64, y: f64, z: f64) -> Self {
         Point(Coordinate::new(x, y, z, 1.))
+    }
+
+    pub fn get_coord_x(&self) -> f64 {
+        self.0.tuple.values()[0]
+    }
+
+    pub fn get_coord_y(&self) -> f64 {
+        self.0.tuple.values()[1]
+    }
+
+    pub fn get_coord_z(&self) -> f64 {
+        self.0.tuple.values()[2]
     }
 }
 
@@ -120,14 +131,14 @@ impl Sub<Vector> for Point {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-struct Vector(Coordinate);
+pub struct Vector(Coordinate);
 
 impl Vector {
-    fn new(x: f64, y: f64, z: f64) -> Self {
+    pub fn new(x: f64, y: f64, z: f64) -> Self {
         Vector(Coordinate::new(x, y, z, 0.))
     }
 
-    fn magnitude(&self) -> f64 {
+    pub fn magnitude(&self) -> f64 {
         let values = self.0.tuple.values();
         values
             .iter()
@@ -135,11 +146,11 @@ impl Vector {
             .sqrt()
     }
 
-    fn normalize(&self) -> Self {
+    pub fn normalize(&self) -> Self {
         *self / self.magnitude()
     }
 
-    fn dot(&self, other: &Self) -> f64 {
+    pub fn dot(&self, other: &Self) -> f64 {
         let a_values = self.0.tuple.values();
         let b_values = other.0.tuple.values();
         a_values
@@ -148,7 +159,7 @@ impl Vector {
             .fold(0., |acc, (a, b)| acc + a * b)
     }
 
-    fn cross(&self, other: &Self) -> Self {
+    pub fn cross(&self, other: &Self) -> Self {
         let [a_x, a_y, a_z] = self.0.tuple.values();
         let [b_x, b_y, b_z] = other.0.tuple.values();
 
@@ -156,10 +167,22 @@ impl Vector {
             tuple: Tuple::new(
                 a_y * b_z - a_z * b_y,
                 a_z * b_x - a_x * b_z,
-                a_x * b_y - a_y * b_x
-           ),
+                a_x * b_y - a_y * b_x,
+            ),
             w: self.0.w,
         })
+    }
+
+    pub fn get_coord_x(&self) -> f64 {
+        self.0.tuple.values()[0]
+    }
+
+    pub fn get_coord_y(&self) -> f64 {
+        self.0.tuple.values()[1]
+    }
+
+    pub fn get_coord_z(&self) -> f64 {
+        self.0.tuple.values()[2]
     }
 }
 
