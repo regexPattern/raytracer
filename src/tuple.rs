@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
 #[derive(Copy, Clone, Debug)]
@@ -7,6 +6,10 @@ pub struct Tuple(f64, f64, f64);
 impl Tuple {
     pub fn new(a: f64, b: f64, c: f64) -> Self {
         Tuple(a, b, c)
+    }
+    
+    pub fn values(&self) -> [f64; 3] {
+        [self.0, self.1, self.2]
     }
 }
 
