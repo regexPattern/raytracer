@@ -1,5 +1,6 @@
 mod point;
 mod vector;
+mod color;
 
 use std::cmp::{Ordering, PartialOrd};
 use std::ops::{Add, Div, Mul, Neg, Sub};
@@ -104,6 +105,18 @@ impl Neg for Tuple {
 
     fn neg(self) -> Tuple {
         Tuple::new(0.0, 0.0, 0.0) - self
+    }
+}
+
+impl Mul for Tuple {
+    type Output = Tuple;
+
+    fn mul(self, rhs: Tuple) -> Tuple {
+        let x = self.x * rhs.x;
+        let y = self.y * rhs.y;
+        let z = self.z * rhs.z;
+
+        Tuple::new(x.0, y.0, z.0)
     }
 }
 
