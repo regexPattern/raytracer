@@ -1,4 +1,4 @@
-use raytracer::{Point, Scalar, Vector};
+use raytracer::tuple::{Point, Scalar, Vector};
 
 struct Projectile {
     position: Point,
@@ -26,12 +26,9 @@ fn main() {
         wind: Vector::new(-0.01, 0.0, 0.0),
     };
 
-    let mut ticks = 0;
-
     while projectile.position.tuple.y >= Scalar(0.0) {
         tick(&mut projectile, &env);
         std::thread::sleep(std::time::Duration::from_millis(500));
         println!("{:?}", projectile.position);
-        ticks += 1;
     }
 }
