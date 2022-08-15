@@ -1,56 +1,64 @@
-use std::ops::{Add, Sub};
-
-// TODO: Ver si puedo unificar la creacion tanto de puntos como de vectores para que queden
-// unificadas en el `impl` block de cada tipo. Ahora por ejemplo, cuando implemento diferentes
-// traits como `Add` estoy utilizando Struct { ... } para crear estos tipos en vez del constructor
-// `Struct::new()`. Poria implementar el trait `From` para ver si puedo hacer constructores que
-// directamente reciban tuples.
-
-const POINT_COORDINATE: Coordinate = Coordinate(1.0);
-const VECTOR_COORDINATE: Coordinate = Coordinate(0.0);
-
-#[derive(Debug)]
-struct Coordinate(f64);
+use std::ops::{Add, Div, Mul, Neg, Sub};
 
 // https://doc.rust-lang.org/book/ch19-03-advanced-traits.html#using-the-newtype-pattern-to-implement-external-traits-on-external-types
-impl PartialEq for Coordinate {
-    fn eq(&self, other: &Coordinate) -> bool {
+#[derive(Copy, Clone, Debug)]
+struct Scalar(f64);
+
+impl PartialEq for Scalar {
+    fn eq(&self, other: &Scalar) -> bool {
         (self.0 - other.0).abs() < f64::EPSILON
     }
 }
 
-impl Add for Coordinate {
-    type Output = Coordinate;
+impl Add for Scalar {
+    type Output = Scalar;
 
-    fn add(self, rhs: Coordinate) -> Coordinate {
-        Coordinate(self.0 + rhs.0)
+    fn add(self, rhs: Scalar) -> Scalar {
+        Scalar(self.0 + rhs.0)
     }
 }
 
-impl Sub for Coordinate {
-    type Output = Coordinate;
+impl Sub for Scalar {
+    type Output = Scalar;
 
-    fn sub(self, rhs: Coordinate) -> Coordinate {
-        Coordinate(self.0 - rhs.0)
+    fn sub(self, rhs: Scalar) -> Scalar {
+        Scalar(self.0 - rhs.0)
     }
 }
 
-#[derive(Debug)]
-struct Tuple(Coordinate, Coordinate, Coordinate);
+impl Mul for Scalar {
+    type Output = Scalar;
+
+    fn mul(self, rhs: Self) -> Scalar {
+        Scalar(self.0 * rhs.0)
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+struct Tuple {
+    x: Scalar,
+    y: Scalar,
+    z: Scalar,
+}
 
 impl Tuple {
-    pub fn new(x: f64, y: f64, z: f64) -> Tuple {
-        let x = Coordinate(x);
-        let y = Coordinate(y);
-        let z = Coordinate(z);
+    fn new(x: f64, y: f64, z: f64) -> Tuple {
+        let x = Scalar(x);
+        let y = Scalar(y);
+        let z = Scalar(z);
 
-        Tuple(x, y, z)
+        Tuple { x, y, z }
+    }
+
+    // TODO: Me gustaria usar el trait `Into` aca.
+    fn coordinates(&self) -> (f64, f64, f64) {
+        (self.x.0, self.y.0, self.z.0)
     }
 }
 
 impl PartialEq for Tuple {
     fn eq(&self, other: &Tuple) -> bool {
-        self.0 == other.0 && self.1 == other.1 && self.2 == other.2
+        self.x == other.x && self.y == other.y && self.z == other.z
     }
 }
 
@@ -58,9 +66,9 @@ impl Add for Tuple {
     type Output = Tuple;
 
     fn add(self, rhs: Tuple) -> Tuple {
-        let x = self.0 + rhs.0;
-        let y = self.1 + rhs.1;
-        let z = self.2 + rhs.2;
+        let x = self.x + rhs.x;
+        let y = self.y + rhs.y;
+        let z = self.z + rhs.z;
 
         Tuple::new(x.0, y.0, z.0)
     }
@@ -70,26 +78,62 @@ impl Sub for Tuple {
     type Output = Tuple;
 
     fn sub(self, rhs: Tuple) -> Tuple {
-        let x = self.0 - rhs.0;
-        let y = self.1 - rhs.1;
-        let z = self.2 - rhs.2;
+        let x = self.x - rhs.x;
+        let y = self.y - rhs.y;
+        let z = self.z - rhs.z;
 
         Tuple::new(x.0, y.0, z.0)
     }
 }
 
-#[derive(Debug)]
+impl Neg for Tuple {
+    type Output = Tuple;
+
+    fn neg(self) -> Tuple {
+        Tuple::new(0.0, 0.0, 0.0) - self
+    }
+}
+
+impl Mul<f64> for Tuple {
+    type Output = Tuple;
+
+    fn mul(self, rhs: f64) -> Tuple {
+        let (x, y, z) = self.coordinates();
+
+        Tuple::new(x * rhs, y * rhs, z * rhs)
+    }
+}
+
+impl Div<f64> for Tuple {
+    type Output = Tuple;
+
+    fn div(self, rhs: f64) -> Tuple {
+        let (x, y, z) = self.coordinates();
+
+        Tuple::new(x / rhs, y / rhs, z / rhs)
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
 struct Point {
     tuple: Tuple,
-    w: Coordinate,
+    w: Scalar,
 }
 
 impl Point {
-    pub fn new(x: f64, y: f64, z: f64) -> Point {
+    fn new(x: f64, y: f64, z: f64) -> Point {
         Point {
             tuple: Tuple::new(x, y, z),
-            w: POINT_COORDINATE,
+            w: Scalar(1.0),
         }
+    }
+}
+
+impl From<Tuple> for Point {
+    fn from(tuple: Tuple) -> Point {
+        let (x, y, z) = tuple.coordinates();
+
+        Point::new(x, y, z)
     }
 }
 
@@ -103,10 +147,7 @@ impl Add<Vector> for Point {
     type Output = Point;
 
     fn add(self, rhs: Vector) -> Point {
-        Point {
-            tuple: self.tuple + rhs.tuple,
-            w: self.w + rhs.w,
-        }
+        Point::from(self.tuple + rhs.tuple)
     }
 }
 
@@ -114,10 +155,7 @@ impl Sub for Point {
     type Output = Vector;
 
     fn sub(self, rhs: Point) -> Vector {
-        Vector {
-            tuple: self.tuple - rhs.tuple,
-            w: self.w - rhs.w,
-        }
+        Vector::from(self.tuple - rhs.tuple)
     }
 }
 
@@ -125,25 +163,90 @@ impl Sub<Vector> for Point {
     type Output = Point;
 
     fn sub(self, rhs: Vector) -> Point {
-        Point {
-            tuple: self.tuple - rhs.tuple,
-            w: self.w - rhs.w,
-        }
+        Point::from(self.tuple - rhs.tuple)
     }
 }
 
-#[derive(Debug)]
+impl Neg for Point {
+    type Output = Point;
+
+    fn neg(self) -> Self::Output {
+        Point::from(-self.tuple)
+    }
+}
+
+impl Mul<f64> for Point {
+    type Output = Point;
+
+    fn mul(self, rhs: f64) -> Point {
+        Point::from(self.tuple * rhs)
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
 struct Vector {
     tuple: Tuple,
-    w: Coordinate,
+    w: Scalar,
 }
 
 impl Vector {
-    pub fn new(x: f64, y: f64, z: f64) -> Vector {
+    fn new(x: f64, y: f64, z: f64) -> Vector {
         Vector {
             tuple: Tuple::new(x, y, z),
-            w: VECTOR_COORDINATE,
+            w: Scalar(0.0),
         }
+    }
+
+    fn magnitude(&self) -> Scalar {
+        // TODO: Ver si aqui puedo hacer `Into` con `f64` para Coordinate.
+        let (x, y, z) = self.tuple.coordinates();
+        let coordinates = [x, y, z];
+        let magnitude = coordinates
+            .iter()
+            .fold(0.0, |sum, n| sum + n.powi(2))
+            .sqrt();
+
+        Scalar(magnitude)
+    }
+
+    fn normalize(self) -> Vector {
+        let magnitude = self.magnitude();
+        match magnitude {
+            x if x == Scalar(0.0) => Vector::new(0.0, 0.0, 0.0),
+            _ => Vector::from(self.tuple / self.magnitude().0),
+        }
+    }
+
+    fn dot(self, rhs: Vector) -> Scalar {
+        // TODO: Debe haber una mejor forma de hacer esto.
+        let (x, y, z) = self.tuple.coordinates();
+        let self_coordinates = [x, y, z];
+
+        let (x, y, z) = rhs.tuple.coordinates();
+        let rhs_coordinates = [x, y, z];
+
+        let product = self_coordinates
+            .iter()
+            .zip(rhs_coordinates)
+            .fold(0.0, |sum, (a, b)| sum + (a * b));
+
+        Scalar(product)
+    }
+
+    fn cross(self, rhs: Vector) -> Vector {
+        let x = self.tuple.y * rhs.tuple.z - self.tuple.z * rhs.tuple.y;
+        let y = self.tuple.z * rhs.tuple.x - self.tuple.x * rhs.tuple.z;
+        let z = self.tuple.x * rhs.tuple.y - self.tuple.y * rhs.tuple.x;
+
+        Vector::from(Tuple::new(x.0, y.0, z.0))
+    }
+}
+
+impl From<Tuple> for Vector {
+    fn from(tuple: Tuple) -> Vector {
+        let (x, y, z) = tuple.coordinates();
+
+        Vector::new(x, y, z)
     }
 }
 
@@ -157,10 +260,7 @@ impl Add for Vector {
     type Output = Vector;
 
     fn add(self, rhs: Vector) -> Vector {
-        Vector {
-            tuple: self.tuple + rhs.tuple,
-            w: self.w + rhs.w,
-        }
+        Vector::from(self.tuple + rhs.tuple)
     }
 }
 
@@ -168,10 +268,7 @@ impl Add<Point> for Vector {
     type Output = Point;
 
     fn add(self, rhs: Point) -> Point {
-        Point {
-            tuple: self.tuple + rhs.tuple,
-            w: self.w + rhs.w,
-        }
+        Point::from(self.tuple + rhs.tuple)
     }
 }
 
@@ -179,10 +276,23 @@ impl Sub for Vector {
     type Output = Vector;
 
     fn sub(self, rhs: Vector) -> Vector {
-        Vector {
-            tuple: self.tuple - rhs.tuple,
-            w: self.w - rhs.w,
-        }
+        Vector::from(self.tuple - rhs.tuple)
+    }
+}
+
+impl Neg for Vector {
+    type Output = Vector;
+
+    fn neg(self) -> Vector {
+        Vector::from(-self.tuple)
+    }
+}
+
+impl Mul<f64> for Vector {
+    type Output = Vector;
+
+    fn mul(self, rhs: f64) -> Vector {
+        Vector::from(self.tuple * rhs)
     }
 }
 
@@ -191,10 +301,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn comparing_two_coordinates() {
-        let c1 = Coordinate(1.0);
-        let c2 = Coordinate(1.0);
-        let c3 = Coordinate(1.0 + f64::EPSILON);
+    fn comparing_two_scalar() {
+        let c1 = Scalar(1.0);
+        let c2 = Scalar(1.0);
+        let c3 = Scalar(1.0 + f64::EPSILON);
 
         assert_eq!(c1, c2);
         assert_ne!(c1, c3);
@@ -211,27 +321,48 @@ mod tests {
     }
 
     #[test]
-    fn creating_two_points() {
-        let p = Point::new(1.0, 2.0, 3.0);
+    fn getting_tuple_coordinates() {
+        let t = Tuple::new(1.0, 2.0, 3.0);
 
-        assert_eq!(p.tuple, Tuple::new(1.0, 2.0, 3.0));
-        assert_eq!(p.w, POINT_COORDINATE);
+        assert_eq!(t.coordinates(), (1.0, 2.0, 3.0));
     }
 
     #[test]
-    fn creating_two_vectors() {
+    fn creating_point() {
+        let p = Point::new(1.0, 2.0, 3.0);
+
+        assert_eq!(p.tuple, Tuple::new(1.0, 2.0, 3.0));
+        assert_eq!(p.w, Scalar(1.0));
+    }
+
+    #[test]
+    fn creating_vector() {
         let v = Vector::new(1.0, 2.0, 3.0);
 
         assert_eq!(v.tuple, Tuple::new(1.0, 2.0, 3.0));
-        assert_eq!(v.w, VECTOR_COORDINATE);
+        assert_eq!(v.w, Scalar(0.0));
+    }
+
+    #[test]
+    fn creating_point_from_tuple() {
+        let p = Point::from(Tuple::new(1.0, 2.0, 3.0));
+
+        assert_eq!(p, Point::new(1.0, 2.0, 3.0));
+    }
+
+    #[test]
+    fn creating_vector_from_tuple() {
+        let v = Vector::from(Tuple::new(1.0, 2.0, 3.0));
+
+        assert_eq!(v, Vector::new(1.0, 2.0, 3.0));
     }
 
     #[test]
     fn adding_two_coordiantes() {
-        let c1 = Coordinate(1.0);
-        let c2 = Coordinate(2.0);
+        let c1 = Scalar(1.0);
+        let c2 = Scalar(2.0);
 
-        assert_eq!(c1 + c2, Coordinate(3.0));
+        assert_eq!(c1 + c2, Scalar(3.0));
     }
 
     #[test]
@@ -288,5 +419,110 @@ mod tests {
         let v = Vector::new(5.0, 6.0, 7.0);
 
         assert_eq!(p - v, Point::new(-2.0, -4.0, -6.0));
+    }
+
+    #[test]
+    fn negating_tuple() {
+        let t = Tuple::new(1.0, 2.0, 3.0);
+
+        assert_eq!(-t, Tuple::new(-1.0, -2.0, -3.0));
+    }
+
+    #[test]
+    fn negating_point() {
+        let p = Point::new(1.0, 2.0, 3.0);
+
+        assert_eq!(-p, Point::new(-1.0, -2.0, -3.0));
+    }
+
+    #[test]
+    fn negating_vector() {
+        let v = Vector::new(1.0, 2.0, 3.0);
+
+        assert_eq!(-v, Vector::new(-1.0, -2.0, -3.0));
+    }
+
+    #[test]
+    fn scaling_tuple() {
+        let t = Tuple::new(1.0, 2.0, 3.0);
+
+        assert_eq!(t * 2.0, Tuple::new(2.0, 4.0, 6.0));
+    }
+
+    #[test]
+    fn scaling_point() {
+        let p = Point::new(1.0, 2.0, 3.0);
+
+        assert_eq!(p * 2.0, Point::new(2.0, 4.0, 6.0));
+    }
+
+    #[test]
+    fn scaling_vector() {
+        let v = Vector::new(1.0, 2.0, 3.0);
+
+        assert_eq!(v * 2.0, Vector::new(2.0, 4.0, 6.0));
+    }
+
+    #[test]
+    fn vector_magnitude() {
+        let v1 = Vector::new(1.0, 0.0, 0.0);
+        let v2 = Vector::new(0.0, 1.0, 0.0);
+        let v3 = Vector::new(0.0, 0.0, 1.0);
+        let v4 = Vector::new(1.0, 2.0, 3.0);
+        let v5 = Vector::new(0.0, 0.0, 0.0);
+
+        assert_eq!(v1.magnitude(), Scalar(1.0));
+        assert_eq!(v2.magnitude(), Scalar(1.0));
+        assert_eq!(v3.magnitude(), Scalar(1.0));
+        assert_eq!(v4.magnitude(), Scalar(14_f64.sqrt()));
+        assert_eq!(v5.magnitude(), Scalar(0.0));
+    }
+
+    #[test]
+    fn vector_normalization() {
+        let v1 = Vector::new(4.0, 0.0, 0.0);
+        let v2 = Vector::new(1.0, 2.0, 3.0);
+
+        assert_eq!(v1.normalize(), Vector::new(1.0, 0.0, 0.0));
+        assert_eq!(
+            v2.normalize(),
+            Vector::new(
+                1.0 / 14_f64.sqrt(),
+                2.0 / 14_f64.sqrt(),
+                3.0 / 14_f64.sqrt()
+            )
+        );
+    }
+
+    #[test]
+    fn normalize_null_vector() {
+        let v = Vector::new(0.0, 0.0, 0.0);
+
+        assert_eq!(v.normalize(), Vector::new(0.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn normalized_vector_magnitude() {
+        let v = Vector::new(1.0, 2.0, 3.0);
+
+        assert_eq!(v.normalize().magnitude(), Scalar(1.0));
+    }
+
+    #[test]
+    fn dot_product_of_two_vectors() {
+        let v1 = Vector::new(1.0, 2.0, 3.0);
+        let v2 = Vector::new(2.0, 3.0, 4.0);
+
+        assert_eq!(v1.dot(v2), Scalar(20.0));
+        assert_eq!(v2.dot(v1), Scalar(20.0));
+    }
+
+    #[test]
+    fn cross_product_of_two_vectors() {
+        let v1 = Vector::new(1.0, 2.0, 3.0);
+        let v2 = Vector::new(2.0, 3.0, 4.0);
+
+        assert_eq!(v1.cross(v2), Vector::new(-1.0, 2.0, -1.0));
+        assert_eq!(v2.cross(v1), Vector::new(1.0, -2.0, 1.0));
     }
 }
