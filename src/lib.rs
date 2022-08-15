@@ -1,12 +1,19 @@
+use std::cmp::{Ordering, PartialOrd};
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
 // https://doc.rust-lang.org/book/ch19-03-advanced-traits.html#using-the-newtype-pattern-to-implement-external-traits-on-external-types
 #[derive(Copy, Clone, Debug)]
-struct Scalar(f64);
+pub struct Scalar(pub f64);
 
 impl PartialEq for Scalar {
     fn eq(&self, other: &Scalar) -> bool {
         (self.0 - other.0).abs() < f64::EPSILON
+    }
+}
+
+impl PartialOrd for Scalar {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.0.total_cmp(&other.0))
     }
 }
 
@@ -35,10 +42,10 @@ impl Mul for Scalar {
 }
 
 #[derive(Copy, Clone, Debug)]
-struct Tuple {
-    x: Scalar,
-    y: Scalar,
-    z: Scalar,
+pub struct Tuple {
+    pub x: Scalar,
+    pub y: Scalar,
+    pub z: Scalar,
 }
 
 impl Tuple {
@@ -115,13 +122,13 @@ impl Div<f64> for Tuple {
 }
 
 #[derive(Copy, Clone, Debug)]
-struct Point {
-    tuple: Tuple,
+pub struct Point {
+    pub tuple: Tuple,
     w: Scalar,
 }
 
 impl Point {
-    fn new(x: f64, y: f64, z: f64) -> Point {
+    pub fn new(x: f64, y: f64, z: f64) -> Point {
         Point {
             tuple: Tuple::new(x, y, z),
             w: Scalar(1.0),
@@ -184,20 +191,20 @@ impl Mul<f64> for Point {
 }
 
 #[derive(Copy, Clone, Debug)]
-struct Vector {
-    tuple: Tuple,
+pub struct Vector {
+    pub tuple: Tuple,
     w: Scalar,
 }
 
 impl Vector {
-    fn new(x: f64, y: f64, z: f64) -> Vector {
+    pub fn new(x: f64, y: f64, z: f64) -> Vector {
         Vector {
             tuple: Tuple::new(x, y, z),
             w: Scalar(0.0),
         }
     }
 
-    fn magnitude(&self) -> Scalar {
+    pub fn magnitude(&self) -> Scalar {
         // TODO: Ver si aqui puedo hacer `Into` con `f64` para Coordinate.
         let (x, y, z) = self.tuple.coordinates();
         let coordinates = [x, y, z];
@@ -209,7 +216,7 @@ impl Vector {
         Scalar(magnitude)
     }
 
-    fn normalize(self) -> Vector {
+    pub fn normalize(self) -> Vector {
         let magnitude = self.magnitude();
         match magnitude {
             x if x == Scalar(0.0) => Vector::new(0.0, 0.0, 0.0),
@@ -217,7 +224,7 @@ impl Vector {
         }
     }
 
-    fn dot(self, rhs: Vector) -> Scalar {
+    pub fn dot(self, rhs: Vector) -> Scalar {
         // TODO: Debe haber una mejor forma de hacer esto.
         let (x, y, z) = self.tuple.coordinates();
         let self_coordinates = [x, y, z];
@@ -233,7 +240,7 @@ impl Vector {
         Scalar(product)
     }
 
-    fn cross(self, rhs: Vector) -> Vector {
+    pub fn cross(self, rhs: Vector) -> Vector {
         let x = self.tuple.y * rhs.tuple.z - self.tuple.z * rhs.tuple.y;
         let y = self.tuple.z * rhs.tuple.x - self.tuple.x * rhs.tuple.z;
         let z = self.tuple.x * rhs.tuple.y - self.tuple.y * rhs.tuple.x;
@@ -308,6 +315,14 @@ mod tests {
 
         assert_eq!(c1, c2);
         assert_ne!(c1, c3);
+
+        let c4 = Scalar(1.0);
+        let c5 = Scalar(2.0);
+
+        assert!(c4 <= c4);
+        assert!(c4 >= c4);
+        assert!(c4 < c5);
+        assert!(c5 > c4);
     }
 
     #[test]
