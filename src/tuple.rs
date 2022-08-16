@@ -7,6 +7,7 @@ use std::ops::{Add, Div, Mul, Neg, Sub};
 
 pub use crate::tuple::point::Point;
 pub use crate::tuple::vector::Vector;
+pub use crate::tuple::color::Color;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Scalar(f64);

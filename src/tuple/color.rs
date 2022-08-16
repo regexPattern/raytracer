@@ -2,11 +2,11 @@ use std::ops::{Add, Mul, Sub};
 
 use crate::tuple::{Scalar, Tuple};
 
-#[derive(Debug)]
-struct Color(Tuple);
+#[derive(Copy, Clone, Debug)]
+pub struct Color(Tuple);
 
 impl Color {
-    fn new(red: f64, green: f64, blue: f64) -> Color {
+    pub fn new(red: f64, green: f64, blue: f64) -> Color {
         Color(Tuple::new(red, green, blue))
     }
 

@@ -1,4 +1,4 @@
-use raytracer::tuple::{Point, Scalar, Vector};
+use raytracer::tuple::{Point, Vector};
 
 struct Projectile {
     position: Point,
