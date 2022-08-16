@@ -1,6 +1,6 @@
-use std::collections::HashMap;
-
 use crate::tuple::Color;
+use std::collections::HashMap;
+use std::io::Write;
 
 struct Canvas {
     width: i32,
@@ -53,10 +53,22 @@ impl Canvas {
     fn is_inside_canvas(&self, x: i32, y: i32) -> bool {
         (0..self.width).contains(&x) && (0..self.height).contains(&y)
     }
+
+    fn to_ppm<T: Write>(&self, f: &mut T) {
+        let pixmap = "P3";
+        let Canvas { width, height, .. } = self;
+        let color_range = 255;
+
+        write!(f, "{pixmap}\n{width} {height}\n{color_range}").unwrap();
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::fs::File;
+    use std::io::Read;
+    use tempfile::NamedTempFile;
+
     use super::*;
 
     #[test]
@@ -70,7 +82,7 @@ mod tests {
 
     #[test]
     fn canvas_pixels_are_black() {
-        let mut c = Canvas::new(10, 20);
+        let c = Canvas::new(10, 20);
 
         assert_eq!(c.pixel_at(5, 5), Color::new(0.0, 0.0, 0.0));
     }
@@ -94,7 +106,9 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "{x, y} values must be inside canvas limits { width: 10, height: 20 }")]
+    #[should_panic(
+        expected = "{x, y} values must be inside canvas limits { width: 10, height: 20 }"
+    )]
     fn write_pixel_outside_canvas() {
         let mut c = Canvas::new(10, 20);
 
@@ -102,10 +116,27 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "{x, y} values must be inside canvas limits { width: 10, height: 20 }")]
+    #[should_panic(
+        expected = "{x, y} values must be inside canvas limits { width: 10, height: 20 }"
+    )]
     fn get_pixel_outside_canvas() {
         let c = Canvas::new(10, 20);
 
         c.pixel_at(100, 100);
+    }
+
+    #[test]
+    fn constructing_ppm_header() {
+        let c = Canvas::new(5, 3);
+        let mut f = NamedTempFile::new().unwrap();
+
+        c.to_ppm(&mut f);
+
+        let mut f = File::open(f.path()).unwrap();
+
+        let mut buffer = String::new();
+        f.read_to_string(&mut buffer).unwrap();
+
+        assert_eq!(buffer, String::from("P3\n5 3\n255"));
     }
 }

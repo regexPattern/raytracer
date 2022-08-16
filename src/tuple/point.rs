@@ -63,7 +63,6 @@ impl Mul<Scalar> for Point {
     type Output = Point;
 
     fn mul(self, rhs: Scalar) -> Self::Output {
-        // TODO: Investigar como es que `rhs.0` no es privado???
         self * rhs.0
     }
 }
