@@ -10,16 +10,24 @@ impl Color {
         Color(Tuple::new(red, green, blue))
     }
 
-    fn red(&self) -> Scalar {
-        self.0.x
+    pub fn red(&self) -> u8 {
+        Color::clamp(self.0.x)
     }
 
-    fn green(&self) -> Scalar {
-        self.0.y
+    pub fn green(&self) -> u8 {
+        Color::clamp(self.0.y)
     }
 
-    fn blue(&self) -> Scalar {
-        self.0.z
+    pub fn blue(&self) -> u8 {
+        Color::clamp(self.0.z)
+    }
+
+    fn clamp(color: Scalar) -> u8 {
+        match color.0 {
+            x if x < 0.0 => 0,
+            x if x > 255.0 => 255,
+            x => (x * 255.0) as u8,
+        }
     }
 }
 
@@ -86,9 +94,42 @@ mod tests {
     fn creating_color() {
         let c = Color::new(-0.5, 0.4, 1.7);
 
-        assert_eq!(c.red(), Scalar(-0.5));
-        assert_eq!(c.green(), Scalar(0.4));
-        assert_eq!(c.blue(), Scalar(1.7));
+        assert_eq!(c.0.x.0, -0.5);
+        assert_eq!(c.0.y.0, 0.4);
+        assert_eq!(c.0.z.0, 1.7);
+    }
+
+    #[test]
+    fn clamping_scalar() {
+        let s1 = Scalar(0.0);
+        let s2 = Scalar(0.2);
+        let s3 = Scalar(1.0);
+
+        assert_eq!(Color::clamp(s1), 0);
+        assert_eq!(Color::clamp(s2), 51);
+        assert_eq!(Color::clamp(s3), 255);
+
+        let s4 = Scalar(-1.0);
+        let s5 = Scalar(256.0);
+        let s6 = Scalar(0.5);
+
+        assert_eq!(Color::clamp(s4), 0);
+        assert_eq!(Color::clamp(s5), 255);
+        assert_eq!(Color::clamp(s6), 127);
+    }
+
+    #[test]
+    fn clamping_color() {
+        let red = Color::new(1.0, 0.0, 0.0);
+        let green = Color::new(0.0, 1.0, 0.0);
+        let blue = Color::new(0.0, 0.0, 1.0);
+
+        assert_eq!(red.red(), 255);
+        assert_eq!(red.green(), 0);
+        assert_eq!(red.blue(), 0);
+
+        assert_eq!(green.green(), 255);
+        assert_eq!(blue.blue(), 255);
     }
 
     #[test]

@@ -5,12 +5,12 @@ mod vector;
 use std::cmp::{Ordering, PartialOrd};
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
+pub use crate::tuple::color::Color;
 pub use crate::tuple::point::Point;
 pub use crate::tuple::vector::Vector;
-pub use crate::tuple::color::Color;
 
 #[derive(Copy, Clone, Debug)]
-pub struct Scalar(f64);
+pub struct Scalar(pub f64);
 
 impl From<f64> for Scalar {
     fn from(value: f64) -> Scalar {

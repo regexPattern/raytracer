@@ -1,21 +1,15 @@
-use crate::tuple::Color;
+use crate::tuple::{Color, Tuple};
 use std::collections::HashMap;
-use std::io::Write;
+use std::io::{self, Write};
 
-struct Canvas {
+pub struct Canvas {
     width: i32,
     height: i32,
     pixels: HashMap<Coordinate, Color>,
 }
 
-#[derive(Copy, Clone, Hash, Eq, PartialEq)]
-struct Coordinate {
-    x: i32,
-    y: i32,
-}
-
 impl Canvas {
-    fn new(width: i32, height: i32) -> Canvas {
+    pub fn new(width: i32, height: i32) -> Canvas {
         Canvas {
             width,
             height,
@@ -23,7 +17,7 @@ impl Canvas {
         }
     }
 
-    fn write_pixel(&mut self, x: i32, y: i32, c: Color) {
+    pub fn write_pixel(&mut self, x: i32, y: i32, c: Color) {
         if !self.is_inside_canvas(x, y) {
             panic!(
                 "{{x, y}} values must be inside canvas limits {{ width: {}, height: {} }}",
@@ -54,19 +48,49 @@ impl Canvas {
         (0..self.width).contains(&x) && (0..self.height).contains(&y)
     }
 
-    fn to_ppm<T: Write>(&self, f: &mut T) {
-        let pixmap = "P3";
-        let Canvas { width, height, .. } = self;
-        let color_range = 255;
+    pub fn to_ppm<T: Write>(&self, w: &mut T) -> io::Result<()> {
+        let mut lines = Vec::new();
 
-        write!(f, "{pixmap}\n{width} {height}\n{color_range}").unwrap();
+        lines.push(String::from("P3"));
+        lines.push(format!("{} {}", self.width, self.height));
+        lines.push(String::from("255"));
+
+        for y in 0..self.height {
+            let mut colors_in_row = Vec::new();
+
+            for x in 0..self.width {
+                let color = self.pixel_at(x, y);
+                colors_in_row.push(format!(
+                    "{} {} {}",
+                    color.red(),
+                    color.green(),
+                    color.blue()
+                ));
+            }
+
+            lines.push(colors_in_row.join(" "));
+        }
+
+        write!(w, "{}", lines.join("\n"))
+    }
+}
+
+#[derive(Copy, Clone, Hash, Eq, PartialEq)]
+pub struct Coordinate {
+    x: i32,
+    y: i32,
+}
+
+impl From<Tuple> for Coordinate {
+    fn from(t: Tuple) -> Coordinate {
+        Coordinate { x: t.x.0 as i32, y: t.y.0 as i32 }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use std::fs::File;
-    use std::io::Read;
+    use std::io::{BufRead, BufReader};
     use tempfile::NamedTempFile;
 
     use super::*;
@@ -130,13 +154,91 @@ mod tests {
         let c = Canvas::new(5, 3);
         let mut f = NamedTempFile::new().unwrap();
 
-        c.to_ppm(&mut f);
+        c.to_ppm(&mut f).unwrap();
 
-        let mut f = File::open(f.path()).unwrap();
+        let f = File::open(f.path()).unwrap();
+        let reader = BufReader::new(f);
 
-        let mut buffer = String::new();
-        f.read_to_string(&mut buffer).unwrap();
+        let mut lines = reader.lines().map(|l| l.unwrap());
 
-        assert_eq!(buffer, String::from("P3\n5 3\n255"));
+        assert_eq!(lines.next(), Some(String::from("P3")));
+        assert_eq!(lines.next(), Some(String::from("5 3")));
+        assert_eq!(lines.next(), Some(String::from("255")));
     }
+
+    #[test]
+    fn constructing_ppm_body() {
+        let mut c = Canvas::new(5, 3);
+        let c1 = Color::new(1.5, 0.0, 0.0);
+        let c2 = Color::new(0.0, 0.5, 0.0);
+        let c3 = Color::new(-0.5, 0.0, 1.0);
+
+        c.write_pixel(0, 0, c1);
+        c.write_pixel(2, 1, c2);
+        c.write_pixel(4, 2, c3);
+
+        let mut f = NamedTempFile::new().unwrap();
+
+        c.to_ppm(&mut f).unwrap();
+
+        let f = File::open(f.path()).unwrap();
+        let reader = BufReader::new(f);
+
+        let mut lines = reader.lines().map(|l| l.unwrap());
+
+        lines.next();
+        lines.next();
+        lines.next();
+
+        assert_eq!(
+            lines.next(),
+            Some(String::from("255 0 0 0 0 0 0 0 0 0 0 0 0 0 0"))
+        );
+        assert_eq!(
+            lines.next(),
+            Some(String::from("0 0 0 0 0 0 0 127 0 0 0 0 0 0 0"))
+        );
+        assert_eq!(
+            lines.next(),
+            Some(String::from("0 0 0 0 0 0 0 0 0 0 0 0 0 0 255"))
+        );
+    }
+    /*
+    #[test]
+    fn ppm_splitting_long_lines() {
+        let mut c = Canvas::new(10, 2);
+
+        for y in 0..c.height {
+            for x in 0..c.width {
+                c.write_pixel(x, y, Color::new(1.0, 0.8, 0.6));
+            }
+        }
+
+        let mut f = NamedTempFile::new().unwrap();
+
+        c.to_ppm(&mut f).unwrap();
+
+        let f = File::open(f.path()).unwrap();
+        let reader = BufReader::new(f);
+
+        let mut lines = reader.lines().map(|l| l.unwrap());
+
+        lines.next();
+        lines.next();
+        lines.next();
+        lines.next();
+
+        assert_eq!(
+            lines.next(),
+            Some(String::from(
+                "255 204 153 255 204 153 255 204 153 255 204 153 255 204 153 255 204"
+            ))
+        );
+        assert_eq!(
+            lines.next(),
+            Some(String::from(
+                "153 255 204 153 255 204 153 255 204 153 255 204 153"
+            ))
+        );
+    } */
 }
