@@ -83,7 +83,7 @@ pub struct Coordinate {
 
 impl From<Tuple> for Coordinate {
     fn from(t: Tuple) -> Coordinate {
-        Coordinate { x: t.x.0 as i32, y: t.y.0 as i32 }
+        Coordinate { x: t.x as i32, y: t.y as i32 }
     }
 }
 

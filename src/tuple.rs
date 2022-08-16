@@ -2,7 +2,6 @@ mod color;
 mod point;
 mod vector;
 
-use std::cmp::{Ordering, PartialOrd};
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
 pub use crate::tuple::color::Color;
@@ -10,51 +9,14 @@ pub use crate::tuple::point::Point;
 pub use crate::tuple::vector::Vector;
 
 #[derive(Copy, Clone, Debug)]
-pub struct Scalar(pub f64);
-
-impl From<f64> for Scalar {
-    fn from(value: f64) -> Scalar {
-        Scalar(value)
-    }
-}
-
-impl PartialEq for Scalar {
-    fn eq(&self, other: &Scalar) -> bool {
-        (self.0 - other.0).abs() < f64::EPSILON
-    }
-}
-
-impl PartialEq<f64> for Scalar {
-    fn eq(&self, other: &f64) -> bool {
-        *self == Scalar(*other)
-    }
-}
-
-impl PartialOrd for Scalar {
-    fn partial_cmp(&self, other: &Scalar) -> Option<Ordering> {
-        Some(self.0.total_cmp(&other.0))
-    }
-}
-
-impl PartialOrd<f64> for Scalar {
-    fn partial_cmp(&self, other: &f64) -> Option<Ordering> {
-        Some(self.0.total_cmp(&other))
-    }
-}
-
-#[derive(Copy, Clone, Debug)]
 pub struct Tuple {
-    pub x: Scalar,
-    pub y: Scalar,
-    pub z: Scalar,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
 }
 
 impl Tuple {
     fn new(x: f64, y: f64, z: f64) -> Tuple {
-        let x = Scalar(x);
-        let y = Scalar(y);
-        let z = Scalar(z);
-
         Tuple { x, y, z }
     }
 }
@@ -70,13 +32,15 @@ impl IntoIterator for Tuple {
     type IntoIter = std::array::IntoIter<Self::Item, 3>;
 
     fn into_iter(self) -> Self::IntoIter {
-        [self.x.0, self.y.0, self.z.0].into_iter()
+        [self.x, self.y, self.z].into_iter()
     }
 }
 
 impl PartialEq for Tuple {
     fn eq(&self, other: &Tuple) -> bool {
-        self.x == other.x && self.y == other.y && self.z == other.z
+        (self.x - other.x).abs() < f64::EPSILON
+            && (self.y - other.y).abs() < f64::EPSILON
+            && (self.z - other.z).abs() < f64::EPSILON
     }
 }
 
@@ -84,9 +48,9 @@ impl Add for Tuple {
     type Output = Tuple;
 
     fn add(self, rhs: Tuple) -> Self::Output {
-        let x = self.x.0 + rhs.x.0;
-        let y = self.y.0 + rhs.y.0;
-        let z = self.z.0 + rhs.z.0;
+        let x = self.x + rhs.x;
+        let y = self.y + rhs.y;
+        let z = self.z + rhs.z;
 
         Tuple::new(x, y, z)
     }
@@ -96,9 +60,7 @@ impl Div<f64> for Tuple {
     type Output = Tuple;
 
     fn div(self, rhs: f64) -> Self::Output {
-        let (x, y, z) = (self.x.0, self.y.0, self.z.0);
-
-        Tuple::new(x / rhs, y / rhs, z / rhs)
+        Tuple::new(self.x / rhs, self.y / rhs, self.z / rhs)
     }
 }
 
@@ -106,9 +68,9 @@ impl Mul for Tuple {
     type Output = Tuple;
 
     fn mul(self, rhs: Tuple) -> Self::Output {
-        let x = self.x.0 * rhs.x.0;
-        let y = self.y.0 * rhs.y.0;
-        let z = self.z.0 * rhs.z.0;
+        let x = self.x * rhs.x;
+        let y = self.y * rhs.y;
+        let z = self.z * rhs.z;
 
         Tuple::new(x, y, z)
     }
@@ -118,9 +80,7 @@ impl Mul<f64> for Tuple {
     type Output = Tuple;
 
     fn mul(self, rhs: f64) -> Self::Output {
-        let (x, y, z) = (self.x.0, self.y.0, self.z.0);
-
-        Tuple::new(x * rhs, y * rhs, z * rhs)
+        Tuple::new(self.x * rhs, self.y * rhs, self.z * rhs)
     }
 }
 
@@ -136,9 +96,9 @@ impl Sub for Tuple {
     type Output = Tuple;
 
     fn sub(self, rhs: Tuple) -> Self::Output {
-        let x = self.x.0 - rhs.x.0;
-        let y = self.y.0 - rhs.y.0;
-        let z = self.z.0 - rhs.z.0;
+        let x = self.x - rhs.x;
+        let y = self.y - rhs.y;
+        let z = self.z - rhs.z;
 
         Tuple::new(x, y, z)
     }
@@ -147,43 +107,6 @@ impl Sub for Tuple {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn creating_scalar_from_float() {
-        let s = Scalar::from(1.0);
-
-        assert_eq!(s, Scalar(1.0));
-    }
-
-    #[test]
-    fn comparing_two_scalars() {
-        let s1 = Scalar(1.0);
-        let s2 = Scalar(1.0);
-        let s3 = Scalar(1.0 + f64::EPSILON);
-
-        assert_eq!(s1, s2);
-        assert_ne!(s1, s3);
-
-        let s4 = Scalar(1.0);
-        let s5 = Scalar(2.0);
-
-        assert!(s4 <= s4);
-        assert!(s4 >= s4);
-        assert!(s4 < s5);
-        assert!(s5 > s4);
-    }
-
-    #[test]
-    fn comparing_scalar_with_float() {
-        let s1 = Scalar(1.0);
-        let s2 = Scalar(1.0 + f64::EPSILON);
-
-        assert_eq!(s1, 1.0);
-        assert_ne!(s2, 1.0);
-
-        assert!(s1 < 1.0 + f64::EPSILON);
-        assert!(!(s1 > 1.0 + f64::EPSILON));
-    }
 
     #[test]
     fn creating_tuple_from_array() {

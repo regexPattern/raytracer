@@ -1,4 +1,4 @@
-use crate::tuple::{Scalar, Tuple, Vector};
+use crate::tuple::{Tuple, Vector};
 
 use std::fmt;
 use std::ops::{Add, Mul, Neg, Sub};
@@ -6,14 +6,14 @@ use std::ops::{Add, Mul, Neg, Sub};
 #[derive(Copy, Clone, Debug)]
 pub struct Point {
     pub tuple: Tuple,
-    w: Scalar,
+    w: f64,
 }
 
 impl Point {
     pub fn new(x: f64, y: f64, z: f64) -> Point {
         Point {
             tuple: Tuple::new(x, y, z),
-            w: Scalar(1.0),
+            w: 1.0,
         }
     }
 }
@@ -21,8 +21,6 @@ impl Point {
 impl From<Tuple> for Point {
     fn from(t: Tuple) -> Point {
         let Tuple { x, y, z } = t;
-        let (x, y, z) = (x.0, y.0, z.0);
-
         Self::new(x, y, z)
     }
 }
@@ -36,9 +34,9 @@ impl PartialEq for Point {
 impl fmt::Display for Point {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Point")
-            .field("x", &format_args!("{:.2}", self.tuple.x.0))
-            .field("y", &format_args!("{:.2}", self.tuple.y.0))
-            .field("z", &format_args!("{:.2}", self.tuple.z.0))
+            .field("x", &format_args!("{:.2}", self.tuple.x))
+            .field("y", &format_args!("{:.2}", self.tuple.y))
+            .field("z", &format_args!("{:.2}", self.tuple.z))
             .finish()
     }
 }
@@ -56,14 +54,6 @@ impl Mul<f64> for Point {
 
     fn mul(self, rhs: f64) -> Self::Output {
         Point::from(self.tuple * rhs)
-    }
-}
-
-impl Mul<Scalar> for Point {
-    type Output = Point;
-
-    fn mul(self, rhs: Scalar) -> Self::Output {
-        self * rhs.0
     }
 }
 
@@ -133,13 +123,6 @@ mod tests {
         let p = Point::new(1.0, 2.0, 3.0);
 
         assert_eq!(p * 2.0, Point::new(2.0, 4.0, 6.0));
-    }
-
-    #[test]
-    fn multiplying_point_with_scalar() {
-        let p = Point::new(1.0, 2.0, 3.0);
-
-        assert_eq!(p * Scalar(2.0), Point::new(2.0, 4.0, 6.0));
     }
 
     #[test]

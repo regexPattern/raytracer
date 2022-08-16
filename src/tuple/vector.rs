@@ -1,4 +1,4 @@
-use crate::tuple::{Point, Scalar, Tuple};
+use crate::tuple::{Point, Tuple};
 
 use std::fmt;
 use std::ops::{Add, Mul, Neg, Sub};
@@ -6,48 +6,42 @@ use std::ops::{Add, Mul, Neg, Sub};
 #[derive(Copy, Clone, Debug)]
 pub struct Vector {
     pub tuple: Tuple,
-    w: Scalar,
+    w: f64,
 }
 
 impl Vector {
     pub fn new(x: f64, y: f64, z: f64) -> Vector {
         Vector {
             tuple: Tuple::new(x, y, z),
-            w: Scalar(0.0),
+            w: 0.0,
         }
     }
 
-    pub fn magnitude(&self) -> Scalar {
-        let magnitude = self
-            .tuple
+    pub fn magnitude(&self) -> f64 {
+        self.tuple
             .into_iter()
             .fold(0.0, |sum, n| sum + n.powi(2))
-            .sqrt();
-
-        Scalar(magnitude)
+            .sqrt()
     }
 
     pub fn normalize(self) -> Vector {
         match self.magnitude() {
-            x if x == Scalar(0.0) => Vector::new(0.0, 0.0, 0.0),
-            _ => Vector::from(self.tuple / self.magnitude().0),
+            x if x == 0.0 => Vector::new(0.0, 0.0, 0.0),
+            _ => Vector::from(self.tuple / self.magnitude()),
         }
     }
 
-    pub fn dot(&self, rhs: &Vector) -> Scalar {
-        let result = self
-            .tuple
+    pub fn dot(&self, rhs: &Vector) -> f64 {
+        self.tuple
             .into_iter()
             .zip(rhs.tuple.into_iter())
-            .fold(0.0, |sum, (a, b)| sum + (a * b));
-
-        Scalar(result)
+            .fold(0.0, |sum, (a, b)| sum + (a * b))
     }
 
     pub fn cross(self, rhs: Vector) -> Vector {
-        let x = self.tuple.y.0 * rhs.tuple.z.0 - self.tuple.z.0 * rhs.tuple.y.0;
-        let y = self.tuple.z.0 * rhs.tuple.x.0 - self.tuple.x.0 * rhs.tuple.z.0;
-        let z = self.tuple.x.0 * rhs.tuple.y.0 - self.tuple.y.0 * rhs.tuple.x.0;
+        let x = self.tuple.y * rhs.tuple.z - self.tuple.z * rhs.tuple.y;
+        let y = self.tuple.z * rhs.tuple.x - self.tuple.x * rhs.tuple.z;
+        let z = self.tuple.x * rhs.tuple.y - self.tuple.y * rhs.tuple.x;
 
         Vector::from(Tuple::new(x, y, z))
     }
@@ -56,8 +50,6 @@ impl Vector {
 impl From<Tuple> for Vector {
     fn from(t: Tuple) -> Vector {
         let Tuple { x, y, z } = t;
-        let (x, y, z) = (x.0, y.0, z.0);
-
         Vector::new(x, y, z)
     }
 }
@@ -71,9 +63,9 @@ impl PartialEq for Vector {
 impl fmt::Display for Vector {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Vector")
-            .field("x", &format_args!("{:.2}", self.tuple.x.0))
-            .field("y", &format_args!("{:.2}", self.tuple.y.0))
-            .field("z", &format_args!("{:.2}", self.tuple.z.0))
+            .field("x", &format_args!("{:.2}", self.tuple.x))
+            .field("y", &format_args!("{:.2}", self.tuple.y))
+            .field("z", &format_args!("{:.2}", self.tuple.z))
             .finish()
     }
 }
@@ -99,14 +91,6 @@ impl Mul<f64> for Vector {
 
     fn mul(self, rhs: f64) -> Self::Output {
         Vector::from(self.tuple * rhs)
-    }
-}
-
-impl Mul<Scalar> for Vector {
-    type Output = Vector;
-
-    fn mul(self, rhs: Scalar) -> Self::Output {
-        self * rhs.0
     }
 }
 
@@ -176,13 +160,6 @@ mod tests {
         let v = Vector::new(1.0, 2.0, 3.0);
 
         assert_eq!(v * 2.0, Vector::new(2.0, 4.0, 6.0));
-    }
-
-    #[test]
-    fn multiplying_vector_with_scalar() {
-        let v = Vector::new(1.0, 2.0, 3.0);
-
-        assert_eq!(v * Scalar(2.0), Vector::new(2.0, 4.0, 6.0));
     }
 
     #[test]

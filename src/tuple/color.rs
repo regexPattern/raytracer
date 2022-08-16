@@ -1,6 +1,6 @@
 use std::ops::{Add, Mul, Sub};
 
-use crate::tuple::{Scalar, Tuple};
+use crate::tuple::Tuple;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Color(Tuple);
@@ -22,8 +22,8 @@ impl Color {
         Color::clamp(self.0.z)
     }
 
-    fn clamp(color: Scalar) -> u8 {
-        match color.0 {
+    fn clamp(value: f64) -> u8 {
+        match value {
             x if x < 0.0 => 0,
             x if x > 255.0 => 255,
             x => (x * 255.0) as u8,
@@ -34,7 +34,7 @@ impl Color {
 impl From<Tuple> for Color {
     fn from(t: Tuple) -> Color {
         let Tuple { x, y, z } = t;
-        let (red, green, blue) = (x.0, y.0, z.0);
+        let (red, green, blue) = (x, y, z);
 
         Color::new(red, green, blue)
     }
@@ -70,14 +70,6 @@ impl Mul<f64> for Color {
     }
 }
 
-impl Mul<Scalar> for Color {
-    type Output = Color;
-
-    fn mul(self, rhs: Scalar) -> Color {
-        self * rhs.0
-    }
-}
-
 impl Sub for Color {
     type Output = Color;
 
@@ -94,24 +86,24 @@ mod tests {
     fn creating_color() {
         let c = Color::new(-0.5, 0.4, 1.7);
 
-        assert_eq!(c.0.x.0, -0.5);
-        assert_eq!(c.0.y.0, 0.4);
-        assert_eq!(c.0.z.0, 1.7);
+        assert_eq!(c.0.x, -0.5);
+        assert_eq!(c.0.y, 0.4);
+        assert_eq!(c.0.z, 1.7);
     }
 
     #[test]
-    fn clamping_scalar() {
-        let s1 = Scalar(0.0);
-        let s2 = Scalar(0.2);
-        let s3 = Scalar(1.0);
+    fn clamping_float() {
+        let s1 = 0.0;
+        let s2 = 0.2;
+        let s3 = 1.0;
 
         assert_eq!(Color::clamp(s1), 0);
         assert_eq!(Color::clamp(s2), 51);
         assert_eq!(Color::clamp(s3), 255);
 
-        let s4 = Scalar(-1.0);
-        let s5 = Scalar(256.0);
-        let s6 = Scalar(0.5);
+        let s4 = -1.0;
+        let s5 = 256.0;
+        let s6 = 0.5;
 
         assert_eq!(Color::clamp(s4), 0);
         assert_eq!(Color::clamp(s5), 255);
@@ -145,13 +137,6 @@ mod tests {
         let c = Color::new(0.2, 0.3, 0.4);
 
         assert_eq!(c * 2.0, Color::new(0.4, 0.6, 0.8))
-    }
-
-    #[test]
-    fn multiplying_color_by_scalar() {
-        let c = Color::new(0.2, 0.3, 0.4);
-
-        assert_eq!(c * Scalar(2.0), Color::new(0.4, 0.6, 0.8))
     }
 
     #[test]
