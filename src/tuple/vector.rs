@@ -17,11 +17,9 @@ impl Vector {
     }
 
     pub fn magnitude(&self) -> Scalar {
-        let (x, y, z) = self.tuple.coordinates();
-        let coordinates = [x, y, z];
-        let magnitude = coordinates
-            .iter()
-            .fold(0.0, |sum, n| sum + n.powi(2))
+        let magnitude = self.tuple
+            .into_iter()
+            .fold(0.0, |sum, n| sum + n.0.powi(2))
             .sqrt();
 
         Scalar(magnitude)
@@ -36,19 +34,10 @@ impl Vector {
     }
 
     pub fn dot(self, rhs: Vector) -> Scalar {
-        // TODO: Debe haber una mejor forma de hacer esto.
-        let (x, y, z) = self.tuple.coordinates();
-        let self_coordinates = [x, y, z];
-
-        let (x, y, z) = rhs.tuple.coordinates();
-        let rhs_coordinates = [x, y, z];
-
-        let product = self_coordinates
-            .iter()
-            .zip(rhs_coordinates)
-            .fold(0.0, |sum, (a, b)| sum + (a * b));
-
-        Scalar(product)
+        self.tuple
+            .into_iter()
+            .zip(rhs.tuple.into_iter())
+            .fold(Scalar(0.0), |sum, (a, b)| sum + (a * b))
     }
 
     pub fn cross(self, rhs: Vector) -> Vector {

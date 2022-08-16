@@ -81,28 +81,36 @@ impl Tuple {
         Tuple { x, y, z }
     }
 
-    // TODO: Me gustaria usar el trait `Into` aca.
     fn coordinates(&self) -> (f64, f64, f64) {
         (self.x.0, self.y.0, self.z.0)
     }
 }
 
 impl From<[f64; 3]> for Tuple {
-    fn from(array: [f64; 3]) -> Tuple {
+    fn from(array: [f64; 3]) -> Self {
         Tuple::new(array[0], array[1], array[2])
     }
 }
 
+impl IntoIterator for Tuple {
+    type Item = Scalar;
+    type IntoIter = std::array::IntoIter<Self::Item, 3>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        [self.x, self.y, self.z].into_iter()
+    }
+}
+
 impl PartialEq for Tuple {
-    fn eq(&self, other: &Tuple) -> bool {
+    fn eq(&self, other: &Self) -> bool {
         self.x == other.x && self.y == other.y && self.z == other.z
     }
 }
 
 impl Add for Tuple {
-    type Output = Tuple;
+    type Output = Self;
 
-    fn add(self, rhs: Tuple) -> Tuple {
+    fn add(self, rhs: Self) -> Self::Output {
         let x = self.x + rhs.x;
         let y = self.y + rhs.y;
         let z = self.z + rhs.z;
@@ -112,9 +120,9 @@ impl Add for Tuple {
 }
 
 impl Div<f64> for Tuple {
-    type Output = Tuple;
+    type Output = Self;
 
-    fn div(self, rhs: f64) -> Tuple {
+    fn div(self, rhs: f64) -> Self::Output {
         let (x, y, z) = self.coordinates();
 
         Tuple::new(x / rhs, y / rhs, z / rhs)

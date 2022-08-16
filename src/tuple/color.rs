@@ -45,14 +45,6 @@ impl Add for Color {
     }
 }
 
-impl Sub for Color {
-    type Output = Color;
-
-    fn sub(self, rhs: Color) -> Color {
-        Color::from(self.0 - rhs.0)
-    }
-}
-
 impl Mul for Color {
     type Output = Color;
 
@@ -66,6 +58,22 @@ impl Mul<f64> for Color {
 
     fn mul(self, rhs: f64) -> Color {
         Color::from(self.0 * rhs)
+    }
+}
+
+impl Mul<Scalar> for Color {
+    type Output = Color;
+
+    fn mul(self, rhs: Scalar) -> Color {
+        self * rhs.0
+    }
+}
+
+impl Sub for Color {
+    type Output = Color;
+
+    fn sub(self, rhs: Color) -> Color {
+        Color::from(self.0 - rhs.0)
     }
 }
 
@@ -91,20 +99,17 @@ mod tests {
     }
 
     #[test]
-    fn subtracting_two_colors() {
-        let c1 = Color::new(0.9, 0.6, 0.75);
-        let c2 = Color::new(0.7, 0.1, 0.25);
+    fn multiplying_color_by_float() {
+        let c = Color::new(0.2, 0.3, 0.4);
 
-        assert_eq!(c1 - c2, Color::new(0.2, 0.5, 0.5));
+        assert_eq!(c * 2.0, Color::new(0.4, 0.6, 0.8))
     }
 
-    // TODO: Definir realmente como quiero trabajar con escalares, no me gusta mucho tener que usar
-    // el newtype.
     #[test]
     fn multiplying_color_by_scalar() {
         let c = Color::new(0.2, 0.3, 0.4);
 
-        assert_eq!(c * 2.0, Color::new(0.4, 0.6, 0.8))
+        assert_eq!(c * Scalar(2.0), Color::new(0.4, 0.6, 0.8))
     }
 
     #[test]
@@ -113,5 +118,13 @@ mod tests {
         let c2 = Color::new(0.9, 1.0, 0.1);
 
         assert_eq!(c1 * c2, Color::new(0.9, 0.2, 0.04));
+    }
+
+    #[test]
+    fn subtracting_two_colors() {
+        let c1 = Color::new(0.9, 0.6, 0.75);
+        let c2 = Color::new(0.7, 0.1, 0.25);
+
+        assert_eq!(c1 - c2, Color::new(0.2, 0.5, 0.5));
     }
 }
