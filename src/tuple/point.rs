@@ -1,5 +1,6 @@
-use crate::tuple::{Vector, Scalar, Tuple};
+use crate::tuple::{Scalar, Tuple, Vector};
 
+use std::fmt;
 use std::ops::{Add, Mul, Neg, Sub};
 
 #[derive(Copy, Clone, Debug)]
@@ -29,6 +30,16 @@ impl From<Tuple> for Point {
 impl PartialEq for Point {
     fn eq(&self, other: &Point) -> bool {
         self.tuple == other.tuple && self.w == other.w
+    }
+}
+
+impl fmt::Display for Point {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Point")
+            .field("x", &format_args!("{:.2}", self.tuple.x.0))
+            .field("y", &format_args!("{:.2}", self.tuple.y.0))
+            .field("z", &format_args!("{:.2}", self.tuple.z.0))
+            .finish()
     }
 }
 
@@ -153,5 +164,14 @@ mod tests {
         let v = Vector::new(5.0, 6.0, 7.0);
 
         assert_eq!(p - v, Point::new(-2.0, -4.0, -6.0));
+    }
+
+    #[test]
+    fn display_point_with_empty_format() {
+        let v1 = Point::new(1.0, 2.0, 3.0);
+        let v2 = Point::new(std::f64::consts::PI, 0.0, 0.0);
+
+        assert_eq!("Point { x: 1.00, y: 2.00, z: 3.00 }", format!("{}", v1));
+        assert_eq!("Point { x: 3.14, y: 0.00, z: 0.00 }", format!("{}", v2));
     }
 }

@@ -1,5 +1,6 @@
 use crate::tuple::{Point, Scalar, Tuple};
 
+use std::fmt;
 use std::ops::{Add, Mul, Neg, Sub};
 
 #[derive(Copy, Clone, Debug)]
@@ -64,6 +65,16 @@ impl From<Tuple> for Vector {
 impl PartialEq for Vector {
     fn eq(&self, other: &Vector) -> bool {
         self.tuple == other.tuple && self.w == other.w
+    }
+}
+
+impl fmt::Display for Vector {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Vector")
+            .field("x", &format_args!("{:.2}", self.tuple.x.0))
+            .field("y", &format_args!("{:.2}", self.tuple.y.0))
+            .field("z", &format_args!("{:.2}", self.tuple.z.0))
+            .finish()
     }
 }
 
@@ -239,8 +250,8 @@ mod tests {
         let v1 = Vector::new(1.0, 2.0, 3.0);
         let v2 = Vector::new(2.0, 3.0, 4.0);
 
-        assert_eq!(v1.dot(v2), 20.0);
-        assert_eq!(v2.dot(v1), 20.0);
+        assert_eq!(v1.dot(&v2), 20.0);
+        assert_eq!(v2.dot(&v1), 20.0);
     }
 
     #[test]
@@ -250,5 +261,14 @@ mod tests {
 
         assert_eq!(v1.cross(v2), Vector::new(-1.0, 2.0, -1.0));
         assert_eq!(v2.cross(v1), Vector::new(1.0, -2.0, 1.0));
+    }
+
+    #[test]
+    fn display_vector_with_empty_format() {
+        let v1 = Vector::new(1.0, 2.0, 3.0);
+        let v2 = Vector::new(std::f64::consts::PI, 0.0, 0.0);
+
+        assert_eq!("Vector { x: 1.00, y: 2.00, z: 3.00 }", format!("{}", v1));
+        assert_eq!("Vector { x: 3.14, y: 0.00, z: 0.00 }", format!("{}", v2));
     }
 }
