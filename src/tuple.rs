@@ -41,30 +41,6 @@ impl PartialOrd<f64> for Scalar {
     }
 }
 
-impl Add for Scalar {
-    type Output = Scalar;
-
-    fn add(self, rhs: Scalar) -> Scalar {
-        Scalar(self.0 + rhs.0)
-    }
-}
-
-impl Mul for Scalar {
-    type Output = Scalar;
-
-    fn mul(self, rhs: Self) -> Scalar {
-        Scalar(self.0 * rhs.0)
-    }
-}
-
-impl Sub for Scalar {
-    type Output = Scalar;
-
-    fn sub(self, rhs: Scalar) -> Scalar {
-        Scalar(self.0 - rhs.0)
-    }
-}
-
 #[derive(Copy, Clone, Debug)]
 pub struct Tuple {
     pub x: Scalar,
@@ -80,50 +56,46 @@ impl Tuple {
 
         Tuple { x, y, z }
     }
-
-    fn coordinates(&self) -> (f64, f64, f64) {
-        (self.x.0, self.y.0, self.z.0)
-    }
 }
 
 impl From<[f64; 3]> for Tuple {
-    fn from(array: [f64; 3]) -> Self {
+    fn from(array: [f64; 3]) -> Tuple {
         Tuple::new(array[0], array[1], array[2])
     }
 }
 
 impl IntoIterator for Tuple {
-    type Item = Scalar;
+    type Item = f64;
     type IntoIter = std::array::IntoIter<Self::Item, 3>;
 
     fn into_iter(self) -> Self::IntoIter {
-        [self.x, self.y, self.z].into_iter()
+        [self.x.0, self.y.0, self.z.0].into_iter()
     }
 }
 
 impl PartialEq for Tuple {
-    fn eq(&self, other: &Self) -> bool {
+    fn eq(&self, other: &Tuple) -> bool {
         self.x == other.x && self.y == other.y && self.z == other.z
     }
 }
 
 impl Add for Tuple {
-    type Output = Self;
+    type Output = Tuple;
 
-    fn add(self, rhs: Self) -> Self::Output {
-        let x = self.x + rhs.x;
-        let y = self.y + rhs.y;
-        let z = self.z + rhs.z;
+    fn add(self, rhs: Tuple) -> Self::Output {
+        let x = self.x.0 + rhs.x.0;
+        let y = self.y.0 + rhs.y.0;
+        let z = self.z.0 + rhs.z.0;
 
-        Tuple::new(x.0, y.0, z.0)
+        Tuple::new(x, y, z)
     }
 }
 
 impl Div<f64> for Tuple {
-    type Output = Self;
+    type Output = Tuple;
 
     fn div(self, rhs: f64) -> Self::Output {
-        let (x, y, z) = self.coordinates();
+        let (x, y, z) = (self.x.0, self.y.0, self.z.0);
 
         Tuple::new(x / rhs, y / rhs, z / rhs)
     }
@@ -132,20 +104,20 @@ impl Div<f64> for Tuple {
 impl Mul for Tuple {
     type Output = Tuple;
 
-    fn mul(self, rhs: Tuple) -> Tuple {
-        let x = self.x * rhs.x;
-        let y = self.y * rhs.y;
-        let z = self.z * rhs.z;
+    fn mul(self, rhs: Tuple) -> Self::Output {
+        let x = self.x.0 * rhs.x.0;
+        let y = self.y.0 * rhs.y.0;
+        let z = self.z.0 * rhs.z.0;
 
-        Tuple::new(x.0, y.0, z.0)
+        Tuple::new(x, y, z)
     }
 }
 
 impl Mul<f64> for Tuple {
     type Output = Tuple;
 
-    fn mul(self, rhs: f64) -> Tuple {
-        let (x, y, z) = self.coordinates();
+    fn mul(self, rhs: f64) -> Self::Output {
+        let (x, y, z) = (self.x.0, self.y.0, self.z.0);
 
         Tuple::new(x * rhs, y * rhs, z * rhs)
     }
@@ -154,7 +126,7 @@ impl Mul<f64> for Tuple {
 impl Neg for Tuple {
     type Output = Tuple;
 
-    fn neg(self) -> Tuple {
+    fn neg(self) -> Self::Output {
         Tuple::new(0.0, 0.0, 0.0) - self
     }
 }
@@ -162,12 +134,12 @@ impl Neg for Tuple {
 impl Sub for Tuple {
     type Output = Tuple;
 
-    fn sub(self, rhs: Tuple) -> Tuple {
-        let x = self.x - rhs.x;
-        let y = self.y - rhs.y;
-        let z = self.z - rhs.z;
+    fn sub(self, rhs: Tuple) -> Self::Output {
+        let x = self.x.0 - rhs.x.0;
+        let y = self.y.0 - rhs.y.0;
+        let z = self.z.0 - rhs.z.0;
 
-        Tuple::new(x.0, y.0, z.0)
+        Tuple::new(x, y, z)
     }
 }
 
@@ -227,21 +199,6 @@ mod tests {
 
         assert_eq!(t1, t2);
         assert_ne!(t1, t3);
-    }
-
-    #[test]
-    fn getting_tuple_coordinates() {
-        let t = Tuple::new(1.0, 2.0, 3.0);
-
-        assert_eq!(t.coordinates(), (1.0, 2.0, 3.0));
-    }
-
-    #[test]
-    fn adding_two_coordiantes() {
-        let c1 = Scalar(1.0);
-        let c2 = Scalar(2.0);
-
-        assert_eq!(c1 + c2, Scalar(3.0));
     }
 
     #[test]

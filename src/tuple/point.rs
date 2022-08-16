@@ -18,10 +18,11 @@ impl Point {
 }
 
 impl From<Tuple> for Point {
-    fn from(tuple: Tuple) -> Point {
-        let (x, y, z) = tuple.coordinates();
+    fn from(t: Tuple) -> Point {
+        let Tuple { x, y, z } = t;
+        let (x, y, z) = (x.0, y.0, z.0);
 
-        Point::new(x, y, z)
+        Self::new(x, y, z)
     }
 }
 
@@ -34,7 +35,7 @@ impl PartialEq for Point {
 impl Add<Vector> for Point {
     type Output = Point;
 
-    fn add(self, rhs: Vector) -> Point {
+    fn add(self, rhs: Vector) -> Self::Output {
         Point::from(self.tuple + rhs.tuple)
     }
 }
@@ -42,7 +43,7 @@ impl Add<Vector> for Point {
 impl Mul<f64> for Point {
     type Output = Point;
 
-    fn mul(self, rhs: f64) -> Point {
+    fn mul(self, rhs: f64) -> Self::Output {
         Point::from(self.tuple * rhs)
     }
 }
@@ -50,7 +51,7 @@ impl Mul<f64> for Point {
 impl Mul<Scalar> for Point {
     type Output = Point;
 
-    fn mul(self, rhs: Scalar) -> Point {
+    fn mul(self, rhs: Scalar) -> Self::Output {
         // TODO: Investigar como es que `rhs.0` no es privado???
         self * rhs.0
     }
@@ -67,7 +68,7 @@ impl Neg for Point {
 impl Sub for Point {
     type Output = Vector;
 
-    fn sub(self, rhs: Point) -> Vector {
+    fn sub(self, rhs: Point) -> Self::Output {
         Vector::from(self.tuple - rhs.tuple)
     }
 }
@@ -75,7 +76,7 @@ impl Sub for Point {
 impl Sub<Vector> for Point {
     type Output = Point;
 
-    fn sub(self, rhs: Vector) -> Point {
+    fn sub(self, rhs: Vector) -> Self::Output {
         Point::from(self.tuple - rhs.tuple)
     }
 }

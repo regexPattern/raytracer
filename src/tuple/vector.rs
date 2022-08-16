@@ -17,41 +17,45 @@ impl Vector {
     }
 
     pub fn magnitude(&self) -> Scalar {
-        let magnitude = self.tuple
+        let magnitude = self
+            .tuple
             .into_iter()
-            .fold(0.0, |sum, n| sum + n.0.powi(2))
+            .fold(0.0, |sum, n| sum + n.powi(2))
             .sqrt();
 
         Scalar(magnitude)
     }
 
     pub fn normalize(self) -> Vector {
-        let magnitude = self.magnitude();
-        match magnitude {
+        match self.magnitude() {
             x if x == Scalar(0.0) => Vector::new(0.0, 0.0, 0.0),
             _ => Vector::from(self.tuple / self.magnitude().0),
         }
     }
 
-    pub fn dot(self, rhs: Vector) -> Scalar {
-        self.tuple
+    pub fn dot(&self, rhs: &Vector) -> Scalar {
+        let result = self
+            .tuple
             .into_iter()
             .zip(rhs.tuple.into_iter())
-            .fold(Scalar(0.0), |sum, (a, b)| sum + (a * b))
+            .fold(0.0, |sum, (a, b)| sum + (a * b));
+
+        Scalar(result)
     }
 
     pub fn cross(self, rhs: Vector) -> Vector {
-        let x = self.tuple.y * rhs.tuple.z - self.tuple.z * rhs.tuple.y;
-        let y = self.tuple.z * rhs.tuple.x - self.tuple.x * rhs.tuple.z;
-        let z = self.tuple.x * rhs.tuple.y - self.tuple.y * rhs.tuple.x;
+        let x = self.tuple.y.0 * rhs.tuple.z.0 - self.tuple.z.0 * rhs.tuple.y.0;
+        let y = self.tuple.z.0 * rhs.tuple.x.0 - self.tuple.x.0 * rhs.tuple.z.0;
+        let z = self.tuple.x.0 * rhs.tuple.y.0 - self.tuple.y.0 * rhs.tuple.x.0;
 
-        Vector::from(Tuple::new(x.0, y.0, z.0))
+        Vector::from(Tuple::new(x, y, z))
     }
 }
 
 impl From<Tuple> for Vector {
-    fn from(tuple: Tuple) -> Vector {
-        let (x, y, z) = tuple.coordinates();
+    fn from(t: Tuple) -> Vector {
+        let Tuple { x, y, z } = t;
+        let (x, y, z) = (x.0, y.0, z.0);
 
         Vector::new(x, y, z)
     }
@@ -66,7 +70,7 @@ impl PartialEq for Vector {
 impl Add for Vector {
     type Output = Vector;
 
-    fn add(self, rhs: Vector) -> Vector {
+    fn add(self, rhs: Vector) -> Self::Output {
         Vector::from(self.tuple + rhs.tuple)
     }
 }
@@ -74,7 +78,7 @@ impl Add for Vector {
 impl Add<Point> for Vector {
     type Output = Point;
 
-    fn add(self, rhs: Point) -> Point {
+    fn add(self, rhs: Point) -> Self::Output {
         Point::from(self.tuple + rhs.tuple)
     }
 }
@@ -82,7 +86,7 @@ impl Add<Point> for Vector {
 impl Mul<f64> for Vector {
     type Output = Vector;
 
-    fn mul(self, rhs: f64) -> Vector {
+    fn mul(self, rhs: f64) -> Self::Output {
         Vector::from(self.tuple * rhs)
     }
 }
@@ -90,7 +94,7 @@ impl Mul<f64> for Vector {
 impl Mul<Scalar> for Vector {
     type Output = Vector;
 
-    fn mul(self, rhs: Scalar) -> Vector {
+    fn mul(self, rhs: Scalar) -> Self::Output {
         self * rhs.0
     }
 }
@@ -106,7 +110,7 @@ impl Neg for Vector {
 impl Sub for Vector {
     type Output = Vector;
 
-    fn sub(self, rhs: Vector) -> Vector {
+    fn sub(self, rhs: Vector) -> Self::Output {
         Vector::from(self.tuple - rhs.tuple)
     }
 }

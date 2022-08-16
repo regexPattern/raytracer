@@ -24,8 +24,9 @@ impl Color {
 }
 
 impl From<Tuple> for Color {
-    fn from(tuple: Tuple) -> Color {
-        let (red, green, blue) = tuple.coordinates();
+    fn from(t: Tuple) -> Color {
+        let Tuple { x, y, z } = t;
+        let (red, green, blue) = (x.0, y.0, z.0);
 
         Color::new(red, green, blue)
     }
@@ -40,7 +41,7 @@ impl PartialEq for Color {
 impl Add for Color {
     type Output = Color;
 
-    fn add(self, rhs: Color) -> Color {
+    fn add(self, rhs: Color) -> Self::Output {
         Color::from(self.0 + rhs.0)
     }
 }
