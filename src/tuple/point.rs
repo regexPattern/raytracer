@@ -39,6 +39,31 @@ impl Add<Vector> for Point {
     }
 }
 
+impl Mul<f64> for Point {
+    type Output = Point;
+
+    fn mul(self, rhs: f64) -> Point {
+        Point::from(self.tuple * rhs)
+    }
+}
+
+impl Mul<Scalar> for Point {
+    type Output = Point;
+
+    fn mul(self, rhs: Scalar) -> Point {
+        // TODO: Investigar como es que `rhs.0` no es privado???
+        self * rhs.0
+    }
+}
+
+impl Neg for Point {
+    type Output = Point;
+
+    fn neg(self) -> Self::Output {
+        Point::from(-self.tuple)
+    }
+}
+
 impl Sub for Point {
     type Output = Vector;
 
@@ -55,22 +80,6 @@ impl Sub<Vector> for Point {
     }
 }
 
-impl Neg for Point {
-    type Output = Point;
-
-    fn neg(self) -> Self::Output {
-        Point::from(-self.tuple)
-    }
-}
-
-impl Mul<f64> for Point {
-    type Output = Point;
-
-    fn mul(self, rhs: f64) -> Point {
-        Point::from(self.tuple * rhs)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -80,7 +89,7 @@ mod tests {
         let p = Point::new(1.0, 2.0, 3.0);
 
         assert_eq!(p.tuple, Tuple::new(1.0, 2.0, 3.0));
-        assert_eq!(p.w, Scalar(1.0));
+        assert_eq!(p.w, 1.0);
     }
 
     #[test]
@@ -91,11 +100,42 @@ mod tests {
     }
 
     #[test]
+    fn comparing_two_points() {
+        let p1 = Point::new(1.0, 2.0, 3.0);
+        let p2 = Point::new(1.0, 2.0, 3.0);
+        let p3 = Point::new(2.0, 2.0, 3.0);
+
+        assert_eq!(p1, p2);
+        assert_ne!(p1, p3);
+    }
+
+    #[test]
     fn adding_vector_to_point() {
         let v = Vector::new(1.0, 2.0, 3.0);
         let p = Point::new(2.0, 3.0, 4.0);
 
         assert_eq!(p + v, Point::new(3.0, 5.0, 7.0));
+    }
+
+    #[test]
+    fn multiplying_point_with_float() {
+        let p = Point::new(1.0, 2.0, 3.0);
+
+        assert_eq!(p * 2.0, Point::new(2.0, 4.0, 6.0));
+    }
+
+    #[test]
+    fn multiplying_point_with_scalar() {
+        let p = Point::new(1.0, 2.0, 3.0);
+
+        assert_eq!(p * Scalar(2.0), Point::new(2.0, 4.0, 6.0));
+    }
+
+    #[test]
+    fn negating_point() {
+        let p = Point::new(1.0, 2.0, 3.0);
+
+        assert_eq!(-p, Point::new(-1.0, -2.0, -3.0));
     }
 
     #[test]
@@ -113,19 +153,4 @@ mod tests {
 
         assert_eq!(p - v, Point::new(-2.0, -4.0, -6.0));
     }
-
-    #[test]
-    fn negating_point() {
-        let p = Point::new(1.0, 2.0, 3.0);
-
-        assert_eq!(-p, Point::new(-1.0, -2.0, -3.0));
-    }
-
-    #[test]
-    fn scaling_point() {
-        let p = Point::new(1.0, 2.0, 3.0);
-
-        assert_eq!(p * 2.0, Point::new(2.0, 4.0, 6.0));
-    }
-
 }

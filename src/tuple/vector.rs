@@ -17,7 +17,6 @@ impl Vector {
     }
 
     pub fn magnitude(&self) -> Scalar {
-        // TODO: Ver si aqui puedo hacer `Into` con `f64` para Coordinate.
         let (x, y, z) = self.tuple.coordinates();
         let coordinates = [x, y, z];
         let magnitude = coordinates
@@ -91,11 +90,19 @@ impl Add<Point> for Vector {
     }
 }
 
-impl Sub for Vector {
+impl Mul<f64> for Vector {
     type Output = Vector;
 
-    fn sub(self, rhs: Vector) -> Vector {
-        Vector::from(self.tuple - rhs.tuple)
+    fn mul(self, rhs: f64) -> Vector {
+        Vector::from(self.tuple * rhs)
+    }
+}
+
+impl Mul<Scalar> for Vector {
+    type Output = Vector;
+
+    fn mul(self, rhs: Scalar) -> Vector {
+        self * rhs.0
     }
 }
 
@@ -107,11 +114,11 @@ impl Neg for Vector {
     }
 }
 
-impl Mul<f64> for Vector {
+impl Sub for Vector {
     type Output = Vector;
 
-    fn mul(self, rhs: f64) -> Vector {
-        Vector::from(self.tuple * rhs)
+    fn sub(self, rhs: Vector) -> Vector {
+        Vector::from(self.tuple - rhs.tuple)
     }
 }
 
@@ -124,7 +131,7 @@ mod tests {
         let v = Vector::new(1.0, 2.0, 3.0);
 
         assert_eq!(v.tuple, Tuple::new(1.0, 2.0, 3.0));
-        assert_eq!(v.w, Scalar(0.0));
+        assert_eq!(v.w, 0.0);
     }
 
     #[test]
@@ -135,7 +142,17 @@ mod tests {
     }
 
     #[test]
-    fn adding_vector_to_vector() {
+    fn comparing_two_vectors() {
+        let v1 = Vector::new(1.0, 2.0, 3.0);
+        let v2 = Vector::new(1.0, 2.0, 3.0);
+        let v3 = Vector::new(2.0, 2.0, 3.0);
+
+        assert_eq!(v1, v2);
+        assert_ne!(v2, v3);
+    }
+
+    #[test]
+    fn adding_two_vectors() {
         let v1 = Vector::new(1.0, 2.0, 3.0);
         let v2 = Vector::new(2.0, 3.0, 4.0);
 
@@ -151,11 +168,17 @@ mod tests {
     }
 
     #[test]
-    fn subtracting_two_vectors() {
-        let v1 = Vector::new(3.0, 2.0, 1.0);
-        let v2 = Vector::new(5.0, 6.0, 7.0);
+    fn multiplying_vector_with_float() {
+        let v = Vector::new(1.0, 2.0, 3.0);
 
-        assert_eq!(v1 - v2, Vector::new(-2.0, -4.0, -6.0));
+        assert_eq!(v * 2.0, Vector::new(2.0, 4.0, 6.0));
+    }
+
+    #[test]
+    fn multiplying_vector_with_scalar() {
+        let v = Vector::new(1.0, 2.0, 3.0);
+
+        assert_eq!(v * Scalar(2.0), Vector::new(2.0, 4.0, 6.0));
     }
 
     #[test]
@@ -166,10 +189,11 @@ mod tests {
     }
 
     #[test]
-    fn scaling_vector() {
-        let v = Vector::new(1.0, 2.0, 3.0);
+    fn subtracting_two_vectors() {
+        let v1 = Vector::new(3.0, 2.0, 1.0);
+        let v2 = Vector::new(5.0, 6.0, 7.0);
 
-        assert_eq!(v * 2.0, Vector::new(2.0, 4.0, 6.0));
+        assert_eq!(v1 - v2, Vector::new(-2.0, -4.0, -6.0));
     }
 
     #[test]
@@ -180,11 +204,11 @@ mod tests {
         let v4 = Vector::new(1.0, 2.0, 3.0);
         let v5 = Vector::new(0.0, 0.0, 0.0);
 
-        assert_eq!(v1.magnitude(), Scalar(1.0));
-        assert_eq!(v2.magnitude(), Scalar(1.0));
-        assert_eq!(v3.magnitude(), Scalar(1.0));
-        assert_eq!(v4.magnitude(), Scalar(14_f64.sqrt()));
-        assert_eq!(v5.magnitude(), Scalar(0.0));
+        assert_eq!(v1.magnitude(), 1.0);
+        assert_eq!(v2.magnitude(), 1.0);
+        assert_eq!(v3.magnitude(), 1.0);
+        assert_eq!(v4.magnitude(), 14_f64.sqrt());
+        assert_eq!(v5.magnitude(), 0.0);
     }
 
     #[test]
@@ -214,7 +238,7 @@ mod tests {
     fn normalized_vector_magnitude() {
         let v = Vector::new(1.0, 2.0, 3.0);
 
-        assert_eq!(v.normalize().magnitude(), Scalar(1.0));
+        assert_eq!(v.normalize().magnitude(), 1.0);
     }
 
     #[test]
@@ -222,8 +246,8 @@ mod tests {
         let v1 = Vector::new(1.0, 2.0, 3.0);
         let v2 = Vector::new(2.0, 3.0, 4.0);
 
-        assert_eq!(v1.dot(v2), Scalar(20.0));
-        assert_eq!(v2.dot(v1), Scalar(20.0));
+        assert_eq!(v1.dot(v2), 20.0);
+        assert_eq!(v2.dot(v1), 20.0);
     }
 
     #[test]
