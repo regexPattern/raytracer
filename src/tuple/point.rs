@@ -1,5 +1,4 @@
 use crate::tuple::{Tuple, Vector};
-
 use std::fmt;
 use std::ops::{Add, Mul, Neg, Sub};
 

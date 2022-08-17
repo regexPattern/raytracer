@@ -45,6 +45,18 @@ impl Vector {
 
         Vector::from(Tuple::new(x, y, z))
     }
+
+    pub fn x(&self) -> f64 {
+        self.tuple.x
+    }
+
+    pub fn y(&self) -> f64 {
+        self.tuple.y
+    }
+
+    pub fn z(&self) -> f64 {
+        self.tuple.z
+    }
 }
 
 impl From<Tuple> for Vector {
@@ -120,6 +132,15 @@ mod tests {
 
         assert_eq!(v.tuple, Tuple::new(1.0, 2.0, 3.0));
         assert_eq!(v.w, 0.0);
+    }
+
+    #[test]
+    fn getting_point_coordinates() {
+        let v = Vector::new(1.0, 2.0, 3.0);
+
+        assert_eq!(v.x(), 1.0);
+        assert_eq!(v.y(), 2.0);
+        assert_eq!(v.z(), 3.0);
     }
 
     #[test]

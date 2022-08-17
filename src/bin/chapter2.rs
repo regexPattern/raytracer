@@ -1,7 +1,8 @@
 use std::fs::File;
 
 use raytracer::canvas::Canvas;
-use raytracer::tuple::{Color, Point, Tuple, Vector};
+use raytracer::color::Color;
+use raytracer::tuple::{Point, Tuple, Vector};
 
 struct Projectile {
     position: Point,

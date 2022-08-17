@@ -1,10 +1,8 @@
-mod color;
 mod point;
 mod vector;
 
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
-pub use crate::tuple::color::Color;
 pub use crate::tuple::point::Point;
 pub use crate::tuple::vector::Vector;
 
@@ -16,7 +14,7 @@ pub struct Tuple {
 }
 
 impl Tuple {
-    fn new(x: f64, y: f64, z: f64) -> Tuple {
+    pub fn new(x: f64, y: f64, z: f64) -> Tuple {
         Tuple { x, y, z }
     }
 }

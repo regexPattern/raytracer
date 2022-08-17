@@ -1,6 +1,8 @@
-use crate::tuple::Color;
+use crate::color::Color;
 use std::collections::HashMap;
 use std::io::{self, Write};
+
+const PPM_TEXTWIDTH: u8 = 70;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq)]
 struct Coordinate {
@@ -24,10 +26,9 @@ impl Canvas {
     }
 
     pub fn write_pixel(&mut self, x: i32, y: i32, c: Color) {
-        // TODO: Quitar este panic de aca y mejor poner un recoverable error.
-        if !self.is_inside_canvas(x, y) {
+        if !self.contains(x, y) {
             panic!(
-                "{{ x: {}, y: {} }} values must be inside canvas limits {{ width: {}, height: {} }}",
+                "Invalid `x: {}` and `y: {}` values. Must be inside canvas limits {{ width: {}, height: {} }}",
                 x, y, self.width, self.height
             );
         }
@@ -37,10 +38,10 @@ impl Canvas {
     }
 
     fn pixel_at(&self, x: i32, y: i32) -> Color {
-        if !self.is_inside_canvas(x, y) {
+        if !self.contains(x, y) {
             panic!(
-                "{{x, y}} values must be inside canvas limits {{ width: {}, height: {} }}",
-                self.width, self.height
+                "Invalid `x: {}` and `y: {}` values. Must be inside canvas limits {{ width: {}, height: {} }}",
+                x, y, self.width, self.height
             );
         }
 
@@ -51,7 +52,7 @@ impl Canvas {
         }
     }
 
-    fn is_inside_canvas(&self, x: i32, y: i32) -> bool {
+    fn contains(&self, x: i32, y: i32) -> bool {
         (0..self.width).contains(&x) && (0..self.height).contains(&y)
     }
 
@@ -69,7 +70,7 @@ impl Canvas {
                 let pixel = self.pixel_at(x, y);
                 for color in [pixel.red(), pixel.green(), pixel.blue()].iter() {
                     let byte = &format!("{} ", color);
-                    if line.len() + byte.len() > 70 {
+                    if line.len() + byte.len() > PPM_TEXTWIDTH.into() {
                         lines.push(line.trim().to_string());
                         line.clear();
                     }
@@ -80,7 +81,7 @@ impl Canvas {
             lines.push(line.trim().to_string());
         }
 
-        write!(w, "{}\n", lines.join("\n"))
+        writeln!(w, "{}", lines.join("\n"))
     }
 }
 
@@ -119,16 +120,16 @@ mod tests {
     }
 
     #[test]
-    fn coordinate_is_inside_canvas() {
+    fn canvas_contains_coordinate() {
         let c = Canvas::new(10, 20);
 
-        assert!(c.is_inside_canvas(5, 5));
-        assert!(!c.is_inside_canvas(100, 100));
+        assert!(c.contains(5, 5));
+        assert!(!c.contains(100, 100));
     }
 
     #[test]
     #[should_panic(
-        expected = "{x, y} values must be inside canvas limits { width: 10, height: 20 }"
+        expected = "Invalid `x: 100` and `y: 100` values. Must be inside canvas limits { width: 10, height: 20 }"
     )]
     fn write_pixel_outside_canvas() {
         let mut c = Canvas::new(10, 20);
@@ -138,7 +139,7 @@ mod tests {
 
     #[test]
     #[should_panic(
-        expected = "{x, y} values must be inside canvas limits { width: 10, height: 20 }"
+        expected = "Invalid `x: 100` and `y: 100` values. Must be inside canvas limits { width: 10, height: 20 }"
     )]
     fn get_pixel_outside_canvas() {
         let c = Canvas::new(10, 20);
