@@ -36,9 +36,9 @@ impl IntoIterator for Tuple {
 
 impl PartialEq for Tuple {
     fn eq(&self, other: &Tuple) -> bool {
-        (self.x - other.x).abs() < f64::EPSILON
-            && (self.y - other.y).abs() < f64::EPSILON
-            && (self.z - other.z).abs() < f64::EPSILON
+        (self.x - other.x).abs() < (2.0 * f64::EPSILON)
+            && (self.y - other.y).abs() < (2.0 * f64::EPSILON)
+            && (self.z - other.z).abs() < (2.0 * f64::EPSILON)
     }
 }
 
@@ -132,6 +132,12 @@ mod tests {
 
         assert_eq!(t1, t2);
         assert_ne!(t1, t3);
+
+        let t4 = Tuple::new(1.0 + f64::EPSILON, 2.0, 3.0);
+        let t5 = Tuple::new(1.0 + (2.0 * f64::EPSILON), 2.0, 3.0);
+
+        assert_eq!(t1, t4);
+        assert_ne!(t1, t5);
     }
 
     #[test]

@@ -36,7 +36,7 @@ fn main() {
     // NOTE: Si hago esto no podria restarle las dimensiones del canvas a la posicion relativa del
     // projectile.
     while canvas
-        .write_pixel(p.position.tuple.x as i32, p.position.tuple.y as i32, color)
+        .insert(p.position.tuple.x as i32, p.position.tuple.y as i32, color)
         .is_ok()
     {
         println!("{:?}", p.position);
