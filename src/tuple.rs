@@ -116,6 +116,17 @@ mod tests {
     }
 
     #[test]
+    fn creating_iterator_from_tuple() {
+        let t = Tuple::new(1.0, 2.0, 3.0);
+        let mut iter = t.into_iter();
+
+        assert_eq!(iter.next(), Some(1.0));
+        assert_eq!(iter.next(), Some(2.0));
+        assert_eq!(iter.next(), Some(3.0));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
     fn comparing_two_tuples() {
         let t1 = Tuple::new(1.0, 2.0, 3.0);
         let t2 = Tuple::new(1.0, 2.0, 3.0);

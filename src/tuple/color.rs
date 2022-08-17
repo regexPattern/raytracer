@@ -22,7 +22,7 @@ impl Color {
         Color::clamp(self.0.z)
     }
 
-    fn clamp(value: f64) -> u8 {
+    pub fn clamp(value: f64) -> u8 {
         match value {
             x if x < 0.0 => 0,
             x if x > 255.0 => 255,
@@ -43,6 +43,15 @@ impl From<Tuple> for Color {
 impl PartialEq for Color {
     fn eq(&self, other: &Color) -> bool {
         self.0 == other.0
+    }
+}
+
+impl IntoIterator for Color {
+    type Item = f64;
+    type IntoIter = std::array::IntoIter<Self::Item, 3>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        [self.0.x, self.0.y, self.0.z].into_iter()
     }
 }
 
@@ -89,6 +98,17 @@ mod tests {
         assert_eq!(c.0.x, -0.5);
         assert_eq!(c.0.y, 0.4);
         assert_eq!(c.0.z, 1.7);
+    }
+
+    #[test]
+    fn creating_iterator_from_color() {
+        let c = Color::new(1.0, 2.0, 3.0);
+        let mut iter = c.into_iter();
+
+        assert_eq!(iter.next(), Some(1.0));
+        assert_eq!(iter.next(), Some(2.0));
+        assert_eq!(iter.next(), Some(3.0));
+        assert_eq!(iter.next(), None);
     }
 
     #[test]

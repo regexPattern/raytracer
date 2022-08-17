@@ -1,10 +1,16 @@
-use crate::tuple::{Color, Tuple};
+use crate::tuple::Color;
 use std::collections::HashMap;
 use std::io::{self, Write};
 
+#[derive(Copy, Clone, Hash, Eq, PartialEq)]
+struct Coordinate {
+    x: i32,
+    y: i32,
+}
+
 pub struct Canvas {
-    width: i32,
-    height: i32,
+    pub width: i32,
+    pub height: i32,
     pixels: HashMap<Coordinate, Color>,
 }
 
@@ -18,10 +24,11 @@ impl Canvas {
     }
 
     pub fn write_pixel(&mut self, x: i32, y: i32, c: Color) {
+        // TODO: Quitar este panic de aca y mejor poner un recoverable error.
         if !self.is_inside_canvas(x, y) {
             panic!(
-                "{{x, y}} values must be inside canvas limits {{ width: {}, height: {} }}",
-                self.width, self.height
+                "{{ x: {}, y: {} }} values must be inside canvas limits {{ width: {}, height: {} }}",
+                x, y, self.width, self.height
             );
         }
 
@@ -51,39 +58,29 @@ impl Canvas {
     pub fn to_ppm<T: Write>(&self, w: &mut T) -> io::Result<()> {
         let mut lines = Vec::new();
 
-        lines.push(String::from("P3"));
+        lines.push("P3".to_string());
         lines.push(format!("{} {}", self.width, self.height));
-        lines.push(String::from("255"));
+        lines.push("255".to_string());
 
         for y in 0..self.height {
-            let mut colors_in_row = Vec::new();
+            let mut line = String::new();
 
             for x in 0..self.width {
-                let color = self.pixel_at(x, y);
-                colors_in_row.push(format!(
-                    "{} {} {}",
-                    color.red(),
-                    color.green(),
-                    color.blue()
-                ));
+                let pixel = self.pixel_at(x, y);
+                for color in [pixel.red(), pixel.green(), pixel.blue()].iter() {
+                    let byte = &format!("{} ", color);
+                    if line.len() + byte.len() > 70 {
+                        lines.push(line.trim().to_string());
+                        line.clear();
+                    }
+                    line.push_str(byte);
+                }
             }
 
-            lines.push(colors_in_row.join(" "));
+            lines.push(line.trim().to_string());
         }
 
-        write!(w, "{}", lines.join("\n"))
-    }
-}
-
-#[derive(Copy, Clone, Hash, Eq, PartialEq)]
-pub struct Coordinate {
-    x: i32,
-    y: i32,
-}
-
-impl From<Tuple> for Coordinate {
-    fn from(t: Tuple) -> Coordinate {
-        Coordinate { x: t.x as i32, y: t.y as i32 }
+        write!(w, "{}\n", lines.join("\n"))
     }
 }
 
@@ -161,9 +158,9 @@ mod tests {
 
         let mut lines = reader.lines().map(|l| l.unwrap());
 
-        assert_eq!(lines.next(), Some(String::from("P3")));
-        assert_eq!(lines.next(), Some(String::from("5 3")));
-        assert_eq!(lines.next(), Some(String::from("255")));
+        assert_eq!(lines.next(), Some("P3".to_string()));
+        assert_eq!(lines.next(), Some("5 3".to_string()));
+        assert_eq!(lines.next(), Some("255".to_string()));
     }
 
     #[test]
@@ -192,18 +189,18 @@ mod tests {
 
         assert_eq!(
             lines.next(),
-            Some(String::from("255 0 0 0 0 0 0 0 0 0 0 0 0 0 0"))
+            Some("255 0 0 0 0 0 0 0 0 0 0 0 0 0 0".to_string())
         );
         assert_eq!(
             lines.next(),
-            Some(String::from("0 0 0 0 0 0 0 127 0 0 0 0 0 0 0"))
+            Some("0 0 0 0 0 0 0 127 0 0 0 0 0 0 0".to_string())
         );
         assert_eq!(
             lines.next(),
-            Some(String::from("0 0 0 0 0 0 0 0 0 0 0 0 0 0 255"))
+            Some("0 0 0 0 0 0 0 0 0 0 0 0 0 0 255".to_string())
         );
     }
-    /*
+
     #[test]
     fn ppm_splitting_long_lines() {
         let mut c = Canvas::new(10, 2);
@@ -226,19 +223,27 @@ mod tests {
         lines.next();
         lines.next();
         lines.next();
-        lines.next();
 
         assert_eq!(
             lines.next(),
-            Some(String::from(
-                "255 204 153 255 204 153 255 204 153 255 204 153 255 204 153 255 204"
-            ))
+            Some("255 204 153 255 204 153 255 204 153 255 204 153 255 204 153 255 204".to_string())
         );
         assert_eq!(
             lines.next(),
-            Some(String::from(
-                "153 255 204 153 255 204 153 255 204 153 255 204 153"
-            ))
+            Some("153 255 204 153 255 204 153 255 204 153 255 204 153".to_string())
         );
-    } */
+    }
+
+    #[test]
+    fn ppm_ended_by_newline() {
+        let c = Canvas::new(3, 1);
+        let mut f = NamedTempFile::new().unwrap();
+
+        c.to_ppm(&mut f).unwrap();
+
+        let f = File::open(f.path()).unwrap();
+        let mut reader = BufReader::new(f);
+
+        assert_eq!(reader.fill_buf().unwrap().last(), Some(&b'\n'));
+    }
 }
