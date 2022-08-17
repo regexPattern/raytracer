@@ -25,31 +25,39 @@ impl Canvas {
         }
     }
 
-    pub fn write_pixel(&mut self, x: i32, y: i32, c: Color) {
+    pub fn write_pixel(&mut self, x: i32, y: i32, c: Color) -> Result<(), String> {
         if !self.contains(x, y) {
-            panic!(
-                "Invalid `x: {}` and `y: {}` values. Must be inside canvas limits {{ width: {}, height: {} }}",
-                x, y, self.width, self.height
+            return Err(
+                format!(
+                    "Invalid `x: {}` and `y: {}` values. Must be inside canvas limits {{ width: {}, height: {} }}",
+                    x, y, self.width, self.height
+                )
             );
         }
 
         let coordinate = Coordinate { x, y };
         self.pixels.insert(coordinate, c);
+
+        Ok(())
     }
 
-    fn pixel_at(&self, x: i32, y: i32) -> Color {
+    fn pixel_at(&self, x: i32, y: i32) -> Result<Color, String> {
         if !self.contains(x, y) {
-            panic!(
-                "Invalid `x: {}` and `y: {}` values. Must be inside canvas limits {{ width: {}, height: {} }}",
-                x, y, self.width, self.height
+            return Err(
+                format!(
+                    "Invalid `x: {}` and `y: {}` values. Must be inside canvas limits {{ width: {}, height: {} }}",
+                    x, y, self.width, self.height
+                )
             );
         }
 
         let coordinate = Coordinate { x, y };
-        match self.pixels.get(&coordinate) {
+        let color = match self.pixels.get(&coordinate) {
             Some(pixel) => pixel.to_owned(),
             None => Color::new(0.0, 0.0, 0.0),
-        }
+        };
+
+        Ok(color)
     }
 
     fn contains(&self, x: i32, y: i32) -> bool {
@@ -67,7 +75,7 @@ impl Canvas {
             let mut line = String::new();
 
             for x in 0..self.width {
-                let pixel = self.pixel_at(x, y);
+                let pixel = self.pixel_at(x, y).unwrap();
                 for color in [pixel.red(), pixel.green(), pixel.blue()].iter() {
                     let byte = &format!("{} ", color);
                     if line.len() + byte.len() > PPM_TEXTWIDTH.into() {
@@ -106,7 +114,7 @@ mod tests {
     fn canvas_pixels_are_black() {
         let c = Canvas::new(10, 20);
 
-        assert_eq!(c.pixel_at(5, 5), Color::new(0.0, 0.0, 0.0));
+        assert_eq!(c.pixel_at(5, 5), Ok(Color::new(0.0, 0.0, 0.0)));
     }
 
     #[test]
@@ -114,9 +122,9 @@ mod tests {
         let mut canvas = Canvas::new(10, 20);
         let color = Color::new(1.0, 0.0, 0.0);
 
-        canvas.write_pixel(2, 3, color);
+        canvas.write_pixel(2, 3, color).unwrap();
 
-        assert_eq!(canvas.pixel_at(2, 3), color);
+        assert_eq!(canvas.pixel_at(2, 3), Ok(color));
     }
 
     #[test]
@@ -128,23 +136,23 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(
-        expected = "Invalid `x: 100` and `y: 100` values. Must be inside canvas limits { width: 10, height: 20 }"
-    )]
     fn write_pixel_outside_canvas() {
         let mut c = Canvas::new(10, 20);
 
-        c.write_pixel(100, 100, Color::new(1.0, 2.0, 3.0));
+        assert_eq!(
+            c.write_pixel(100, 100, Color::new(1.0, 2.0, 3.0)),
+            Err("Invalid `x: 100` and `y: 100` values. Must be inside canvas limits { width: 10, height: 20 }".to_string())
+        );
     }
 
     #[test]
-    #[should_panic(
-        expected = "Invalid `x: 100` and `y: 100` values. Must be inside canvas limits { width: 10, height: 20 }"
-    )]
     fn get_pixel_outside_canvas() {
         let c = Canvas::new(10, 20);
 
-        c.pixel_at(100, 100);
+        assert_eq!(
+            c.pixel_at(100, 100),
+            Err("Invalid `x: 100` and `y: 100` values. Must be inside canvas limits { width: 10, height: 20 }".to_string())
+        );
     }
 
     #[test]
@@ -171,9 +179,9 @@ mod tests {
         let c2 = Color::new(0.0, 0.5, 0.0);
         let c3 = Color::new(-0.5, 0.0, 1.0);
 
-        c.write_pixel(0, 0, c1);
-        c.write_pixel(2, 1, c2);
-        c.write_pixel(4, 2, c3);
+        c.write_pixel(0, 0, c1).unwrap();
+        c.write_pixel(2, 1, c2).unwrap();
+        c.write_pixel(4, 2, c3).unwrap();
 
         let mut f = NamedTempFile::new().unwrap();
 
@@ -208,7 +216,7 @@ mod tests {
 
         for y in 0..c.height {
             for x in 0..c.width {
-                c.write_pixel(x, y, Color::new(1.0, 0.8, 0.6));
+                c.write_pixel(x, y, Color::new(1.0, 0.8, 0.6)).unwrap();
             }
         }
 
