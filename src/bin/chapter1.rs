@@ -1,34 +1,39 @@
-use raytracer::tuple::{Point, Vector};
+use raytracer::tuple::Tuple;
+use std::thread;
+use std::time::Duration;
 
 struct Projectile {
-    position: Point,
-    velocity: Vector,
+    position: Tuple,
+    velocity: Tuple,
 }
 
 struct Environment {
-    gravity: Vector,
-    wind: Vector,
+    gravity: Tuple,
+    wind: Tuple,
 }
 
-fn tick(p: &mut Projectile, env: &Environment) {
-    p.position = p.position + p.velocity;
-    p.velocity = p.velocity + env.gravity + env.wind;
+fn tick(p: Projectile, env: &Environment) -> Projectile {
+    let position = p.position + &p.velocity;
+    let velocity = p.velocity + &env.gravity + &env.wind;
+
+    Projectile { position, velocity }
 }
 
 fn main() {
     let mut p = Projectile {
-        position: Point::new(0.0, 1.0, 0.0),
-        velocity: Vector::new(1.0, 1.0, 0.0).normalize(),
+        position: Tuple::point(0.0, 1.0, 0.0),
+        velocity: Tuple::normalize(Tuple::vector(1.0, 1.0, 0.0)),
     };
 
     let env = Environment {
-        gravity: Vector::new(0.0, -0.1, 0.0),
-        wind: Vector::new(-0.01, 0.0, 0.0),
+        gravity: Tuple::vector(0.0, -0.1, 0.0),
+        wind: Tuple::vector(-0.01, 0.0, 0.0),
     };
 
-    while p.position.tuple.y >= 0.0 {
-        println!("{:?}", p.position);
-        tick(&mut p, &env);
-        std::thread::sleep(std::time::Duration::from_millis(500));
+    while p.position.y >= 0.0 {
+        println!("{:?}", &p.position);
+        p = tick(p, &env);
+
+        thread::sleep(Duration::from_millis(50));
     }
 }

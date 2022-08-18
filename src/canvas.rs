@@ -1,23 +1,87 @@
-use crate::color::Color;
+use crate::utils;
 use std::collections::HashMap;
-use std::io::{self, Write};
+use std::io::Write;
+use std::ops::{Add, Mul, Sub};
 
-const PPM_TEXTWIDTH: u8 = 70;
-
-#[derive(Copy, Clone, Hash, Eq, PartialEq)]
-struct Coordinate {
-    x: i32,
-    y: i32,
+#[derive(Copy, Clone, Debug)]
+struct Color {
+    red: f64,
+    green: f64,
+    blue: f64,
 }
 
-pub struct Canvas {
-    pub width: i32,
-    pub height: i32,
+impl Color {
+    fn new(red: f64, green: f64, blue: f64) -> Color {
+        Color { red, green, blue }
+    }
+
+    fn clamp(value: f64) -> u8 {
+        match value {
+            x if x <= 0.0 => 0,
+            x if x >= 1.0 => 255,
+            x => (x * 255.0) as u8,
+        }
+    }
+}
+
+impl Add for Color {
+    type Output = Color;
+
+    fn add(self, rhs: Color) -> Self::Output {
+        Color::new(
+            self.red + rhs.red,
+            self.green + rhs.green,
+            self.blue + rhs.blue,
+        )
+    }
+}
+
+impl PartialEq for Color {
+    fn eq(&self, other: &Color) -> bool {
+        utils::approximately_eq(self.red, other.red)
+            && utils::approximately_eq(self.green, other.green)
+            && utils::approximately_eq(self.blue, other.blue)
+    }
+}
+
+impl Sub for Color {
+    type Output = Color;
+
+    fn sub(self, rhs: Color) -> Self::Output {
+        Color::new(
+            self.red - rhs.red,
+            self.green - rhs.green,
+            self.blue - rhs.blue,
+        )
+    }
+}
+
+impl Mul for Color {
+    type Output = Color;
+
+    fn mul(self, rhs: Color) -> Self::Output {
+        Color::new(
+            self.red * rhs.red,
+            self.green * rhs.green,
+            self.blue * rhs.blue,
+        )
+    }
+}
+
+#[derive(Eq, Hash, PartialEq)]
+struct Coordinate {
+    x: u32,
+    y: u32,
+}
+
+struct Canvas {
+    width: u32,
+    height: u32,
     pixels: HashMap<Coordinate, Color>,
 }
 
 impl Canvas {
-    pub fn new(width: i32, height: i32) -> Canvas {
+    fn new(width: u32, height: u32) -> Canvas {
         Canvas {
             width,
             height,
@@ -25,81 +89,112 @@ impl Canvas {
         }
     }
 
-    pub fn insert(&mut self, x: i32, y: i32, c: Color) -> Result<(), String> {
-        if !self.contains(x, y) {
-            return Err(
-                format!(
-                    "Invalid `x: {}` and `y: {}` values. Must be inside canvas limits {{ width: {}, height: {} }}",
-                    x, y, self.width, self.height
-                )
-            );
+    fn write_pixel(&mut self, x: u32, y: u32, color: Color) -> Result<(), String> {
+        let coordinate = Coordinate { x, y };
+        if !self.contains(&coordinate) {
+            return Err(format!(
+                "invalid x: `{}` and y: `{}` values.\
+                must be between canvas limits width: `{}` and height: `{}`",
+                x, y, self.width, self.height
+            ));
         }
 
-        let coordinate = Coordinate { x, y };
-        self.pixels.insert(coordinate, c);
-
+        self.pixels.insert(coordinate, color);
         Ok(())
     }
 
-    fn get(&self, x: i32, y: i32) -> Result<Color, String> {
-        if !self.contains(x, y) {
-            return Err(
-                format!(
-                    "Invalid `x: {}` and `y: {}` values. Must be inside canvas limits {{ width: {}, height: {} }}",
-                    x, y, self.width, self.height
-                )
-            );
+    fn pixel_at(&self, x: u32, y: u32) -> Option<Color> {
+        let coordinate = Coordinate { x, y };
+        if !self.contains(&coordinate) {
+            return None;
         }
 
-        let coordinate = Coordinate { x, y };
         let color = match self.pixels.get(&coordinate) {
-            Some(pixel) => pixel.to_owned(),
+            Some(color) => color.to_owned(),
             None => Color::new(0.0, 0.0, 0.0),
         };
 
-        Ok(color)
+        Some(color)
     }
 
-    fn contains(&self, x: i32, y: i32) -> bool {
-        (0..self.width).contains(&x) && (0..self.height).contains(&y)
+    fn contains(&self, coordinate: &Coordinate) -> bool {
+        (0..self.width).contains(&coordinate.x) && (0..self.height).contains(&coordinate.y)
     }
 
-    pub fn to_ppm<T: Write>(&self, w: &mut T) -> io::Result<()> {
-        let mut lines = Vec::new();
+    fn to_ppm(&self, w: &mut impl Write) {
+        let mut buffer: Vec<String> = Vec::new();
 
-        lines.push("P3".to_string());
-        lines.push(format!("{} {}", self.width, self.height));
-        lines.push("255".to_string());
+        buffer.push("P3".to_string());
+        buffer.push(format!("{} {}", self.width, self.height));
+        buffer.push("255".to_string());
 
         for y in 0..self.height {
             let mut line = String::new();
 
             for x in 0..self.width {
-                let pixel = self.get(x, y).unwrap();
-                for color in [pixel.red(), pixel.green(), pixel.blue()].iter() {
-                    let byte = &format!("{} ", color);
-                    if line.len() + byte.len() > PPM_TEXTWIDTH.into() {
-                        lines.push(line.trim().to_string());
+                let pixel = self.pixel_at(x, y).unwrap();
+                let colors = [
+                    Color::clamp(pixel.red),
+                    Color::clamp(pixel.green),
+                    Color::clamp(pixel.blue),
+                ];
+
+                for color in colors {
+                    let byte: String = format!("{} ", color);
+                    if line.len() + byte.len() > 70 as usize {
+                        buffer.push(line.trim().to_string());
                         line.clear();
                     }
-                    line.push_str(byte);
+                    line.push_str(&byte);
                 }
             }
 
-            lines.push(line.trim().to_string());
+            buffer.push(line.trim().to_string());
         }
 
-        writeln!(w, "{}", lines.join("\n"))
+        writeln!(w, "{}", buffer.join("\n")).unwrap();
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use std::fs::File;
     use std::io::{BufRead, BufReader};
     use tempfile::NamedTempFile;
 
-    use super::*;
+    #[test]
+    fn colors_are_red_green_blue_tuples() {
+        let c = Color::new(-0.5, 0.4, 1.7);
+
+        assert_eq!(c.red, -0.5);
+        assert_eq!(c.green, 0.4);
+        assert_eq!(c.blue, 1.7);
+    }
+
+    #[test]
+    fn adding_colors() {
+        let c1 = Color::new(0.9, 0.6, 0.75);
+        let c2 = Color::new(0.7, 0.1, 0.25);
+
+        assert_eq!(c1 + c2, Color::new(1.6, 0.7, 1.0));
+    }
+
+    #[test]
+    fn subtracting_colors() {
+        let c1 = Color::new(0.9, 0.6, 0.75);
+        let c2 = Color::new(0.7, 0.1, 0.25);
+
+        assert_eq!(c1 - c2, Color::new(0.2, 0.5, 0.5));
+    }
+
+    #[test]
+    fn multiplying_colors() {
+        let c1 = Color::new(1.0, 0.2, 0.4);
+        let c2 = Color::new(0.9, 1.0, 0.1);
+
+        assert_eq!(c1 * c2, Color::new(0.9, 0.2, 0.04));
+    }
 
     #[test]
     fn creating_canvas() {
@@ -107,64 +202,52 @@ mod tests {
 
         assert_eq!(c.width, 10);
         assert_eq!(c.height, 20);
-        assert!(c.pixels.is_empty());
+
+        assert_eq!(c.pixel_at(5, 5), Some(Color::new(0.0, 0.0, 0.0)));
     }
 
     #[test]
-    fn canvas_pixels_are_black() {
-        let c = Canvas::new(10, 20);
+    fn writing_pixels_to_canvas() {
+        let mut c = Canvas::new(10, 20);
+        let red = Color::new(1.0, 0.0, 0.0);
 
-        assert_eq!(c.get(5, 5), Ok(Color::new(0.0, 0.0, 0.0)));
+        c.write_pixel(2, 3, red);
+
+        assert_eq!(c.pixel_at(2, 3), Some(red));
     }
 
     #[test]
-    fn write_pixel_to_canvas() {
+    fn writing_pixel_outside_canvas() {
         let mut canvas = Canvas::new(10, 20);
-        let color = Color::new(1.0, 0.0, 0.0);
+        let color = Color::new(0.0, 0.0, 0.0);
 
-        canvas.insert(2, 3, color).unwrap();
+        assert_eq!(
+            canvas.write_pixel(100, 100, color),
+            Err("invalid x: `100` and y: `100` values.\
+                must be between canvas limits width: `10` and height: `20`"
+                .to_string())
+        );
 
-        assert_eq!(canvas.get(2, 3), Ok(color));
+        assert_eq!(canvas.pixel_at(100, 100), None);
     }
 
     #[test]
     fn canvas_contains_coordinate() {
         let c = Canvas::new(10, 20);
 
-        assert!(c.contains(5, 5));
-        assert!(!c.contains(100, 100));
-    }
-
-    #[test]
-    fn write_pixel_outside_canvas() {
-        let mut c = Canvas::new(10, 20);
-
-        assert_eq!(
-            c.insert(100, 100, Color::new(1.0, 2.0, 3.0)),
-            Err("Invalid `x: 100` and `y: 100` values. Must be inside canvas limits { width: 10, height: 20 }".to_string())
-        );
-    }
-
-    #[test]
-    fn get_pixel_outside_canvas() {
-        let c = Canvas::new(10, 20);
-
-        assert_eq!(
-            c.get(100, 100),
-            Err("Invalid `x: 100` and `y: 100` values. Must be inside canvas limits { width: 10, height: 20 }".to_string())
-        );
+        assert!(c.contains(&Coordinate { x: 5, y: 5 }));
+        assert!(!c.contains(&Coordinate { x: 100, y: 100 }));
     }
 
     #[test]
     fn constructing_ppm_header() {
         let c = Canvas::new(5, 3);
-        let mut f = NamedTempFile::new().unwrap();
+        let mut file = NamedTempFile::new().unwrap();
 
-        c.to_ppm(&mut f).unwrap();
+        c.to_ppm(&mut file);
 
-        let f = File::open(f.path()).unwrap();
-        let reader = BufReader::new(f);
-
+        let file = File::open(file.path()).unwrap();
+        let reader = BufReader::new(file);
         let mut lines = reader.lines().map(|l| l.unwrap());
 
         assert_eq!(lines.next(), Some("P3".to_string()));
@@ -173,23 +256,22 @@ mod tests {
     }
 
     #[test]
-    fn constructing_ppm_body() {
+    fn constructing_ppm_pixels_data() {
         let mut c = Canvas::new(5, 3);
         let c1 = Color::new(1.5, 0.0, 0.0);
         let c2 = Color::new(0.0, 0.5, 0.0);
         let c3 = Color::new(-0.5, 0.0, 1.0);
 
-        c.insert(0, 0, c1).unwrap();
-        c.insert(2, 1, c2).unwrap();
-        c.insert(4, 2, c3).unwrap();
+        c.write_pixel(0, 0, c1);
+        c.write_pixel(2, 1, c2);
+        c.write_pixel(4, 2, c3);
 
-        let mut f = NamedTempFile::new().unwrap();
+        let mut file = NamedTempFile::new().unwrap();
 
-        c.to_ppm(&mut f).unwrap();
+        c.to_ppm(&mut file);
 
-        let f = File::open(f.path()).unwrap();
-        let reader = BufReader::new(f);
-
+        let file = File::open(file.path()).unwrap();
+        let reader = BufReader::new(file);
         let mut lines = reader.lines().map(|l| l.unwrap());
 
         lines.next();
@@ -208,25 +290,40 @@ mod tests {
             lines.next(),
             Some("0 0 0 0 0 0 0 0 0 0 0 0 0 0 255".to_string())
         );
+        assert_eq!(lines.next(), None);
     }
 
     #[test]
-    fn ppm_splitting_long_lines() {
+    fn clamp_color() {
+        let c1 = 1.0;
+        let c2 = 0.0;
+        let c3 = 0.5;
+        let c4 = -1.0;
+        let c5 = 256.0;
+
+        assert_eq!(Color::clamp(c1), 255);
+        assert_eq!(Color::clamp(c2), 0);
+        assert_eq!(Color::clamp(c3), 127);
+        assert_eq!(Color::clamp(c4), 0);
+        assert_eq!(Color::clamp(c5), 255);
+    }
+
+    #[test]
+    fn splitting_long_lines_in_ppm_files() {
         let mut c = Canvas::new(10, 2);
 
-        for y in 0..c.height {
-            for x in 0..c.width {
-                c.insert(x, y, Color::new(1.0, 0.8, 0.6)).unwrap();
+        for x in 0..c.width {
+            for y in 0..c.height {
+                c.write_pixel(x, y, Color::new(1.0, 0.8, 0.6));
             }
         }
 
-        let mut f = NamedTempFile::new().unwrap();
+        let mut file = NamedTempFile::new().unwrap();
 
-        c.to_ppm(&mut f).unwrap();
+        c.to_ppm(&mut file);
 
-        let f = File::open(f.path()).unwrap();
-        let reader = BufReader::new(f);
-
+        let file = File::open(file.path()).unwrap();
+        let reader = BufReader::new(file);
         let mut lines = reader.lines().map(|l| l.unwrap());
 
         lines.next();
@@ -241,17 +338,27 @@ mod tests {
             lines.next(),
             Some("153 255 204 153 255 204 153 255 204 153 255 204 153".to_string())
         );
+        assert_eq!(
+            lines.next(),
+            Some("255 204 153 255 204 153 255 204 153 255 204 153 255 204 153 255 204".to_string())
+        );
+        assert_eq!(
+            lines.next(),
+            Some("153 255 204 153 255 204 153 255 204 153 255 204 153".to_string())
+        );
+        assert_eq!(lines.next(), None);
     }
 
     #[test]
-    fn ppm_ended_by_newline() {
-        let c = Canvas::new(3, 1);
-        let mut f = NamedTempFile::new().unwrap();
+    fn ppm_files_terminated_by_newline_char() {
+        let c = Canvas::new(1, 1);
 
-        c.to_ppm(&mut f).unwrap();
+        let mut file = NamedTempFile::new().unwrap();
 
-        let f = File::open(f.path()).unwrap();
-        let mut reader = BufReader::new(f);
+        c.to_ppm(&mut file);
+
+        let file = File::open(file.path()).unwrap();
+        let mut reader = BufReader::new(file);
 
         assert_eq!(reader.fill_buf().unwrap().last(), Some(&b'\n'));
     }
