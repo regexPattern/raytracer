@@ -42,12 +42,11 @@ impl<const R: usize, const C: usize> IndexMut<usize> for Matrix<R, C> {
     }
 }
 
-// TODO: Corregir el floating point comparison.
 impl<const R: usize, const C: usize> PartialEq for Matrix<R, C> {
     fn eq(&self, other: &Matrix<R, C>) -> bool {
         for row in 0..R {
             for col in 0..C {
-                if (self.0[row][col] - other.0[row][col]).abs() > f64::EPSILON {
+                if (self.0[row][col] - other.0[row][col]).abs() > 0.00001 {
                     return false;
                 }
             }
@@ -190,11 +189,7 @@ impl Matrix<4, 4> {
         self.determinant() != 0.0
     }
 
-    fn inverse(&self) -> Option<Matrix<4, 4>> {
-        if !self.is_inversible() {
-            return None;
-        }
-
+    fn inverse(&self) -> Matrix<4, 4> {
         let determinant = self.determinant();
         let mut cofactors = Matrix([[0.0; 4]; 4]);
 
@@ -204,7 +199,7 @@ impl Matrix<4, 4> {
             }
         }
 
-        Some(cofactors.transpose())
+        cofactors.transpose()
     }
 }
 
@@ -263,14 +258,14 @@ mod tests {
         ]);
 
         let m2 = Matrix([
-            [1.0 + f64::EPSILON, 2.0, 3.0, 4.0],
+            [1.0, 2.0, 3.0, 4.0],
             [5.0, 6.0, 7.0, 8.0],
             [9.0, 8.0, 7.0, 6.0],
             [5.0, 4.0, 3.0, 2.0],
         ]);
 
         let m3 = Matrix([
-            [1.0 + (2.0 * f64::EPSILON), 2.0, 3.0, 4.0],
+            [1.5, 2.0, 3.0, 4.0],
             [5.0, 6.0, 7.0, 8.0],
             [9.0, 8.0, 7.0, 6.0],
             [5.0, 4.0, 3.0, 2.0],
@@ -283,8 +278,8 @@ mod tests {
     #[test]
     fn comparing_column_matrices() {
         let m1 = Matrix([[1.0], [2.0], [3.0]]);
-        let m2 = Matrix([[1.0 + f64::EPSILON], [2.0], [3.0]]);
-        let m3 = Matrix([[1.0 + (2.0 * f64::EPSILON)], [2.0], [3.0]]);
+        let m2 = Matrix([[1.0], [2.0], [3.0]]);
+        let m3 = Matrix([[1.5], [2.0], [3.0]]);
 
         assert_eq!(m1, m2);
         assert_ne!(m1, m3);
@@ -356,7 +351,7 @@ mod tests {
 
     #[test]
     fn multiplying_by_the_identity_matrix() {
-        let m = Matrix([
+        let m1 = Matrix([
             [0.0, 1.0, 2.0, 4.0],
             [1.0, 2.0, 4.0, 8.0],
             [2.0, 4.0, 8.0, 16.0],
@@ -370,7 +365,10 @@ mod tests {
             [0.0, 0.0, 0.0, 1.0],
         ]);
 
-        assert_eq!(m * i, m);
+        let m2 = Matrix([[2.0], [2.0], [2.0], [2.0]]);
+
+        assert_eq!(m1 * i, m1);
+        assert_eq!(i * m2, m2);
     }
 
     #[test]
@@ -421,6 +419,7 @@ mod tests {
         ]);
 
         assert_eq!(m1.submatrix(0, 2), Matrix([[-3.0, 2.0], [0.0, 6.0]]));
+        assert_eq!(m1.submatrix(2, 2), Matrix([[1.0, 5.0], [-3.0, 2.0]]));
         assert_eq!(
             m2.submatrix(2, 1),
             Matrix([[-6.0, 1.0, 6.0], [-8.0, 8.0, 6.0], [-7.0, -1.0, 1.0]])
@@ -506,7 +505,7 @@ mod tests {
             [1.0, -3.0, 7.0, 4.0],
         ]);
 
-        let inverse = m.inverse().unwrap();
+        let inverse = m.inverse();
 
         assert_eq!(m.determinant(), 532.0);
         assert_eq!(m.cofactor(2, 3), -160.0);
@@ -517,7 +516,28 @@ mod tests {
             [0.21805, 0.45113, 0.24060, -0.04511],
             [-0.80827, -1.45677, -0.44361, 0.52068],
             [-0.07895, -0.22368, -0.05263, 0.19737],
-            [-0.52256, -0.81391, -0.30075, -0.30639],
+            [-0.52256, -0.81391, -0.30075, 0.30639],
         ]));
+    }
+
+    #[test]
+    fn multiplying_a_product_by_its_inverse() {
+        let m1 = Matrix([
+            [3.0, -9.0, 7.0, 3.0],
+            [3.0, -8.0, 2.0, -9.0],
+            [-4.0, 4.0, 4.0, 1.0],
+            [-6.0, 5.0, -1.0, 1.0],
+        ]);
+
+        let m2 = Matrix([
+            [8.0, 2.0, 2.0, 2.0],
+            [3.0, -1.0, 7.0, 0.0],
+            [7.0, 0.0, 5.0, 4.0],
+            [6.0, -2.0, 0.0, 5.0],
+        ]);
+
+        let product = m1 * m2;
+
+        assert_eq!(product * m2.inverse(), m1);
     }
 }
