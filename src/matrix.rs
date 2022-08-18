@@ -1,8 +1,34 @@
 use crate::utils;
 use std::ops::{Index, IndexMut, Mul};
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 struct Matrix<const R: usize, const C: usize>([[f64; C]; R]);
+
+impl<const R: usize, const C: usize> Matrix<R, C> {
+    fn transpose(&self) -> Matrix<C, R> {
+        let mut transposed = Matrix([[0.0; R]; C]);
+
+        for col in 0..C {
+            for row in 0..R {
+                transposed[col][row] = self.0[row][col];
+            }
+        }
+
+        transposed
+    }
+}
+
+impl<const N: usize> Matrix<N, N> {
+    fn identity(&self) -> Matrix<N, N> {
+        let mut identity = Matrix([[0.0; N]; N]);
+
+        for n in 0..N {
+            identity[n][n] = 1.0;
+        }
+
+        identity
+    }
+}
 
 impl<const R: usize, const C: usize> Index<usize> for Matrix<R, C> {
     type Output = [f64; C];
@@ -105,12 +131,14 @@ mod tests {
             [9.0, 8.0, 7.0, 6.0],
             [5.0, 4.0, 3.0, 2.0],
         ]);
+
         let m2 = Matrix([
             [1.0 + f64::EPSILON, 2.0, 3.0, 4.0],
             [5.0, 6.0, 7.0, 8.0],
             [9.0, 8.0, 7.0, 6.0],
             [5.0, 4.0, 3.0, 2.0],
         ]);
+
         let m3 = Matrix([
             [1.0 + (2.0 * f64::EPSILON), 2.0, 3.0, 4.0],
             [5.0, 6.0, 7.0, 8.0],
@@ -170,15 +198,78 @@ mod tests {
 
     #[test]
     fn multiplying_4x4_matrix_by_4x1_matrix() {
-        let A = Matrix([
+        let m = Matrix([
             [1.0, 2.0, 3.0, 4.0],
             [2.0, 4.0, 4.0, 2.0],
             [8.0, 6.0, 4.0, 1.0],
             [0.0, 0.0, 0.0, 1.0],
         ]);
 
-        let b = Matrix([[1.0], [2.0], [3.0], [1.0]]);
+        let v = Matrix([[1.0], [2.0], [3.0], [1.0]]);
 
-        // assert_eq!(A * b, Matrix([[18.0], [24.0], [33.0], [1.0]]));
+        assert_eq!(m * v, Matrix([[18.0], [24.0], [33.0], [1.0]]));
+    }
+
+    #[test]
+    fn getting_the_identity_matrix_for_squared_matrices() {
+        let m1 = Matrix([[5.0]]);
+        let m2 = Matrix([[3.0, 4.0], [5.0, 6.0]]);
+        let m3 = Matrix([[11.0, 12.0, 13.0], [14.0, 15.0, 16.0], [17.0, 18.0, 19.0]]);
+
+        assert_eq!(m1.identity(), Matrix([[1.0]]));
+        assert_eq!(m2.identity(), Matrix([[1.0, 0.0], [0.0, 1.0]]));
+        assert_eq!(
+            m3.identity(),
+            Matrix([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
+        );
+    }
+
+    #[test]
+    fn multiplying_by_the_identity_matrix() {
+        let m = Matrix([
+            [0.0, 1.0, 2.0, 4.0],
+            [1.0, 2.0, 4.0, 8.0],
+            [2.0, 4.0, 8.0, 16.0],
+            [4.0, 8.0, 16.0, 32.0],
+        ]);
+
+        let i = Matrix([
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]);
+
+        assert_eq!(m * i, m);
+    }
+
+    #[test]
+    fn transposing_a_matrix() {
+        let m = Matrix([
+            [0.0, 9.0, 3.0, 0.0],
+            [9.0, 8.0, 0.0, 8.0],
+            [1.0, 8.0, 5.0, 3.0],
+            [0.0, 0.0, 5.0, 8.0],
+        ]);
+
+        assert_eq!(
+            m.transpose(),
+            Matrix([
+                [0.0, 9.0, 1.0, 0.0],
+                [9.0, 8.0, 8.0, 0.0],
+                [3.0, 0.0, 5.0, 5.0],
+                [0.0, 8.0, 3.0, 8.0],
+            ])
+        );
+
+        assert_eq!(
+            m.transpose().identity(),
+            Matrix([
+                [1.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ])
+        );
     }
 }
