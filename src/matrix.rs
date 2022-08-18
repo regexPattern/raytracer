@@ -28,9 +28,62 @@ impl<const N: usize> Matrix<N, N> {
     }
 }
 
+impl<const R: usize, const C: usize> Index<usize> for Matrix<R, C> {
+    type Output = [f64; C];
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.0[index]
+    }
+}
+
+impl<const R: usize, const C: usize> IndexMut<usize> for Matrix<R, C> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.0[index]
+    }
+}
+
+// TODO: Corregir el floating point comparison.
+impl<const R: usize, const C: usize> PartialEq for Matrix<R, C> {
+    fn eq(&self, other: &Matrix<R, C>) -> bool {
+        for row in 0..R {
+            for col in 0..C {
+                if (self.0[row][col] - other.0[row][col]).abs() > f64::EPSILON {
+                    return false;
+                }
+            }
+        }
+
+        true
+    }
+}
+
+impl<const R1: usize, const C1: usize, const C2: usize> Mul<Matrix<C1, C2>> for Matrix<R1, C1> {
+    type Output = Matrix<R1, C2>;
+
+    fn mul(self, rhs: Matrix<C1, C2>) -> Self::Output {
+        let mut result = Matrix([[0.0; C2]; R1]);
+
+        for row1 in 0..R1 {
+            for col2 in 0..C2 {
+                let mut value = 0.0;
+                for col1 in 0..C1 {
+                    value += self.0[row1][col1] * rhs.0[col1][col2]
+                }
+                result[row1][col2] = value;
+            }
+        }
+
+        result
+    }
+}
+
 impl Matrix<2, 2> {
     fn determinant(&self) -> f64 {
         (self.0[0][0] * self.0[1][1]) - (self.0[0][1] * self.0[1][0])
+    }
+
+    fn is_inversible(&self) -> bool {
+        self.determinant() != 0.0
     }
 }
 
@@ -80,6 +133,10 @@ impl Matrix<3, 3> {
 
         determinant
     }
+
+    fn is_inversible(&self) -> bool {
+        self.determinant() != 0.0
+    }
 }
 
 impl Matrix<4, 4> {
@@ -128,53 +185,26 @@ impl Matrix<4, 4> {
 
         determinant
     }
-}
 
-impl<const R: usize, const C: usize> Index<usize> for Matrix<R, C> {
-    type Output = [f64; C];
-
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.0[index]
+    fn is_inversible(&self) -> bool {
+        self.determinant() != 0.0
     }
-}
 
-impl<const R: usize, const C: usize> IndexMut<usize> for Matrix<R, C> {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.0[index]
-    }
-}
+    fn inverse(&self) -> Option<Matrix<4, 4>> {
+        if !self.is_inversible() {
+            return None;
+        }
 
-impl<const R: usize, const C: usize> PartialEq for Matrix<R, C> {
-    fn eq(&self, other: &Matrix<R, C>) -> bool {
-        for row in 0..R {
-            for col in 0..C {
-                if !utils::approximately_eq(self.0[row][col], other.0[row][col]) {
-                    return false;
-                }
+        let determinant = self.determinant();
+        let mut cofactors = Matrix([[0.0; 4]; 4]);
+
+        for row in 0..4 {
+            for col in 0..4 {
+                cofactors[row][col] = self.cofactor(row, col) / determinant;
             }
         }
 
-        true
-    }
-}
-
-impl<const R1: usize, const C1: usize, const C2: usize> Mul<Matrix<C1, C2>> for Matrix<R1, C1> {
-    type Output = Matrix<R1, C2>;
-
-    fn mul(self, rhs: Matrix<C1, C2>) -> Self::Output {
-        let mut result = Matrix([[0.0; C2]; R1]);
-
-        for row1 in 0..R1 {
-            for col2 in 0..C2 {
-                let mut value = 0.0;
-                for col1 in 0..C1 {
-                    value += self.0[row1][col1] * rhs.0[col1][col2]
-                }
-                result[row1][col2] = value;
-            }
-        }
-
-        result
+        Some(cofactors.transpose())
     }
 }
 
@@ -442,5 +472,52 @@ mod tests {
         assert_eq!(m2.cofactor(0, 2), 210.0);
         assert_eq!(m2.cofactor(0, 3), 51.0);
         assert_eq!(m2.determinant(), -4071.0);
+    }
+
+    #[test]
+    fn testing_matrix_inversibility() {
+        let m1 = Matrix([
+            [6.0, 4.0, 4.0, 4.0],
+            [5.0, 5.0, 7.0, 6.0],
+            [4.0, -9.0, 3.0, -7.0],
+            [9.0, 1.0, 7.0, -6.0],
+        ]);
+
+        let m2 = Matrix([
+            [-4.0, 2.0, -2.0, -3.0],
+            [9.0, 6.0, 2.0, 6.0],
+            [0.0, -5.0, 1.0, -5.0],
+            [0.0, 0.0, 0.0, 0.0],
+        ]);
+
+        assert_eq!(m1.determinant(), -2120.0);
+        assert!(m1.is_inversible());
+
+        assert_eq!(m2.determinant(), 0.0);
+        assert!(!m2.is_inversible());
+    }
+
+    #[test]
+    fn calculating_inverse_of_matrix() {
+        let m = Matrix([
+            [-5.0, 2.0, 6.0, -8.0],
+            [1.0, -5.0, 1.0, 8.0],
+            [7.0, 7.0, -6.0, -7.0],
+            [1.0, -3.0, 7.0, 4.0],
+        ]);
+
+        let inverse = m.inverse().unwrap();
+
+        assert_eq!(m.determinant(), 532.0);
+        assert_eq!(m.cofactor(2, 3), -160.0);
+        assert_eq!(inverse[3][2], -160.0 / 532.0);
+        assert_eq!(m.cofactor(3, 2), 105.0);
+        assert_eq!(inverse[2][3], 105.0 / 532.0);
+        assert_eq!(inverse, Matrix([
+            [0.21805, 0.45113, 0.24060, -0.04511],
+            [-0.80827, -1.45677, -0.44361, 0.52068],
+            [-0.07895, -0.22368, -0.05263, 0.19737],
+            [-0.52256, -0.81391, -0.30075, -0.30639],
+        ]));
     }
 }
