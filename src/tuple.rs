@@ -172,9 +172,13 @@ mod tests {
         let t1 = Tuple::new(1.0, 2.0, 3.0, 4.0);
         let t2 = Tuple::new(1.0, 2.0, 3.0, 4.0);
         let t3 = Tuple::new(2.0, 2.0, 3.0, 4.0);
+        let t4 = Tuple::new(1.0 + f64::EPSILON, 2.0, 3.0, 4.0);
+        let t5 = Tuple::new(1.0 + (2.0 * f64::EPSILON), 2.0, 3.0, 4.0);
 
         assert_eq!(t1, t2);
         assert_ne!(t1, t3);
+        assert_eq!(t1, t4);
+        assert_ne!(t1, t5);
     }
 
     #[test]

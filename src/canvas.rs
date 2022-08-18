@@ -4,14 +4,14 @@ use std::io::Write;
 use std::ops::{Add, Mul, Sub};
 
 #[derive(Copy, Clone, Debug)]
-struct Color {
+pub struct Color {
     red: f64,
     green: f64,
     blue: f64,
 }
 
 impl Color {
-    fn new(red: f64, green: f64, blue: f64) -> Color {
+    pub fn new(red: f64, green: f64, blue: f64) -> Color {
         Color { red, green, blue }
     }
 
@@ -74,14 +74,14 @@ struct Coordinate {
     y: u32,
 }
 
-struct Canvas {
-    width: u32,
-    height: u32,
+pub struct Canvas {
+    pub width: u32,
+    pub height: u32,
     pixels: HashMap<Coordinate, Color>,
 }
 
 impl Canvas {
-    fn new(width: u32, height: u32) -> Canvas {
+    pub fn new(width: u32, height: u32) -> Canvas {
         Canvas {
             width,
             height,
@@ -89,7 +89,7 @@ impl Canvas {
         }
     }
 
-    fn write_pixel(&mut self, x: u32, y: u32, color: Color) -> Result<(), String> {
+    pub fn write_pixel(&mut self, x: u32, y: u32, color: Color) -> Result<(), String> {
         let coordinate = Coordinate { x, y };
         if !self.contains(&coordinate) {
             return Err(format!(
@@ -121,7 +121,7 @@ impl Canvas {
         (0..self.width).contains(&coordinate.x) && (0..self.height).contains(&coordinate.y)
     }
 
-    fn to_ppm(&self, w: &mut impl Write) {
+    pub fn to_ppm(&self, w: &mut impl Write) {
         let mut buffer: Vec<String> = Vec::new();
 
         buffer.push("P3".to_string());
@@ -141,7 +141,7 @@ impl Canvas {
 
                 for color in colors {
                     let byte: String = format!("{} ", color);
-                    if line.len() + byte.len() > 70 as usize {
+                    if line.len() + byte.len() > 70 {
                         buffer.push(line.trim().to_string());
                         line.clear();
                     }
@@ -211,7 +211,7 @@ mod tests {
         let mut c = Canvas::new(10, 20);
         let red = Color::new(1.0, 0.0, 0.0);
 
-        c.write_pixel(2, 3, red);
+        c.write_pixel(2, 3, red).unwrap();
 
         assert_eq!(c.pixel_at(2, 3), Some(red));
     }
@@ -262,9 +262,9 @@ mod tests {
         let c2 = Color::new(0.0, 0.5, 0.0);
         let c3 = Color::new(-0.5, 0.0, 1.0);
 
-        c.write_pixel(0, 0, c1);
-        c.write_pixel(2, 1, c2);
-        c.write_pixel(4, 2, c3);
+        c.write_pixel(0, 0, c1).unwrap();
+        c.write_pixel(2, 1, c2).unwrap();
+        c.write_pixel(4, 2, c3).unwrap();
 
         let mut file = NamedTempFile::new().unwrap();
 
@@ -314,7 +314,7 @@ mod tests {
 
         for x in 0..c.width {
             for y in 0..c.height {
-                c.write_pixel(x, y, Color::new(1.0, 0.8, 0.6));
+                c.write_pixel(x, y, Color::new(1.0, 0.8, 0.6)).unwrap();
             }
         }
 
