@@ -1,38 +1,28 @@
 use crate::utils;
 use std::ops::{Index, IndexMut, Mul};
 
-// TODO: Ver si puedo meter todo esto en un solo tipo con dos generics.
 #[derive(Debug)]
-struct VectorMatrix<const N: usize>([f64; N]);
+struct Matrix<const R: usize, const C: usize>([[f64; C]; R]);
 
-#[derive(Debug)]
-struct Matrix<const N: usize>([[f64; N]; N]);
-
-impl<const N: usize> From<[[f64; N]; N]> for Matrix<N> {
-    fn from(values: [[f64; N]; N]) -> Matrix<N> {
-        Matrix(values)
-    }
-}
-
-impl<const N: usize> Index<usize> for Matrix<N> {
-    type Output = [f64; N];
+impl<const R: usize, const C: usize> Index<usize> for Matrix<R, C> {
+    type Output = [f64; C];
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.0[index]
     }
 }
 
-impl<const N: usize> IndexMut<usize> for Matrix<N> {
+impl<const R: usize, const C: usize> IndexMut<usize> for Matrix<R, C> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.0[index]
     }
 }
 
-impl<const N: usize> PartialEq for Matrix<N> {
-    fn eq(&self, other: &Matrix<N>) -> bool {
-        for row in 0..N {
-            for col in 0..N {
-                if !utils::approximately_eq(self.0[row][col], other.0[row][col]) {
+impl<const R: usize, const C: usize> PartialEq for Matrix<R, C> {
+    fn eq(&self, other: &Matrix<R, C>) -> bool {
+        for row in 0..R {
+            for col in 0..C {
+                if !utils::approximately_eq(self.0[col][row], other.0[col][row]) {
                     return false;
                 }
             }
@@ -42,39 +32,23 @@ impl<const N: usize> PartialEq for Matrix<N> {
     }
 }
 
-impl<const N: usize> Mul for Matrix<N> {
-    type Output = Matrix<N>;
+impl<const R1: usize, const C1: usize, const C2: usize> Mul<Matrix<C1, C2>> for Matrix<R1, C1> {
+    type Output = Matrix<R1, C2>;
 
-    fn mul(self, rhs: Matrix<N>) -> Self::Output {
-        let mut result = Matrix::from([[0.0; N]; N]);
+    fn mul(self, rhs: Matrix<C1, C2>) -> Self::Output {
+        let mut result = Matrix([[0.0; C2]; R1]);
 
-        for row in 0..N {
-            for col in 0..N {
+        for row1 in 0..R1 {
+            for col2 in 0..C2 {
                 let mut value = 0.0;
-
-                for n in 0..N {
-                    value += self.0[row][n] * rhs.0[n][col]
+                for col1 in 0..C1 {
+                    value += self.0[row1][col1] * rhs.0[col1][col2]
                 }
-
-                result[row][col] = value;
+                result[row1][col2] = value;
             }
         }
 
         result
-    }
-}
-
-impl<const N: usize> Mul<VectorMatrix<N>> for Matrix<N> {
-    type Output = VectorMatrix<N>;
-
-    fn mul(self, rhs: VectorMatrix<N>) -> Self::Output {
-        VectorMatrix([0.0; N])
-    }
-}
-
-impl<const N: usize> PartialEq for VectorMatrix<N> {
-    fn eq(&self, other: &VectorMatrix<N>) -> bool {
-        true
     }
 }
 
@@ -84,121 +58,99 @@ mod tests {
     use super::*;
 
     #[test]
+    fn constructing_and_inspecting_a_2x2_matrix() {
+        let m = Matrix([[-3.0, 5.0], [1.0, -2.0]]);
+
+        assert_eq!(m[0], [-3.0, 5.0]);
+        assert_eq!(m[1], [1.0, -2.0]);
+    }
+
+    #[test]
+    fn constructing_and_inspecting_a_3x3_matrix() {
+        let m = Matrix([[-3.0, 5.0, 0.0], [1.0, -2.0, -7.0], [1.0, 1.0, 1.0]]);
+
+        assert_eq!(m[0], [-3.0, 5.0, 0.0]);
+        assert_eq!(m[1], [1.0, -2.0, -7.0]);
+        assert_eq!(m[2], [1.0, 1.0, 1.0]);
+    }
+
+    #[test]
     fn constructing_and_inspecting_a_4x4_matrix() {
-        let M = Matrix::from([
+        let m = Matrix([
             [1.0, 2.0, 3.0, 4.0],
             [5.5, 6.5, 7.5, 8.5],
             [9.0, 10.0, 11.0, 12.0],
             [13.5, 14.5, 15.5, 16.5],
         ]);
 
-        assert_eq!(M[0][0], 1.0);
-        assert_eq!(M[0][1], 2.0);
-        assert_eq!(M[0][2], 3.0);
-        assert_eq!(M[0][3], 4.0);
-
-        assert_eq!(M[1][0], 5.5);
-        assert_eq!(M[1][1], 6.5);
-        assert_eq!(M[1][2], 7.5);
-        assert_eq!(M[1][3], 8.5);
-
-        assert_eq!(M[2][0], 9.0);
-        assert_eq!(M[2][1], 10.0);
-        assert_eq!(M[2][2], 11.0);
-        assert_eq!(M[2][3], 12.0);
-
-        assert_eq!(M[3][0], 13.5);
-        assert_eq!(M[3][1], 14.5);
-        assert_eq!(M[3][2], 15.5);
-        assert_eq!(M[3][3], 16.5);
+        assert_eq!(m[0], [1.0, 2.0, 3.0, 4.0]);
+        assert_eq!(m[1], [5.5, 6.5, 7.5, 8.5]);
+        assert_eq!(m[2], [9.0, 10.0, 11.0, 12.0]);
+        assert_eq!(m[3], [13.5, 14.5, 15.5, 16.5]);
     }
 
     #[test]
-    fn constructing_and_inspecting_a_2x2_matrix() {
-        let M = Matrix::from([[-3.0, 5.0], [1.0, -2.0]]);
+    fn constructing_and_inspecting_an_MxN_matrix() {
+        let m = Matrix([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]);
 
-        assert_eq!(M[0][0], -3.0);
-        assert_eq!(M[0][1], 5.0);
-
-        assert_eq!(M[1][0], 1.0);
-        assert_eq!(M[1][1], -2.0);
+        assert_eq!(m[0], [1.0, 2.0, 3.0]);
+        assert_eq!(m[1], [4.0, 5.0, 6.0]);
     }
 
     #[test]
-    fn constructing_and_inspecting_a_3x3_matrix() {
-        let M = Matrix::from([[-3.0, 5.0, 0.0], [1.0, -2.0, -7.0], [1.0, 1.0, 1.0]]);
-
-        assert_eq!(M[0][0], -3.0);
-        assert_eq!(M[0][1], 5.0);
-        assert_eq!(M[0][2], 0.0);
-
-        assert_eq!(M[1][0], 1.0);
-        assert_eq!(M[1][1], -2.0);
-        assert_eq!(M[1][2], -7.0);
-
-        assert_eq!(M[2][0], 1.0);
-        assert_eq!(M[2][1], 1.0);
-        assert_eq!(M[2][2], 1.0);
-    }
-
-    #[test]
-    fn matrix_values_are_mutable() {
-        let mut M = Matrix::from([[1.0, 2.0], [2.0, 4.0]]);
-
-        M[1][0] = 3.0;
-
-        assert_eq!(M[1][0], 3.0);
-    }
-
-    #[test]
-    fn comparing_matrices() {
-        let A = Matrix::from([
+    fn comparing_squared_matrices() {
+        let m1 = Matrix([
             [1.0, 2.0, 3.0, 4.0],
             [5.0, 6.0, 7.0, 8.0],
             [9.0, 8.0, 7.0, 6.0],
             [5.0, 4.0, 3.0, 2.0],
         ]);
-        let B = Matrix::from([
-            [1.0, 2.0, 3.0, 4.0],
-            [5.0, 6.0, 7.0, 8.0],
-            [9.0, 8.0, 7.0, 6.0],
-            [5.0, 4.0, 3.0, 2.0],
-        ]);
-        let C = Matrix::from([
-            [2.0, 3.0, 4.0, 5.0],
-            [6.0, 7.0, 8.0, 9.0],
-            [8.0, 7.0, 6.0, 5.0],
-            [4.0, 3.0, 2.0, 1.0],
-        ]);
-        let D = Matrix::from([
+        let m2 = Matrix([
             [1.0 + f64::EPSILON, 2.0, 3.0, 4.0],
             [5.0, 6.0, 7.0, 8.0],
             [9.0, 8.0, 7.0, 6.0],
             [5.0, 4.0, 3.0, 2.0],
         ]);
-        let F = Matrix::from([
+        let m3 = Matrix([
             [1.0 + (2.0 * f64::EPSILON), 2.0, 3.0, 4.0],
             [5.0, 6.0, 7.0, 8.0],
             [9.0, 8.0, 7.0, 6.0],
             [5.0, 4.0, 3.0, 2.0],
         ]);
 
-        assert_eq!(A, B);
-        assert_ne!(A, C);
-        assert_eq!(A, D);
-        assert_ne!(A, F);
+        assert_eq!(m1, m2);
+        assert_ne!(m1, m3);
     }
 
     #[test]
-    fn multiplying_matrices() {
-        let A = Matrix::from([
+    fn comparing_column_matrices() {
+        let m1 = Matrix([[1.0], [2.0], [3.0]]);
+        let m2 = Matrix([[1.0 + f64::EPSILON], [2.0], [3.0]]);
+        let m3 = Matrix([[1.0 + (2.0 * f64::EPSILON)], [2.0], [3.0]]);
+
+        assert_eq!(m1, m2);
+        assert_ne!(m1, m3);
+    }
+
+    #[test]
+    fn mutating_matrix_values() {
+        let mut m = Matrix([[1.0, 2.0], [2.0, 4.0]]);
+
+        m[1][0] = 3.0;
+
+        assert_eq!(m[1][0], 3.0);
+    }
+
+    #[test]
+    fn multiplying_4x4_matrices() {
+        let m1 = Matrix([
             [1.0, 2.0, 3.0, 4.0],
             [5.0, 6.0, 7.0, 8.0],
             [9.0, 8.0, 7.0, 6.0],
             [5.0, 4.0, 3.0, 2.0],
         ]);
 
-        let B = Matrix::from([
+        let m2 = Matrix([
             [-2.0, 1.0, 2.0, 3.0],
             [3.0, 2.0, 1.0, -1.0],
             [4.0, 3.0, 6.0, 5.0],
@@ -206,8 +158,8 @@ mod tests {
         ]);
 
         assert_eq!(
-            A * B,
-            Matrix::from([
+            m1 * m2,
+            Matrix([
                 [20.0, 22.0, 50.0, 48.0],
                 [44.0, 54.0, 114.0, 108.0],
                 [40.0, 58.0, 110.0, 102.0],
@@ -217,16 +169,16 @@ mod tests {
     }
 
     #[test]
-    fn multiplying_matrix_and_tuple() {
-        let A = Matrix::from([
+    fn multiplying_4x4_matrix_by_4x1_matrix() {
+        let A = Matrix([
             [1.0, 2.0, 3.0, 4.0],
             [2.0, 4.0, 4.0, 2.0],
             [8.0, 6.0, 4.0, 1.0],
             [0.0, 0.0, 0.0, 1.0],
         ]);
 
-        let b = VectorMatrix([1.0, 2.0, 3.0, 1.0]);
+        let b = Matrix([[1.0], [2.0], [3.0], [1.0]]);
 
-        assert_eq!(A * b, VectorMatrix([18.0, 24.0, 33.0, 1.0]));
+        // assert_eq!(A * b, Matrix([[18.0], [24.0], [33.0], [1.0]]));
     }
 }
