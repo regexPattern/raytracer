@@ -240,6 +240,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn constructing_ppm_header() {
         let c = Canvas::new(5, 3);
         let mut file = NamedTempFile::new().unwrap();
@@ -256,6 +257,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn constructing_ppm_pixels_data() {
         let mut c = Canvas::new(5, 3);
         let c1 = Color::new(1.5, 0.0, 0.0);
@@ -309,6 +311,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn splitting_long_lines_in_ppm_files() {
         let mut c = Canvas::new(10, 2);
 
@@ -350,6 +353,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn ppm_files_terminated_by_newline_char() {
         let c = Canvas::new(1, 1);
 
