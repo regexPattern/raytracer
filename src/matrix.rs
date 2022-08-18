@@ -22,7 +22,7 @@ impl<const R: usize, const C: usize> PartialEq for Matrix<R, C> {
     fn eq(&self, other: &Matrix<R, C>) -> bool {
         for row in 0..R {
             for col in 0..C {
-                if !utils::approximately_eq(self.0[col][row], other.0[col][row]) {
+                if !utils::approximately_eq(self.0[row][col], other.0[row][col]) {
                     return false;
                 }
             }
