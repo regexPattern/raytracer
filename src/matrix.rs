@@ -7,7 +7,6 @@ struct Matrix<const R: usize, const C: usize>([[f64; C]; R]);
 impl<const R: usize, const C: usize> Matrix<R, C> {
     fn transpose(&self) -> Matrix<C, R> {
         let mut transposed = Matrix([[0.0; R]; C]);
-
         for col in 0..C {
             for row in 0..R {
                 transposed[col][row] = self.0[row][col];
@@ -21,12 +20,113 @@ impl<const R: usize, const C: usize> Matrix<R, C> {
 impl<const N: usize> Matrix<N, N> {
     fn identity(&self) -> Matrix<N, N> {
         let mut identity = Matrix([[0.0; N]; N]);
-
         for n in 0..N {
             identity[n][n] = 1.0;
         }
 
         identity
+    }
+}
+
+impl Matrix<2, 2> {
+    fn determinant(&self) -> f64 {
+        (self.0[0][0] * self.0[1][1]) - (self.0[0][1] * self.0[1][0])
+    }
+}
+
+impl Matrix<3, 3> {
+    fn submatrix(&self, removed_row: usize, removed_col: usize) -> Matrix<2, 2> {
+        let mut submatrix = Matrix([[0.0; 2]; 2]);
+        let mut skipped_rows = 0;
+
+        for row in 0..2 {
+            if row == removed_row {
+                skipped_rows += 1;
+            }
+
+            let mut skipped_cols = 0;
+            for col in 0..2 {
+                if col == removed_col {
+                    skipped_cols += 1;
+                }
+
+                submatrix[row][col] = self.0[row + skipped_rows][col + skipped_cols];
+            }
+        }
+
+        submatrix
+    }
+
+    fn minor(&self, removed_row: usize, removed_col: usize) -> f64 {
+        self.submatrix(removed_row, removed_col).determinant()
+    }
+
+    fn cofactor(&self, removed_row: usize, removed_col: usize) -> f64 {
+        let minor = self.minor(removed_row, removed_col);
+        if (removed_row + removed_col) % 2 == 0 {
+            minor
+        } else {
+            -minor
+        }
+    }
+
+    fn determinant(&self) -> f64 {
+        let mut determinant = 0.0;
+        let static_row = 0;
+
+        for (col, elem) in self.0[static_row].iter().enumerate() {
+            determinant += elem * self.cofactor(static_row, col);
+        }
+
+        determinant
+    }
+}
+
+impl Matrix<4, 4> {
+    fn submatrix(&self, removed_row: usize, removed_col: usize) -> Matrix<3, 3> {
+        let mut submatrix = Matrix([[0.0; 3]; 3]);
+        let mut skipped_rows = 0;
+
+        for row in 0..3 {
+            if row == removed_row {
+                skipped_rows += 1;
+            }
+
+            let mut skipped_cols = 0;
+            for col in 0..3 {
+                if col == removed_col {
+                    skipped_cols += 1;
+                }
+
+                submatrix[row][col] = self.0[row + skipped_rows][col + skipped_cols];
+            }
+        }
+
+        submatrix
+    }
+
+    fn minor(&self, removed_row: usize, removed_col: usize) -> f64 {
+        self.submatrix(removed_row, removed_col).determinant()
+    }
+
+    fn cofactor(&self, removed_row: usize, removed_col: usize) -> f64 {
+        let minor = self.minor(removed_row, removed_col);
+        if (removed_row + removed_col) % 2 == 0 {
+            minor
+        } else {
+            -minor
+        }
+    }
+
+    fn determinant(&self) -> f64 {
+        let mut determinant = 0.0;
+        let static_row = 0;
+
+        for (col, elem) in self.0[static_row].iter().enumerate() {
+            determinant += elem * self.cofactor(static_row, col);
+        }
+
+        determinant
     }
 }
 
@@ -271,5 +371,76 @@ mod tests {
                 [0.0, 0.0, 0.0, 1.0],
             ])
         );
+    }
+
+    #[test]
+    fn calculating_determinant_of_2x2_matrix() {
+        let m = Matrix([[1.0, 5.0], [-3.0, 2.0]]);
+
+        assert_eq!(m.determinant(), 17.0);
+    }
+
+    #[test]
+    fn get_submatrices_of_squared_matrices() {
+        let m1 = Matrix([[1.0, 5.0, 0.0], [-3.0, 2.0, 7.0], [0.0, 6.0, -3.0]]);
+        let m2 = Matrix([
+            [-6.0, 1.0, 1.0, 6.0],
+            [-8.0, 5.0, 8.0, 6.0],
+            [-1.0, 0.0, 8.0, 2.0],
+            [-7.0, 1.0, -1.0, 1.0],
+        ]);
+
+        assert_eq!(m1.submatrix(0, 2), Matrix([[-3.0, 2.0], [0.0, 6.0]]));
+        assert_eq!(
+            m2.submatrix(2, 1),
+            Matrix([[-6.0, 1.0, 6.0], [-8.0, 8.0, 6.0], [-7.0, -1.0, 1.0]])
+        );
+    }
+
+    #[test]
+    fn calculating_minor_of_3x3_matrix() {
+        let m = Matrix([[3.0, 5.0, 0.0], [2.0, -1.0, -7.0], [6.0, -1.0, 5.0]]);
+
+        assert_eq!(m.submatrix(0, 0).determinant(), -12.0);
+        assert_eq!(m.minor(0, 0), -12.0);
+
+        assert_eq!(m.submatrix(1, 0).determinant(), 25.0);
+        assert_eq!(m.minor(1, 0), 25.0);
+    }
+
+    #[test]
+    fn calculating_cofactor_of_3x3_matrix() {
+        let m = Matrix([[3.0, 5.0, 0.0], [2.0, -1.0, -7.0], [6.0, -1.0, 5.0]]);
+
+        assert_eq!(m.minor(0, 0), -12.0);
+        assert_eq!(m.cofactor(0, 0), -12.0);
+
+        assert_eq!(m.minor(0, 1), 52.0);
+        assert_eq!(m.cofactor(0, 1), -52.0);
+
+        assert_eq!(m.minor(1, 0), 25.0);
+        assert_eq!(m.cofactor(1, 0), -25.0);
+    }
+
+    #[test]
+    fn calculating_determinant_of_3x3_matrix() {
+        let m1 = Matrix([[1.0, 2.0, 6.0], [-5.0, 8.0, -4.0], [2.0, 6.0, 4.0]]);
+        let m2 = Matrix([
+            [-2.0, -8.0, 3.0, 5.0],
+            [-3.0, 1.0, 7.0, 3.0],
+            [1.0, 2.0, -9.0, 6.0],
+            [-6.0, 7.0, 7.0, -9.0],
+        ]);
+
+        assert_eq!(m1.cofactor(0, 0), 56.0);
+        assert_eq!(m1.cofactor(0, 1), 12.0);
+        assert_eq!(m1.cofactor(0, 2), -46.0);
+        assert_eq!(m1.determinant(), -196.0);
+
+        assert_eq!(m2.cofactor(0, 0), 690.0);
+        assert_eq!(m2.cofactor(0, 1), 447.0);
+        assert_eq!(m2.cofactor(0, 2), 210.0);
+        assert_eq!(m2.cofactor(0, 3), 51.0);
+        assert_eq!(m2.determinant(), -4071.0);
     }
 }
