@@ -1,12 +1,17 @@
-use crate::utils;
+mod transformations;
+
+use crate::tuple::Tuple;
 use std::ops::{Index, IndexMut, Mul};
 
+pub use transformations::Transformation;
+
 #[derive(Copy, Clone, Debug)]
-struct Matrix<const R: usize, const C: usize>([[f64; C]; R]);
+pub struct Matrix<const R: usize, const C: usize>([[f64; C]; R]);
 
 impl<const R: usize, const C: usize> Matrix<R, C> {
     fn transpose(&self) -> Matrix<C, R> {
         let mut transposed = Matrix([[0.0; R]; C]);
+
         for col in 0..C {
             for row in 0..R {
                 transposed[col][row] = self.0[row][col];
@@ -15,11 +20,16 @@ impl<const R: usize, const C: usize> Matrix<R, C> {
 
         transposed
     }
+
+    fn translation(x: f64, y: f64, z: f64) -> Matrix<4, 4> {
+        Matrix([[0.0; 4]; 4])
+    }
 }
 
 impl<const N: usize> Matrix<N, N> {
     fn identity(&self) -> Matrix<N, N> {
         let mut identity = Matrix([[0.0; N]; N]);
+
         for n in 0..N {
             identity[n][n] = 1.0;
         }
@@ -203,9 +213,19 @@ impl Matrix<4, 4> {
     }
 }
 
+impl Mul<Tuple> for Matrix<4, 4> {
+    type Output = Tuple;
+
+    fn mul(self, rhs: Tuple) -> Self::Output {
+        let column_matrix = Matrix([[rhs.x], [rhs.y], [rhs.z], [rhs.w]]);
+        let result = self * column_matrix;
+
+        Tuple::new(result[0][0], result[1][0], result[2][0], result[3][0])
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    #![allow(non_snake_case)]
     use super::*;
 
     #[test]
@@ -512,12 +532,15 @@ mod tests {
         assert_eq!(inverse[3][2], -160.0 / 532.0);
         assert_eq!(m.cofactor(3, 2), 105.0);
         assert_eq!(inverse[2][3], 105.0 / 532.0);
-        assert_eq!(inverse, Matrix([
-            [0.21805, 0.45113, 0.24060, -0.04511],
-            [-0.80827, -1.45677, -0.44361, 0.52068],
-            [-0.07895, -0.22368, -0.05263, 0.19737],
-            [-0.52256, -0.81391, -0.30075, 0.30639],
-        ]));
+        assert_eq!(
+            inverse,
+            Matrix([
+                [0.21805, 0.45113, 0.24060, -0.04511],
+                [-0.80827, -1.45677, -0.44361, 0.52068],
+                [-0.07895, -0.22368, -0.05263, 0.19737],
+                [-0.52256, -0.81391, -0.30075, 0.30639],
+            ])
+        );
     }
 
     #[test]
