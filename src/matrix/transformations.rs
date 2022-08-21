@@ -2,12 +2,10 @@ use crate::matrix::Matrix;
 use crate::tuple::Tuple;
 use std::ops::Mul;
 
-type TransformationMatrix = Matrix<4, 4>;
-
 pub struct Transformation;
 
 impl Transformation {
-    pub fn translation(x: f64, y: f64, z: f64) -> TransformationMatrix {
+    pub fn translation(x: f64, y: f64, z: f64) -> Matrix<4, 4> {
         let mut matrix = Matrix([[0.0; 4]; 4]).identity();
 
         matrix[0][3] = x;
@@ -17,7 +15,7 @@ impl Transformation {
         matrix
     }
 
-    pub fn scaling(x: f64, y: f64, z: f64) -> TransformationMatrix {
+    pub fn scaling(x: f64, y: f64, z: f64) -> Matrix<4, 4> {
         let mut matrix = Matrix([[0.0; 4]; 4]);
 
         matrix[0][0] = x;
@@ -28,7 +26,7 @@ impl Transformation {
         matrix
     }
 
-    pub fn rotation_x(radians: f64) -> TransformationMatrix {
+    pub fn rotation_x(radians: f64) -> Matrix<4, 4> {
         let mut matrix = Matrix([[0.0; 4]; 4]);
 
         matrix[0][0] = 1.0;
@@ -41,7 +39,7 @@ impl Transformation {
         matrix
     }
 
-    fn rotation_y(radians: f64) -> TransformationMatrix {
+    pub fn rotation_y(radians: f64) -> Matrix<4, 4> {
         // TODO: Deberia implementar `Default` para Matrix;
         let mut matrix = Matrix([[0.0; 4]; 4]);
 
@@ -55,7 +53,7 @@ impl Transformation {
         matrix
     }
 
-    fn rotation_z(radians: f64) -> TransformationMatrix {
+    pub fn rotation_z(radians: f64) -> Matrix<4, 4> {
         let mut matrix = Matrix([[0.0; 4]; 4]);
 
         matrix[0][0] = radians.cos();
@@ -68,7 +66,7 @@ impl Transformation {
         matrix
     }
 
-    fn shearing(xy: f64, xz: f64, yx: f64, yz: f64, zx: f64, zy: f64) -> TransformationMatrix {
+    pub fn shearing(xy: f64, xz: f64, yx: f64, yz: f64, zx: f64, zy: f64) -> Matrix<4, 4> {
         let mut matrix = Matrix([[0.0; 4]; 4]).identity();
 
         matrix[0][1] = xy;
