@@ -4,6 +4,18 @@ use std::ops::Mul;
 
 pub struct Transformation;
 
+impl Matrix<4, 4> {
+    pub fn translation(self, x: f64, y: f64, z: f64) -> Matrix<4, 4> {
+        let mut matrix = self.identity();
+
+        matrix[0][3] = x;
+        matrix[1][3] = y;
+        matrix[2][3] = z;
+
+        matrix
+    }
+}
+
 impl Transformation {
     pub fn translation(x: f64, y: f64, z: f64) -> Matrix<4, 4> {
         let mut matrix = Matrix([[0.0; 4]; 4]).identity();

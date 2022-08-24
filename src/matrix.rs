@@ -6,25 +6,7 @@ use std::ops::{Index, IndexMut, Mul};
 pub use transformations::Transformation;
 
 #[derive(Copy, Clone, Debug)]
-pub struct Matrix<const R: usize, const C: usize>([[f64; C]; R]);
-
-impl<const R: usize, const C: usize> Matrix<R, C> {
-    fn transpose(&self) -> Matrix<C, R> {
-        let mut transposed = Matrix([[0.0; R]; C]);
-
-        for col in 0..C {
-            for row in 0..R {
-                transposed[col][row] = self.0[row][col];
-            }
-        }
-
-        transposed
-    }
-
-    fn translation(x: f64, y: f64, z: f64) -> Matrix<4, 4> {
-        Matrix([[0.0; 4]; 4])
-    }
-}
+pub struct Matrix<const M: usize, const N: usize>([[f64; N]; M]);
 
 impl<const N: usize> Matrix<N, N> {
     fn identity(&self) -> Matrix<N, N> {
@@ -36,26 +18,38 @@ impl<const N: usize> Matrix<N, N> {
 
         identity
     }
+
+    fn transpose(self) -> Matrix<N, N> {
+        let mut transposed = Matrix([[0.0; N]; N]);
+
+        for col in 0..N {
+            for row in 0..N {
+                transposed[col][row] = self.0[row][col];
+            }
+        }
+
+        transposed
+    }
 }
 
-impl<const R: usize, const C: usize> Index<usize> for Matrix<R, C> {
-    type Output = [f64; C];
+impl<const M: usize, const N: usize> Index<usize> for Matrix<M, N> {
+    type Output = [f64; N];
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.0[index]
     }
 }
 
-impl<const R: usize, const C: usize> IndexMut<usize> for Matrix<R, C> {
+impl<const M: usize, const N: usize> IndexMut<usize> for Matrix<M, N> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.0[index]
     }
 }
 
-impl<const R: usize, const C: usize> PartialEq for Matrix<R, C> {
-    fn eq(&self, other: &Matrix<R, C>) -> bool {
-        for row in 0..R {
-            for col in 0..C {
+impl<const M: usize, const N: usize> PartialEq for Matrix<M, N> {
+    fn eq(&self, other: &Matrix<M, N>) -> bool {
+        for row in 0..M {
+            for col in 0..N {
                 if (self.0[row][col] - other.0[row][col]).abs() > 0.00001 {
                     return false;
                 }
@@ -66,16 +60,16 @@ impl<const R: usize, const C: usize> PartialEq for Matrix<R, C> {
     }
 }
 
-impl<const R1: usize, const C1: usize, const C2: usize> Mul<Matrix<C1, C2>> for Matrix<R1, C1> {
-    type Output = Matrix<R1, C2>;
+impl<const M1: usize, const N1: usize, const N2: usize> Mul<Matrix<N1, N2>> for Matrix<M1, N1> {
+    type Output = Matrix<M1, N2>;
 
-    fn mul(self, rhs: Matrix<C1, C2>) -> Self::Output {
-        let mut result = Matrix([[0.0; C2]; R1]);
+    fn mul(self, rhs: Matrix<N1, N2>) -> Self::Output {
+        let mut result = Matrix([[0.0; N2]; M1]);
 
-        for row1 in 0..R1 {
-            for col2 in 0..C2 {
+        for row1 in 0..M1 {
+            for col2 in 0..N2 {
                 let mut value = 0.0;
-                for col1 in 0..C1 {
+                for col1 in 0..N1 {
                     value += self.0[row1][col1] * rhs.0[col1][col2]
                 }
                 result[row1][col2] = value;
@@ -86,17 +80,48 @@ impl<const R1: usize, const C1: usize, const C2: usize> Mul<Matrix<C1, C2>> for 
     }
 }
 
+impl Mul<Tuple> for Matrix<4, 4> {
+    type Output = Tuple;
+
+    fn mul(self, rhs: Tuple) -> Self::Output {
+        let column_matrix = Matrix([[rhs.x], [rhs.y], [rhs.z], [rhs.w]]);
+        let result = self * column_matrix;
+
+        Tuple::new(result[0][0], result[1][0], result[2][0], result[3][0])
+    }
+}
+
 impl Matrix<2, 2> {
     fn determinant(&self) -> f64 {
         (self.0[0][0] * self.0[1][1]) - (self.0[0][1] * self.0[1][0])
     }
-
-    fn is_inversible(&self) -> bool {
-        self.determinant() != 0.0
-    }
 }
 
 impl Matrix<3, 3> {
+    fn cofactor(&self, removed_row: usize, removed_col: usize) -> f64 {
+        let minor = self.minor(removed_row, removed_col);
+        if (removed_row + removed_col) % 2 == 0 {
+            minor
+        } else {
+            -minor
+        }
+    }
+
+    fn determinant(&self) -> f64 {
+        let mut determinant = 0.0;
+        let static_row = 0;
+
+        for (col, elem) in self.0[static_row].iter().enumerate() {
+            determinant += elem * self.cofactor(static_row, col);
+        }
+
+        determinant
+    }
+
+    fn minor(&self, removed_row: usize, removed_col: usize) -> f64 {
+        self.submatrix(removed_row, removed_col).determinant()
+    }
+
     fn submatrix(&self, removed_row: usize, removed_col: usize) -> Matrix<2, 2> {
         let mut submatrix = Matrix([[0.0; 2]; 2]);
         let mut skipped_rows = 0;
@@ -118,11 +143,9 @@ impl Matrix<3, 3> {
 
         submatrix
     }
+}
 
-    fn minor(&self, removed_row: usize, removed_col: usize) -> f64 {
-        self.submatrix(removed_row, removed_col).determinant()
-    }
-
+impl Matrix<4, 4> {
     fn cofactor(&self, removed_row: usize, removed_col: usize) -> f64 {
         let minor = self.minor(removed_row, removed_col);
         if (removed_row + removed_col) % 2 == 0 {
@@ -143,12 +166,27 @@ impl Matrix<3, 3> {
         determinant
     }
 
+    fn inverse(&self) -> Matrix<4, 4> {
+        let determinant = self.determinant();
+        let mut cofactors = Matrix([[0.0; 4]; 4]);
+
+        for row in 0..4 {
+            for col in 0..4 {
+                cofactors[row][col] = self.cofactor(row, col) / determinant;
+            }
+        }
+
+        cofactors.transpose()
+    }
+
     fn is_inversible(&self) -> bool {
         self.determinant() != 0.0
     }
-}
 
-impl Matrix<4, 4> {
+    fn minor(&self, removed_row: usize, removed_col: usize) -> f64 {
+        self.submatrix(removed_row, removed_col).determinant()
+    }
+
     fn submatrix(&self, removed_row: usize, removed_col: usize) -> Matrix<3, 3> {
         let mut submatrix = Matrix([[0.0; 3]; 3]);
         let mut skipped_rows = 0;
@@ -169,58 +207,6 @@ impl Matrix<4, 4> {
         }
 
         submatrix
-    }
-
-    fn minor(&self, removed_row: usize, removed_col: usize) -> f64 {
-        self.submatrix(removed_row, removed_col).determinant()
-    }
-
-    fn cofactor(&self, removed_row: usize, removed_col: usize) -> f64 {
-        let minor = self.minor(removed_row, removed_col);
-        if (removed_row + removed_col) % 2 == 0 {
-            minor
-        } else {
-            -minor
-        }
-    }
-
-    fn determinant(&self) -> f64 {
-        let mut determinant = 0.0;
-        let static_row = 0;
-
-        for (col, elem) in self.0[static_row].iter().enumerate() {
-            determinant += elem * self.cofactor(static_row, col);
-        }
-
-        determinant
-    }
-
-    fn is_inversible(&self) -> bool {
-        self.determinant() != 0.0
-    }
-
-    fn inverse(&self) -> Matrix<4, 4> {
-        let determinant = self.determinant();
-        let mut cofactors = Matrix([[0.0; 4]; 4]);
-
-        for row in 0..4 {
-            for col in 0..4 {
-                cofactors[row][col] = self.cofactor(row, col) / determinant;
-            }
-        }
-
-        cofactors.transpose()
-    }
-}
-
-impl Mul<Tuple> for Matrix<4, 4> {
-    type Output = Tuple;
-
-    fn mul(self, rhs: Tuple) -> Self::Output {
-        let column_matrix = Matrix([[rhs.x], [rhs.y], [rhs.z], [rhs.w]]);
-        let result = self * column_matrix;
-
-        Tuple::new(result[0][0], result[1][0], result[2][0], result[3][0])
     }
 }
 
