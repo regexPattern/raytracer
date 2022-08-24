@@ -1,5 +1,10 @@
-use crate::tuple::Tuple;
 use std::ops::{Index, IndexMut, Mul};
+
+use crate::tuple::Tuple;
+
+mod transformations;
+
+pub use transformations::Transformation;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Matrix<const M: usize, const N: usize>([[f64; N]; M]);

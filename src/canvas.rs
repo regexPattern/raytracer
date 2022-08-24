@@ -1,7 +1,8 @@
-use crate::utils;
 use std::collections::HashMap;
 use std::io::Write;
 use std::ops::{Add, Mul, Sub};
+
+use crate::utils;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Color {

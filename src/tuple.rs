@@ -1,5 +1,6 @@
-use crate::utils;
 use std::ops::{Add, Div, Mul, Neg, Sub};
+
+use crate::utils;
 
 const POINT_W: f64 = 1.0;
 const VECTOR_W: f64 = 0.0;
