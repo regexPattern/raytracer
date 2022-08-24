@@ -1,9 +1,5 @@
-mod transformations;
-
 use crate::tuple::Tuple;
 use std::ops::{Index, IndexMut, Mul};
-
-pub use transformations::Transformation;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Matrix<const M: usize, const N: usize>([[f64; N]; M]);
@@ -11,23 +7,19 @@ pub struct Matrix<const M: usize, const N: usize>([[f64; N]; M]);
 impl<const N: usize> Matrix<N, N> {
     fn identity(&self) -> Matrix<N, N> {
         let mut identity = Matrix([[0.0; N]; N]);
-
         for n in 0..N {
             identity[n][n] = 1.0;
         }
-
         identity
     }
 
     fn transpose(self) -> Matrix<N, N> {
         let mut transposed = Matrix([[0.0; N]; N]);
-
         for col in 0..N {
             for row in 0..N {
                 transposed[col][row] = self.0[row][col];
             }
         }
-
         transposed
     }
 }
@@ -247,7 +239,7 @@ mod tests {
     }
 
     #[test]
-    fn constructing_and_inspecting_an_MxN_matrix() {
+    fn constructing_and_inspecting_an_mxn_matrix() {
         let m = Matrix([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]);
 
         assert_eq!(m[0], [1.0, 2.0, 3.0]);

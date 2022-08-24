@@ -5,90 +5,99 @@ use std::ops::Mul;
 pub struct Transformation;
 
 impl Matrix<4, 4> {
-    pub fn translation(self, x: f64, y: f64, z: f64) -> Matrix<4, 4> {
-        let mut matrix = self.identity();
+    pub fn translate(self, x: f64, y: f64, z: f64) -> Matrix<4, 4> {
+        Transformation::translation(x, y, z) * self
+    }
 
-        matrix[0][3] = x;
-        matrix[1][3] = y;
-        matrix[2][3] = z;
+    pub fn scale(self, x: f64, y: f64, z: f64) -> Matrix<4, 4> {
+        Transformation::scaling(x, y, z) * self
+    }
 
-        matrix
+    pub fn rotate_x(self, radians: f64) -> Matrix<4, 4> {
+        Transformation::rotation_x(radians) * self
+    }
+
+    pub fn rotate_y(self, radians: f64) -> Matrix<4, 4> {
+        Transformation::rotation_y(radians) * self
+    }
+
+    pub fn rotate_z(self, radians: f64) -> Matrix<4, 4> {
+        Transformation::rotation_z(radians) * self
     }
 }
 
 impl Transformation {
     pub fn translation(x: f64, y: f64, z: f64) -> Matrix<4, 4> {
-        let mut matrix = Matrix([[0.0; 4]; 4]).identity();
+        let mut transformation = Matrix([[0.0; 4]; 4]).identity();
 
-        matrix[0][3] = x;
-        matrix[1][3] = y;
-        matrix[2][3] = z;
+        transformation[0][3] = x;
+        transformation[1][3] = y;
+        transformation[2][3] = z;
 
-        matrix
+        transformation
     }
 
     pub fn scaling(x: f64, y: f64, z: f64) -> Matrix<4, 4> {
-        let mut matrix = Matrix([[0.0; 4]; 4]);
+        let mut transformation = Matrix([[0.0; 4]; 4]);
 
-        matrix[0][0] = x;
-        matrix[1][1] = y;
-        matrix[2][2] = z;
-        matrix[3][3] = 1.0;
+        transformation[0][0] = x;
+        transformation[1][1] = y;
+        transformation[2][2] = z;
+        transformation[3][3] = 1.0;
 
-        matrix
+        transformation
     }
 
     pub fn rotation_x(radians: f64) -> Matrix<4, 4> {
-        let mut matrix = Matrix([[0.0; 4]; 4]);
+        let mut transformation = Matrix([[0.0; 4]; 4]);
 
-        matrix[0][0] = 1.0;
-        matrix[1][1] = radians.cos();
-        matrix[1][2] = -radians.sin();
-        matrix[2][1] = radians.sin();
-        matrix[2][2] = radians.cos();
-        matrix[3][3] = 1.0;
+        transformation[0][0] = 1.0;
+        transformation[1][1] = radians.cos();
+        transformation[1][2] = -radians.sin();
+        transformation[2][1] = radians.sin();
+        transformation[2][2] = radians.cos();
+        transformation[3][3] = 1.0;
 
-        matrix
+        transformation
     }
 
     pub fn rotation_y(radians: f64) -> Matrix<4, 4> {
-        // TODO: Deberia implementar `Default` para Matrix;
-        let mut matrix = Matrix([[0.0; 4]; 4]);
+        let mut transformation = Matrix([[0.0; 4]; 4]);
 
-        matrix[0][0] = radians.cos();
-        matrix[0][2] = radians.sin();
-        matrix[1][1] = 1.0;
-        matrix[2][0] = -radians.sin();
-        matrix[2][2] = radians.cos();
-        matrix[3][3] = 1.0;
+        transformation[0][0] = radians.cos();
+        transformation[0][2] = radians.sin();
+        transformation[1][1] = 1.0;
+        transformation[2][0] = -radians.sin();
+        transformation[2][2] = radians.cos();
+        transformation[3][3] = 1.0;
 
-        matrix
+        transformation
     }
 
     pub fn rotation_z(radians: f64) -> Matrix<4, 4> {
-        let mut matrix = Matrix([[0.0; 4]; 4]);
+        let mut transformation = Matrix([[0.0; 4]; 4]);
 
-        matrix[0][0] = radians.cos();
-        matrix[0][1] = -radians.sin();
-        matrix[1][0] = radians.sin();
-        matrix[1][1] = radians.cos();
-        matrix[2][2] = 1.0;
-        matrix[3][3] = 1.0;
+        transformation[0][0] = radians.cos();
+        transformation[0][1] = -radians.sin();
+        transformation[1][0] = radians.sin();
+        transformation[1][1] = radians.cos();
+        transformation[2][2] = 1.0;
+        transformation[3][3] = 1.0;
 
-        matrix
+        transformation
     }
 
     pub fn shearing(xy: f64, xz: f64, yx: f64, yz: f64, zx: f64, zy: f64) -> Matrix<4, 4> {
-        let mut matrix = Matrix([[0.0; 4]; 4]).identity();
+        let mut transformation = Matrix([[0.0; 4]; 4]).identity();
 
-        matrix[0][1] = xy;
-        matrix[0][2] = xz;
-        matrix[1][0] = yx;
-        matrix[1][2] = yz;
-        matrix[2][0] = zx;
-        matrix[2][1] = zy;
+        transformation[0][1] = xy;
+        transformation[0][2] = xz;
+        transformation[1][0] = yx;
+        transformation[1][2] = yz;
+        transformation[2][0] = zx;
+        transformation[2][1] = zy;
 
-        matrix
+        transformation
     }
 }
 
@@ -98,16 +107,16 @@ mod tests {
 
     #[test]
     fn multiplying_by_a_transformation_matrix() {
-        let t = Transformation::translation(5.0, -3.0, 2.0);
+        let translation = Transformation::translation(5.0, -3.0, 2.0);
         let p = Tuple::point(-3.0, 4.0, 5.0);
 
-        assert_eq!(t * p, Tuple::point(2.0, 1.0, 7.0));
+        assert_eq!(translation * p, Tuple::point(2.0, 1.0, 7.0));
     }
 
     #[test]
     fn multiplying_by_the_inverse_of_a_transformation_matrix() {
-        let t = Transformation::translation(5.0, -3.0, 2.0);
-        let inv = t.inverse();
+        let translation = Transformation::translation(5.0, -3.0, 2.0);
+        let inv = translation.inverse();
         let p = Tuple::point(-3.0, 4.0, 5.0);
 
         assert_eq!(inv * p, Tuple::point(-8.0, 7.0, 3.0));
@@ -115,32 +124,32 @@ mod tests {
 
     #[test]
     fn translation_does_not_affect_vectors() {
-        let t = Transformation::translation(5.0, -3.0, 2.0);
+        let translation = Transformation::translation(5.0, -3.0, 2.0);
         let v = Tuple::vector(-3.0, 4.0, 5.0);
 
-        assert_eq!(t * v, v);
+        assert_eq!(translation * v, v);
     }
 
     #[test]
     fn scaling_matrix_applied_to_a_point() {
-        let s = Transformation::scaling(2.0, 3.0, 4.0);
+        let scaling = Transformation::scaling(2.0, 3.0, 4.0);
         let p = Tuple::point(-4.0, 6.0, 8.0);
 
-        assert_eq!(s * p, Tuple::point(-8.0, 18.0, 32.0));
+        assert_eq!(scaling * p, Tuple::point(-8.0, 18.0, 32.0));
     }
 
     #[test]
     fn scaling_matrix_applied_to_a_vector() {
-        let s = Transformation::scaling(2.0, 3.0, 4.0);
+        let scaling = Transformation::scaling(2.0, 3.0, 4.0);
         let v = Tuple::vector(-4.0, 6.0, 8.0);
 
-        assert_eq!(s * v, Tuple::vector(-8.0, 18.0, 32.0));
+        assert_eq!(scaling * v, Tuple::vector(-8.0, 18.0, 32.0));
     }
 
     #[test]
     fn multiplying_by_the_inverse_of_a_scaling_matrix() {
-        let s = Transformation::scaling(2.0, 3.0, 4.0);
-        let inv = s.inverse();
+        let scaling = Transformation::scaling(2.0, 3.0, 4.0);
+        let inv = scaling.inverse();
         let v = Tuple::vector(-4.0, 6.0, 8.0);
 
         assert_eq!(inv * v, Tuple::vector(-2.0, 2.0, 2.0));
@@ -148,10 +157,10 @@ mod tests {
 
     #[test]
     fn reflection_is_scaling_by_a_negative_value() {
-        let s = Transformation::scaling(-1.0, 1.0, 1.0);
+        let scaling = Transformation::scaling(-1.0, 1.0, 1.0);
         let p = Tuple::point(2.0, 3.0, 4.0);
 
-        assert_eq!(s * p, Tuple::point(-2.0, 3.0, 4.0));
+        assert_eq!(scaling * p, Tuple::point(-2.0, 3.0, 4.0));
     }
 
     #[test]
@@ -210,50 +219,50 @@ mod tests {
 
     #[test]
     fn shearing_transformation_moves_x_in_proportion_to_y() {
-        let s = Transformation::shearing(1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        let shearing = Transformation::shearing(1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         let p = Tuple::point(2.0, 3.0, 4.0);
 
-        assert_eq!(s * p, Tuple::point(5.0, 3.0, 4.0));
+        assert_eq!(shearing * p, Tuple::point(5.0, 3.0, 4.0));
     }
 
     #[test]
     fn shearing_transformation_moves_x_in_proportion_to_z() {
-        let s = Transformation::shearing(0.0, 1.0, 0.0, 0.0, 0.0, 0.0);
+        let shearing = Transformation::shearing(0.0, 1.0, 0.0, 0.0, 0.0, 0.0);
         let p = Tuple::point(2.0, 3.0, 4.0);
 
-        assert_eq!(s * p, Tuple::point(6.0, 3.0, 4.0));
+        assert_eq!(shearing * p, Tuple::point(6.0, 3.0, 4.0));
     }
 
     #[test]
     fn shearing_transformation_moves_y_in_proportion_to_x() {
-        let s = Transformation::shearing(0.0, 0.0, 1.0, 0.0, 0.0, 0.0);
+        let shearing = Transformation::shearing(0.0, 0.0, 1.0, 0.0, 0.0, 0.0);
         let p = Tuple::point(2.0, 3.0, 4.0);
 
-        assert_eq!(s * p, Tuple::point(2.0, 5.0, 4.0));
+        assert_eq!(shearing * p, Tuple::point(2.0, 5.0, 4.0));
     }
 
     #[test]
     fn shearing_transformation_moves_y_in_proportion_to_z() {
-        let s = Transformation::shearing(0.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+        let shearing = Transformation::shearing(0.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         let p = Tuple::point(2.0, 3.0, 4.0);
 
-        assert_eq!(s * p, Tuple::point(2.0, 7.0, 4.0));
+        assert_eq!(shearing * p, Tuple::point(2.0, 7.0, 4.0));
     }
 
     #[test]
     fn shearing_transformation_moves_z_in_proportion_to_x() {
-        let s = Transformation::shearing(0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+        let shearing = Transformation::shearing(0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
         let p = Tuple::point(2.0, 3.0, 4.0);
 
-        assert_eq!(s * p, Tuple::point(2.0, 3.0, 6.0));
+        assert_eq!(shearing * p, Tuple::point(2.0, 3.0, 6.0));
     }
 
     #[test]
     fn shearing_transformation_moves_z_in_proportion_to_y() {
-        let s = Transformation::shearing(0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+        let shearing = Transformation::shearing(0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
         let p = Tuple::point(2.0, 3.0, 4.0);
 
-        assert_eq!(s * p, Tuple::point(2.0, 3.0, 7.0));
+        assert_eq!(shearing * p, Tuple::point(2.0, 3.0, 7.0));
     }
 
     #[test]
@@ -286,5 +295,38 @@ mod tests {
         let t = translation * scaling * rotation;
 
         assert_eq!(t * p, Tuple::point(15.0, 0.0, 7.0));
+    }
+
+    #[test]
+    fn translation_identity_with_fluid_api_returns_translation_matrix() {
+        let translation = Matrix([[0.0; 4]; 4]).identity().translate(1.0, 1.0, 1.0);
+
+        assert_eq!(translation, Transformation::translation(1.0, 1.0, 1.0));
+    }
+
+    #[test]
+    fn scaling_identity_with_fluid_api_returns_scaling_matrix() {
+        let scaling = Matrix([[0.0; 4]; 4]).identity().scale(1.0, 1.0, 1.0);
+
+        assert_eq!(scaling, Transformation::scaling(1.0, 1.0, 1.0));
+    }
+
+    #[test]
+    fn rotating_identity_with_fluid_api_returns_rotation_matrix() {
+        let rotation_x = Matrix([[0.0; 4]; 4]).identity().rotate_x(std::f64::consts::FRAC_PI_2);
+        let rotation_y = Matrix([[0.0; 4]; 4]).identity().rotate_y(std::f64::consts::FRAC_PI_2);
+        let rotation_z = Matrix([[0.0; 4]; 4]).identity().rotate_z(std::f64::consts::FRAC_PI_2);
+
+        assert_eq!(rotation_x, Transformation::rotation_x(std::f64::consts::FRAC_PI_2));
+        assert_eq!(rotation_y, Transformation::rotation_y(std::f64::consts::FRAC_PI_2));
+        assert_eq!(rotation_z, Transformation::rotation_z(std::f64::consts::FRAC_PI_2));
+    }
+
+    #[test]
+    fn chained_transformations_with_fluid_api() {
+        let p = Tuple::point(1.0, 0.0, 1.0);
+        let transformation = Matrix([[0.0; 4]; 4]).identity().rotate_x(std::f64::consts::FRAC_PI_2).scale(5.0, 5.0, 5.0).translate(10.0, 5.0, 7.0);
+
+        assert_eq!(transformation * p, Tuple::point(15.0, 0.0, 7.0));
     }
 }
