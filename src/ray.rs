@@ -56,30 +56,12 @@ impl Intersection {
         for i in xs {
             intersections.push(i);
         }
+        intersections.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
         intersections
     }
 
     fn hit(xs: &Vec<Intersection>) -> Option<&Intersection> {
-        let mut hit: Option<&Intersection> = None;
-
-        for i in xs {
-            if !i.t.is_sign_positive() {
-                continue;
-            }
-
-            // TODO: Refactor this.
-            // maybe an iterator or something.
-            match hit {
-                Some(h) => {
-                    if i.t < h.t {
-                        hit = Some(i)
-                    }
-                }
-                None => hit = Some(i),
-            }
-        }
-
-        hit
+        xs.iter().find(|i| i.t.is_sign_positive())
     }
 }
 
