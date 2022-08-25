@@ -1,6 +1,6 @@
 pub mod canvas;
+pub mod intersection;
 pub mod matrix;
 pub mod tuple;
-pub mod ray;
 
 mod utils;

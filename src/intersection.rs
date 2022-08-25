@@ -1,46 +1,25 @@
-use crate::matrix::{Matrix, Transformation};
+use crate::matrix::transformation::TransformationMatrix;
 use crate::tuple::Tuple;
 
 #[derive(Copy, Clone, Debug)]
-struct Ray {
+pub struct Ray {
     origin: Tuple,
     direction: Tuple,
 }
 
 impl Ray {
-    fn new(origin: Tuple, direction: Tuple) -> Ray {
+    pub fn new(origin: Tuple, direction: Tuple) -> Ray {
         Ray { origin, direction }
     }
 
-    fn position(&self, t: f64) -> Tuple {
-        self.origin + self.direction * t
-    }
+    pub fn intersect(self, shape: Sphere) -> Vec<Intersection> {
+        let ray = self.transform(shape.transform.inverse());
 
-    fn transform(&self, transformation: Matrix<4, 4>) -> Ray {
-        let origin = transformation * self.origin;
-        let direction = transformation * self.direction;
+        let shape_center = Tuple::point(0.0, 0.0, 0.0);
+        let sphere_to_ray = ray.origin - shape_center;
 
-        Ray::new(origin, direction)
-    }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq)]
-struct Sphere {
-    transform: Matrix<4, 4>,
-}
-
-impl Sphere {
-    fn new() -> Sphere {
-        Sphere { transform: Matrix::default() }
-    }
-
-    fn intersect(self, r: Ray) -> Vec<Intersection> {
-        let r = r.transform(self.transform.inverse());
-
-        let sphere_to_ray = r.origin - Tuple::point(0.0, 0.0, 0.0);
-
-        let a = r.direction.dot(r.direction);
-        let b = 2.0 * r.direction.dot(sphere_to_ray);
+        let a = ray.direction.dot(ray.direction);
+        let b = 2.0 * ray.direction.dot(sphere_to_ray);
         let c = sphere_to_ray.dot(sphere_to_ray) - 1.0;
 
         let discriminant = b.powi(2) - 4.0 * a * c;
@@ -52,15 +31,37 @@ impl Sphere {
         let t1 = (-b - discriminant.sqrt()) / (2.0 * a);
         let t2 = (-b + discriminant.sqrt()) / (2.0 * a);
 
-        vec![Intersection::new(t1, self), Intersection::new(t2, self)]
+        vec![Intersection::new(t1, shape), Intersection::new(t2, shape)]
     }
 
-    fn transform() {
+    fn position(&self, t: f64) -> Tuple {
+        self.origin + self.direction * t
+    }
+
+    fn transform(&self, transformation: TransformationMatrix) -> Ray {
+        let origin = transformation * self.origin;
+        let direction = transformation * self.direction;
+
+        Ray::new(origin, direction)
     }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-struct Intersection {
+pub struct Sphere {
+    pub transform: TransformationMatrix,
+}
+
+impl Sphere {
+    pub fn new() -> Sphere {
+        Sphere {
+            transform: TransformationMatrix::default(),
+        }
+    }
+
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct Intersection {
     t: f64,
     object: Sphere,
 }
@@ -75,7 +76,7 @@ impl Intersection {
         xs
     }
 
-    fn hit(xs: &Vec<Intersection>) -> Option<&Intersection> {
+    pub fn hit(xs: &[Intersection]) -> Option<&Intersection> {
         xs.iter().find(|i| i.t.is_sign_positive())
     }
 }
@@ -83,6 +84,8 @@ impl Intersection {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use crate::matrix::transformation::Transformation;
 
     #[test]
     fn creating_and_querying_a_ray() {
@@ -109,7 +112,7 @@ mod tests {
     fn a_ray_intersects_a_sphere_at_two_points() {
         let r = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
         let s = Sphere::new();
-        let xs = s.intersect(r);
+        let xs = r.intersect(s);
 
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, 4.0);
@@ -120,7 +123,7 @@ mod tests {
     fn a_ray_intersects_a_sphere_at_a_tangent() {
         let r = Ray::new(Tuple::point(0.0, 1.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
         let s = Sphere::new();
-        let xs = s.intersect(r);
+        let xs = r.intersect(s);
 
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, 5.0);
@@ -131,7 +134,7 @@ mod tests {
     fn a_ray_misses_a_sphere() {
         let r = Ray::new(Tuple::point(0.0, 2.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
         let s = Sphere::new();
-        let xs = s.intersect(r);
+        let xs = r.intersect(s);
 
         assert_eq!(xs.len(), 0);
     }
@@ -140,7 +143,7 @@ mod tests {
     fn a_ray_originates_inside_a_sphere() {
         let r = Ray::new(Tuple::point(0.0, 0.0, 0.0), Tuple::vector(0.0, 0.0, 1.0));
         let s = Sphere::new();
-        let xs = s.intersect(r);
+        let xs = r.intersect(s);
 
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, -1.0);
@@ -151,7 +154,7 @@ mod tests {
     fn a_sphere_is_behind_a_ray() {
         let r = Ray::new(Tuple::point(0.0, 0.0, 5.0), Tuple::vector(0.0, 0.0, 1.0));
         let s = Sphere::new();
-        let xs = s.intersect(r);
+        let xs = r.intersect(s);
 
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, -6.0);
@@ -183,7 +186,7 @@ mod tests {
     fn intersect_sets_the_object_on_the_intersection() {
         let r = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
         let s = Sphere::new();
-        let xs = s.intersect(r);
+        let xs = r.intersect(s);
 
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].object, s);
@@ -264,7 +267,7 @@ mod tests {
     fn a_spheres_default_transformation() {
         let s = Sphere::new();
 
-        assert_eq!(s.transform, Matrix::from([[0.0; 4]; 4]).identity());
+        assert_eq!(s.transform, TransformationMatrix::from([[0.0; 4]; 4]).identity());
     }
 
     #[test]
@@ -283,7 +286,7 @@ mod tests {
         let mut s = Sphere::new();
 
         s.transform = Transformation::scaling(2.0, 2.0, 2.0);
-        let xs = s.intersect(r);
+        let xs = r.intersect(s);
 
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, 3.0);
@@ -296,7 +299,7 @@ mod tests {
         let mut s = Sphere::new();
 
         s.transform = Transformation::translation(5.0, 0.0, 0.0);
-        let xs = s.intersect(r);
+        let xs = r.intersect(s);
 
         assert_eq!(xs.len(), 0);
     }

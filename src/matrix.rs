@@ -3,27 +3,27 @@ use std::ops::{Index, IndexMut, Mul};
 use crate::tuple::Tuple;
 use crate::utils;
 
-mod transformations;
+pub mod transformation;
 
-pub use transformations::Transformation;
+pub type InversibleMatrix = Matrix<4, 4>;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Matrix<const M: usize, const N: usize>([[f64; N]; M]);
 
 impl<const M: usize, const N: usize> From<[[f64; N]; M]> for Matrix<M, N> {
-    fn from(array: [[f64; N]; M]) -> Matrix<M, N> {
+    fn from(array: [[f64; N]; M]) -> Self {
         Matrix(array)
     }
 }
 
 impl Default for Matrix<4, 4> {
-    fn default() -> Matrix<4, 4> {
+    fn default() -> Self {
         Matrix([[0.0; 4]; 4]).identity()
     }
 }
 
 impl<const N: usize> Matrix<N, N> {
-    pub fn identity(&self) -> Matrix<N, N> {
+    pub fn identity(&self) -> Self {
         let mut identity = Matrix([[0.0; N]; N]);
         for n in 0..N {
             identity[n][n] = 1.0;
@@ -31,7 +31,7 @@ impl<const N: usize> Matrix<N, N> {
         identity
     }
 
-    fn transpose(self) -> Matrix<N, N> {
+    fn transpose(self) -> Self {
         let mut transposed = Matrix([[0.0; N]; N]);
         for col in 0..N {
             for row in 0..N {
@@ -57,7 +57,7 @@ impl<const M: usize, const N: usize> IndexMut<usize> for Matrix<M, N> {
 }
 
 impl<const M: usize, const N: usize> PartialEq for Matrix<M, N> {
-    fn eq(&self, other: &Matrix<M, N>) -> bool {
+    fn eq(&self, other: &Self) -> bool {
         for row in 0..M {
             for col in 0..N {
                 if !utils::approximately_eq(self.0[row][col], other.0[row][col]) {
@@ -176,9 +176,9 @@ impl Matrix<4, 4> {
         determinant
     }
 
-    pub fn inverse(&self) -> Matrix<4, 4> {
+    pub fn inverse(&self) -> InversibleMatrix {
         let determinant = self.determinant();
-        let mut cofactors = Matrix([[0.0; 4]; 4]);
+        let mut cofactors = Matrix::from([[0.0; 4]; 4]);
 
         for row in 0..4 {
             for col in 0..4 {
@@ -198,7 +198,7 @@ impl Matrix<4, 4> {
     }
 
     fn submatrix(&self, removed_row: usize, removed_col: usize) -> Matrix<3, 3> {
-        let mut submatrix = Matrix([[0.0; 3]; 3]);
+        let mut submatrix = Matrix::from([[0.0; 3]; 3]);
         let mut skipped_rows = 0;
 
         for row in 0..3 {
@@ -265,22 +265,30 @@ mod tests {
     }
 
     #[test]
+    fn constructing_a_matrix_from_array() {
+        let m = Matrix::from([[-3.0, 5.0], [1.0, -2.0]]);
+
+        assert_eq!(m[0], [-3.0, 5.0]);
+        assert_eq!(m[1], [1.0, -2.0]);
+    }
+
+    #[test]
     fn comparing_squared_matrices() {
-        let m1 = Matrix([
+        let m1 = Matrix::from([
             [1.0, 2.0, 3.0, 4.0],
             [5.0, 6.0, 7.0, 8.0],
             [9.0, 8.0, 7.0, 6.0],
             [5.0, 4.0, 3.0, 2.0],
         ]);
 
-        let m2 = Matrix([
+        let m2 = Matrix::from([
             [1.0, 2.0, 3.0, 4.0],
             [5.0, 6.0, 7.0, 8.0],
             [9.0, 8.0, 7.0, 6.0],
             [5.0, 4.0, 3.0, 2.0],
         ]);
 
-        let m3 = Matrix([
+        let m3 = Matrix::from([
             [1.5, 2.0, 3.0, 4.0],
             [5.0, 6.0, 7.0, 8.0],
             [9.0, 8.0, 7.0, 6.0],
@@ -293,9 +301,9 @@ mod tests {
 
     #[test]
     fn comparing_column_matrices() {
-        let m1 = Matrix([[1.0], [2.0], [3.0]]);
-        let m2 = Matrix([[1.0], [2.0], [3.0]]);
-        let m3 = Matrix([[1.5], [2.0], [3.0]]);
+        let m1 = Matrix::from([[1.0], [2.0], [3.0]]);
+        let m2 = Matrix::from([[1.0], [2.0], [3.0]]);
+        let m3 = Matrix::from([[1.5], [2.0], [3.0]]);
 
         assert_eq!(m1, m2);
         assert_ne!(m1, m3);
@@ -303,7 +311,7 @@ mod tests {
 
     #[test]
     fn mutating_matrix_values() {
-        let mut m = Matrix([[1.0, 2.0], [2.0, 4.0]]);
+        let mut m = Matrix::from([[1.0, 2.0], [2.0, 4.0]]);
 
         m[1][0] = 3.0;
 
@@ -312,14 +320,14 @@ mod tests {
 
     #[test]
     fn multiplying_4x4_matrices() {
-        let m1 = Matrix([
+        let m1 = Matrix::from([
             [1.0, 2.0, 3.0, 4.0],
             [5.0, 6.0, 7.0, 8.0],
             [9.0, 8.0, 7.0, 6.0],
             [5.0, 4.0, 3.0, 2.0],
         ]);
 
-        let m2 = Matrix([
+        let m2 = Matrix::from([
             [-2.0, 1.0, 2.0, 3.0],
             [3.0, 2.0, 1.0, -1.0],
             [4.0, 3.0, 6.0, 5.0],
@@ -328,7 +336,7 @@ mod tests {
 
         assert_eq!(
             m1 * m2,
-            Matrix([
+            Matrix::from([
                 [20.0, 22.0, 50.0, 48.0],
                 [44.0, 54.0, 114.0, 108.0],
                 [40.0, 58.0, 110.0, 102.0],
@@ -339,49 +347,49 @@ mod tests {
 
     #[test]
     fn multiplying_4x4_matrix_by_4x1_matrix() {
-        let m = Matrix([
+        let m = Matrix::from([
             [1.0, 2.0, 3.0, 4.0],
             [2.0, 4.0, 4.0, 2.0],
             [8.0, 6.0, 4.0, 1.0],
             [0.0, 0.0, 0.0, 1.0],
         ]);
 
-        let v = Matrix([[1.0], [2.0], [3.0], [1.0]]);
+        let v = Matrix::from([[1.0], [2.0], [3.0], [1.0]]);
 
-        assert_eq!(m * v, Matrix([[18.0], [24.0], [33.0], [1.0]]));
+        assert_eq!(m * v, Matrix::from([[18.0], [24.0], [33.0], [1.0]]));
     }
 
     #[test]
     fn getting_the_identity_matrix_for_squared_matrices() {
-        let m1 = Matrix([[5.0]]);
-        let m2 = Matrix([[3.0, 4.0], [5.0, 6.0]]);
-        let m3 = Matrix([[11.0, 12.0, 13.0], [14.0, 15.0, 16.0], [17.0, 18.0, 19.0]]);
+        let m1 = Matrix::from([[5.0]]);
+        let m2 = Matrix::from([[3.0, 4.0], [5.0, 6.0]]);
+        let m3 = Matrix::from([[11.0, 12.0, 13.0], [14.0, 15.0, 16.0], [17.0, 18.0, 19.0]]);
 
-        assert_eq!(m1.identity(), Matrix([[1.0]]));
-        assert_eq!(m2.identity(), Matrix([[1.0, 0.0], [0.0, 1.0]]));
+        assert_eq!(m1.identity(), Matrix::from([[1.0]]));
+        assert_eq!(m2.identity(), Matrix::from([[1.0, 0.0], [0.0, 1.0]]));
         assert_eq!(
             m3.identity(),
-            Matrix([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
+            Matrix::from([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
         );
     }
 
     #[test]
     fn multiplying_by_the_identity_matrix() {
-        let m1 = Matrix([
+        let m1 = Matrix::from([
             [0.0, 1.0, 2.0, 4.0],
             [1.0, 2.0, 4.0, 8.0],
             [2.0, 4.0, 8.0, 16.0],
             [4.0, 8.0, 16.0, 32.0],
         ]);
 
-        let i = Matrix([
+        let i = Matrix::from([
             [1.0, 0.0, 0.0, 0.0],
             [0.0, 1.0, 0.0, 0.0],
             [0.0, 0.0, 1.0, 0.0],
             [0.0, 0.0, 0.0, 1.0],
         ]);
 
-        let m2 = Matrix([[2.0], [2.0], [2.0], [2.0]]);
+        let m2 = Matrix::from([[2.0], [2.0], [2.0], [2.0]]);
 
         assert_eq!(m1 * i, m1);
         assert_eq!(i * m2, m2);
@@ -389,7 +397,7 @@ mod tests {
 
     #[test]
     fn transposing_a_matrix() {
-        let m = Matrix([
+        let m = Matrix::from([
             [0.0, 9.0, 3.0, 0.0],
             [9.0, 8.0, 0.0, 8.0],
             [1.0, 8.0, 5.0, 3.0],
@@ -398,7 +406,7 @@ mod tests {
 
         assert_eq!(
             m.transpose(),
-            Matrix([
+            Matrix::from([
                 [0.0, 9.0, 1.0, 0.0],
                 [9.0, 8.0, 8.0, 0.0],
                 [3.0, 0.0, 5.0, 5.0],
@@ -408,7 +416,7 @@ mod tests {
 
         assert_eq!(
             m.transpose().identity(),
-            Matrix([
+            Matrix::from([
                 [1.0, 0.0, 0.0, 0.0],
                 [0.0, 1.0, 0.0, 0.0],
                 [0.0, 0.0, 1.0, 0.0],
@@ -419,32 +427,32 @@ mod tests {
 
     #[test]
     fn calculating_determinant_of_2x2_matrix() {
-        let m = Matrix([[1.0, 5.0], [-3.0, 2.0]]);
+        let m = Matrix::from([[1.0, 5.0], [-3.0, 2.0]]);
 
         assert_eq!(m.determinant(), 17.0);
     }
 
     #[test]
     fn get_submatrices_of_squared_matrices() {
-        let m1 = Matrix([[1.0, 5.0, 0.0], [-3.0, 2.0, 7.0], [0.0, 6.0, -3.0]]);
-        let m2 = Matrix([
+        let m1 = Matrix::from([[1.0, 5.0, 0.0], [-3.0, 2.0, 7.0], [0.0, 6.0, -3.0]]);
+        let m2 = Matrix::from([
             [-6.0, 1.0, 1.0, 6.0],
             [-8.0, 5.0, 8.0, 6.0],
             [-1.0, 0.0, 8.0, 2.0],
             [-7.0, 1.0, -1.0, 1.0],
         ]);
 
-        assert_eq!(m1.submatrix(0, 2), Matrix([[-3.0, 2.0], [0.0, 6.0]]));
-        assert_eq!(m1.submatrix(2, 2), Matrix([[1.0, 5.0], [-3.0, 2.0]]));
+        assert_eq!(m1.submatrix(0, 2), Matrix::from([[-3.0, 2.0], [0.0, 6.0]]));
+        assert_eq!(m1.submatrix(2, 2), Matrix::from([[1.0, 5.0], [-3.0, 2.0]]));
         assert_eq!(
             m2.submatrix(2, 1),
-            Matrix([[-6.0, 1.0, 6.0], [-8.0, 8.0, 6.0], [-7.0, -1.0, 1.0]])
+            Matrix::from([[-6.0, 1.0, 6.0], [-8.0, 8.0, 6.0], [-7.0, -1.0, 1.0]])
         );
     }
 
     #[test]
     fn calculating_minor_of_3x3_matrix() {
-        let m = Matrix([[3.0, 5.0, 0.0], [2.0, -1.0, -7.0], [6.0, -1.0, 5.0]]);
+        let m = Matrix::from([[3.0, 5.0, 0.0], [2.0, -1.0, -7.0], [6.0, -1.0, 5.0]]);
 
         assert_eq!(m.submatrix(0, 0).determinant(), -12.0);
         assert_eq!(m.minor(0, 0), -12.0);
@@ -455,7 +463,7 @@ mod tests {
 
     #[test]
     fn calculating_cofactor_of_3x3_matrix() {
-        let m = Matrix([[3.0, 5.0, 0.0], [2.0, -1.0, -7.0], [6.0, -1.0, 5.0]]);
+        let m = Matrix::from([[3.0, 5.0, 0.0], [2.0, -1.0, -7.0], [6.0, -1.0, 5.0]]);
 
         assert_eq!(m.minor(0, 0), -12.0);
         assert_eq!(m.cofactor(0, 0), -12.0);
@@ -469,8 +477,8 @@ mod tests {
 
     #[test]
     fn calculating_determinant_of_3x3_matrix() {
-        let m1 = Matrix([[1.0, 2.0, 6.0], [-5.0, 8.0, -4.0], [2.0, 6.0, 4.0]]);
-        let m2 = Matrix([
+        let m1 = Matrix::from([[1.0, 2.0, 6.0], [-5.0, 8.0, -4.0], [2.0, 6.0, 4.0]]);
+        let m2 = Matrix::from([
             [-2.0, -8.0, 3.0, 5.0],
             [-3.0, 1.0, 7.0, 3.0],
             [1.0, 2.0, -9.0, 6.0],
@@ -491,14 +499,14 @@ mod tests {
 
     #[test]
     fn testing_matrix_inversibility() {
-        let m1 = Matrix([
+        let m1 = Matrix::from([
             [6.0, 4.0, 4.0, 4.0],
             [5.0, 5.0, 7.0, 6.0],
             [4.0, -9.0, 3.0, -7.0],
             [9.0, 1.0, 7.0, -6.0],
         ]);
 
-        let m2 = Matrix([
+        let m2 = Matrix::from([
             [-4.0, 2.0, -2.0, -3.0],
             [9.0, 6.0, 2.0, 6.0],
             [0.0, -5.0, 1.0, -5.0],
@@ -514,7 +522,7 @@ mod tests {
 
     #[test]
     fn calculating_inverse_of_matrix() {
-        let m = Matrix([
+        let m = Matrix::from([
             [-5.0, 2.0, 6.0, -8.0],
             [1.0, -5.0, 1.0, 8.0],
             [7.0, 7.0, -6.0, -7.0],
@@ -530,7 +538,7 @@ mod tests {
         assert_eq!(inverse[2][3], 105.0 / 532.0);
         assert_eq!(
             inverse,
-            Matrix([
+            Matrix::from([
                 [0.21805, 0.45113, 0.24060, -0.04511],
                 [-0.80827, -1.45677, -0.44361, 0.52068],
                 [-0.07895, -0.22368, -0.05263, 0.19737],
@@ -541,14 +549,14 @@ mod tests {
 
     #[test]
     fn multiplying_a_product_by_its_inverse() {
-        let m1 = Matrix([
+        let m1 = Matrix::from([
             [3.0, -9.0, 7.0, 3.0],
             [3.0, -8.0, 2.0, -9.0],
             [-4.0, 4.0, 4.0, 1.0],
             [-6.0, 5.0, -1.0, 1.0],
         ]);
 
-        let m2 = Matrix([
+        let m2 = Matrix::from([
             [8.0, 2.0, 2.0, 2.0],
             [3.0, -1.0, 7.0, 0.0],
             [7.0, 0.0, 5.0, 4.0],
@@ -561,20 +569,12 @@ mod tests {
     }
 
     #[test]
-    fn constructing_a_matrix_from_array() {
-        let m = Matrix::from([[-3.0, 5.0], [1.0, -2.0]]);
-
-        assert_eq!(m[0], [-3.0, 5.0]);
-        assert_eq!(m[1], [1.0, -2.0]);
-    }
-
-    #[test]
     fn default_matrix_is_the_4x4_identity_matrix() {
         let m = Matrix::default();
 
         assert_eq!(
             m,
-            Matrix([
+            Matrix::from([
                 [1.0, 0.0, 0.0, 0.0],
                 [0.0, 1.0, 0.0, 0.0],
                 [0.0, 0.0, 1.0, 0.0],
