@@ -1,5 +1,5 @@
 use crate::canvas::Color;
-use crate::matrix::transformation::TransformationMatrix;
+use crate::matrix::{self, Matrix};
 use crate::tuple::Tuple;
 use crate::utils;
 
@@ -40,7 +40,7 @@ impl Ray {
         self.origin + self.direction * t
     }
 
-    fn transform(self, transformation: TransformationMatrix) -> Ray {
+    fn transform(self, transformation: Matrix<4, 4>) -> Ray {
         let origin = transformation * self.origin;
         let direction = transformation * self.direction;
 
@@ -50,14 +50,14 @@ impl Ray {
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Sphere {
-    pub transform: TransformationMatrix,
+    pub transform: Matrix<4, 4>,
     pub material: Material,
 }
 
 impl Sphere {
     pub fn new() -> Sphere {
         Sphere {
-            transform: TransformationMatrix::default(),
+            transform: matrix::MATRIX_4X4.identity(),
             material: Material::default(),
         }
     }
@@ -172,7 +172,8 @@ mod tests {
     use super::*;
 
     use crate::canvas::Color;
-    use crate::matrix::transformation::Transformation;
+    use crate::matrix;
+    use crate::matrix::transformation;
 
     #[test]
     fn creating_and_querying_a_ray() {
@@ -333,7 +334,7 @@ mod tests {
     #[test]
     fn translating_a_ray() {
         let r = Ray::new(Tuple::point(1.0, 2.0, 3.0), Tuple::vector(0.0, 1.0, 0.0));
-        let m = Transformation::translation(3.0, 4.0, 5.0);
+        let m = transformation::translation(3.0, 4.0, 5.0);
         let r2 = r.transform(m);
 
         assert_eq!(r2.origin, Tuple::point(4.0, 6.0, 8.0));
@@ -343,7 +344,7 @@ mod tests {
     #[test]
     fn scaling_a_ray() {
         let r = Ray::new(Tuple::point(1.0, 2.0, 3.0), Tuple::vector(0.0, 1.0, 0.0));
-        let m = Transformation::scaling(2.0, 3.0, 4.0);
+        let m = transformation::scaling(2.0, 3.0, 4.0);
         let r2 = r.transform(m);
 
         assert_eq!(r2.origin, Tuple::point(2.0, 6.0, 12.0));
@@ -354,16 +355,13 @@ mod tests {
     fn a_spheres_default_transformation() {
         let s = Sphere::new();
 
-        assert_eq!(
-            s.transform,
-            TransformationMatrix::from([[0.0; 4]; 4]).identity()
-        );
+        assert_eq!(s.transform, matrix::MATRIX_4X4.identity());
     }
 
     #[test]
     fn changing_a_spheres_transformation() {
         let mut s = Sphere::new();
-        let t = Transformation::translation(2.0, 3.0, 4.0);
+        let t = transformation::translation(2.0, 3.0, 4.0);
 
         s.transform = t;
 
@@ -375,7 +373,7 @@ mod tests {
         let r = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
         let mut s = Sphere::new();
 
-        s.transform = Transformation::scaling(2.0, 2.0, 2.0);
+        s.transform = transformation::scaling(2.0, 2.0, 2.0);
         let xs = r.intersect(s);
 
         assert_eq!(xs.len(), 2);
@@ -388,7 +386,7 @@ mod tests {
         let r = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
         let mut s = Sphere::new();
 
-        s.transform = Transformation::translation(5.0, 0.0, 0.0);
+        s.transform = transformation::translation(5.0, 0.0, 0.0);
         let xs = r.intersect(s);
 
         assert_eq!(xs.len(), 0);
@@ -453,7 +451,7 @@ mod tests {
     #[test]
     fn computing_the_normal_on_a_translated_sphere() {
         let mut s = Sphere::new();
-        s.transform = Transformation::translation(0.0, 1.0, 0.0);
+        s.transform = transformation::translation(0.0, 1.0, 0.0);
 
         let n = s.normal_at(Tuple::point(0.0, 1.70711, -0.70711));
 
@@ -463,8 +461,8 @@ mod tests {
     #[test]
     fn computing_the_normal_on_a_transformed_sphere() {
         let mut s = Sphere::new();
-        s.transform = Transformation::scaling(1.0, 0.5, 1.0)
-            * Transformation::rotation_z(std::f64::consts::PI / 5.0);
+        s.transform = transformation::scaling(1.0, 0.5, 1.0)
+            * transformation::rotation_z(std::f64::consts::PI / 5.0);
 
         let n = s.normal_at(Tuple::point(0.0, 2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0));
 

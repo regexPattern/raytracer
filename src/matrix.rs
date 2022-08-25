@@ -5,7 +5,7 @@ use crate::utils;
 
 pub mod transformation;
 
-pub type InversibleMatrix = Matrix<4, 4>;
+pub const MATRIX_4X4: Matrix<4, 4> = Matrix([[0.0; 4]; 4]);
 
 #[derive(Copy, Clone, Debug)]
 pub struct Matrix<const M: usize, const N: usize>([[f64; N]; M]);
@@ -176,7 +176,7 @@ impl Matrix<4, 4> {
         determinant
     }
 
-    pub fn inverse(&self) -> InversibleMatrix {
+    pub fn inverse(&self) -> Self {
         let determinant = self.determinant();
         let mut cofactors = Matrix::from([[0.0; 4]; 4]);
 

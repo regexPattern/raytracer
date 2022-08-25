@@ -2,7 +2,6 @@ use std::fs::File;
 
 use raytracer::canvas::{Canvas, Color};
 use raytracer::intersection::{Intersection, Material, PointLight, Ray, Sphere};
-use raytracer::matrix::transformation::Transformation;
 use raytracer::tuple::Tuple;
 
 fn main() {
@@ -14,7 +13,6 @@ fn main() {
     let half = wall_size / 2.0;
 
     let mut canvas = Canvas::new(canvas_pixels, canvas_pixels);
-    let color = Color::new(1.0, 0.0, 0.0);
     let mut shape = Sphere::new();
 
     shape.material = Material::default();
@@ -42,7 +40,7 @@ fn main() {
 
                 let color = hit.object.material.lighting(light, point, eye, normal);
 
-                canvas.write_pixel(x, y, color);
+                canvas.write_pixel(x, y, color).unwrap();
             }
         }
     }
