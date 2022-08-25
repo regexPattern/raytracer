@@ -6,7 +6,7 @@ use crate::utils;
 #[derive(Copy, Clone, Debug)]
 pub struct Ray {
     origin: Tuple,
-    direction: Tuple,
+    pub direction: Tuple,
 }
 
 impl Ray {
@@ -36,7 +36,7 @@ impl Ray {
         vec![Intersection::new(t1, shape), Intersection::new(t2, shape)]
     }
 
-    fn position(self, t: f64) -> Tuple {
+    pub fn position(self, t: f64) -> Tuple {
         self.origin + self.direction * t
     }
 
@@ -51,7 +51,7 @@ impl Ray {
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Sphere {
     pub transform: TransformationMatrix,
-    material: Material,
+    pub material: Material,
 }
 
 impl Sphere {
@@ -62,7 +62,7 @@ impl Sphere {
         }
     }
 
-    fn normal_at(self, world_point: Tuple) -> Tuple {
+    pub fn normal_at(self, world_point: Tuple) -> Tuple {
         let shape_center = Tuple::point(0.0, 0.0, 0.0);
 
         let object_point = self.transform.inverse() * world_point;
@@ -76,8 +76,8 @@ impl Sphere {
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Intersection {
-    t: f64,
-    object: Sphere,
+    pub t: f64,
+    pub object: Sphere,
 }
 
 impl Intersection {
@@ -96,13 +96,13 @@ impl Intersection {
 }
 
 #[derive(Copy, Clone, Debug)]
-struct PointLight {
+pub struct PointLight {
     position: Tuple,
     intensity: Color,
 }
 
 impl PointLight {
-    fn new(position: Tuple, intensity: Color) -> Self {
+    pub fn new(position: Tuple, intensity: Color) -> Self {
         Self {
             position,
             intensity,
@@ -111,8 +111,8 @@ impl PointLight {
 }
 
 #[derive(Copy, Clone, Debug)]
-struct Material {
-    color: Color,
+pub struct Material {
+    pub color: Color,
     ambient: f64,
     diffuse: f64,
     specular: f64,
@@ -141,28 +141,23 @@ impl PartialEq for Material {
 }
 
 impl Material {
-    fn lighting(self, light: PointLight, point: Tuple, eyev: Tuple, normalv: Tuple) -> Color {
+    pub fn lighting(self, light: PointLight, point: Tuple, eyev: Tuple, normalv: Tuple) -> Color {
         let effective_color = self.color * light.intensity;
         let lightv = (light.position - point).normalize();
         let ambient = effective_color * self.ambient;
 
         let light_dot_normal = lightv.dot(normalv);
 
-        let mut diffuse;
-        let mut specular;
+        let mut diffuse = Color::new(0.0, 0.0, 0.0);
+        let mut specular = Color::new(0.0, 0.0, 0.0);
 
-        if light_dot_normal < 0.0 {
-            diffuse = Color::new(0.0, 0.0, 0.0);
-            specular = Color::new(0.0, 0.0, 0.0);
-        } else {
+        if light_dot_normal >= 0.0 {
             diffuse = effective_color * self.diffuse * light_dot_normal;
 
             let reflectv = (-lightv).reflect(normalv);
             let reflect_dot_eye = reflectv.dot(eyev);
 
-            if reflect_dot_eye <= 0.0 {
-                specular = Color::new(0.0, 0.0, 0.0);
-            } else {
+            if reflect_dot_eye > 0.0 {
                 let factor = reflect_dot_eye.powf(self.shininess);
                 specular = light.intensity * self.specular * factor;
             }
