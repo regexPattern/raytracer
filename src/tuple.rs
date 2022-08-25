@@ -14,53 +14,57 @@ pub struct Tuple {
 }
 
 impl Tuple {
-    pub fn new(x: f64, y: f64, z: f64, w: f64) -> Tuple {
-        Tuple { x, y, z, w }
+    pub fn new(x: f64, y: f64, z: f64, w: f64) -> Self {
+        Self { x, y, z, w }
     }
 
-    pub fn point(x: f64, y: f64, z: f64) -> Tuple {
-        Tuple::new(x, y, z, POINT_W)
+    pub fn point(x: f64, y: f64, z: f64) -> Self {
+        Self::new(x, y, z, POINT_W)
     }
 
-    pub fn vector(x: f64, y: f64, z: f64) -> Tuple {
-        Tuple::new(x, y, z, VECTOR_W)
+    pub fn vector(x: f64, y: f64, z: f64) -> Self {
+        Self::new(x, y, z, VECTOR_W)
     }
 
-    pub fn magnitude(self) -> f64 {
-        (self.x.powi(2) + self.y.powi(2) + self.z.powi(2) + self.w.powi(2)).sqrt()
-    }
-
-    pub fn normalize(self) -> Tuple {
-        let magnitude = self.magnitude();
-        self / magnitude
-    }
-
-    pub fn dot(self, other: Tuple) -> f64 {
-        self.x * other.x + self.y * other.y + self.z * other.z + self.w * other.w
-    }
-
-    pub fn cross(self, other: Tuple) -> Tuple {
-        Tuple::vector(
+    pub fn cross(self, other: Self) -> Self {
+        Self::vector(
             self.y * other.z - self.z * other.y,
             self.z * other.x - self.x * other.z,
             self.x * other.y - self.y * other.x,
         )
     }
 
-    pub fn is_point(t: Tuple) -> bool {
+    pub fn dot(self, other: Self) -> f64 {
+        self.x * other.x + self.y * other.y + self.z * other.z + self.w * other.w
+    }
+
+    pub fn magnitude(self) -> f64 {
+        (self.x.powi(2) + self.y.powi(2) + self.z.powi(2) + self.w.powi(2)).sqrt()
+    }
+
+    pub fn normalize(self) -> Self {
+        let magnitude = self.magnitude();
+        self / magnitude
+    }
+
+    pub fn reflect(self, normal: Self) -> Self {
+        self - normal * 2.0 * self.dot(normal)
+    }
+
+    pub fn is_point(t: Self) -> bool {
         utils::approximately_eq(t.w, POINT_W)
     }
 
-    pub fn is_vector(t: Tuple) -> bool {
+    pub fn is_vector(t: Self) -> bool {
         utils::approximately_eq(t.w, VECTOR_W)
     }
 }
 
 impl Add for Tuple {
-    type Output = Tuple;
+    type Output = Self;
 
-    fn add(self, rhs: Tuple) -> Self::Output {
-        Tuple::new(
+    fn add(self, rhs: Self) -> Self::Output {
+        Self::new(
             self.x + rhs.x,
             self.y + rhs.y,
             self.z + rhs.z,
@@ -70,7 +74,7 @@ impl Add for Tuple {
 }
 
 impl PartialEq for Tuple {
-    fn eq(&self, other: &Tuple) -> bool {
+    fn eq(&self, other: &Self) -> bool {
         utils::approximately_eq(self.x, other.x)
             && utils::approximately_eq(self.y, other.y)
             && utils::approximately_eq(self.z, other.z)
@@ -79,10 +83,10 @@ impl PartialEq for Tuple {
 }
 
 impl Sub for Tuple {
-    type Output = Tuple;
+    type Output = Self;
 
-    fn sub(self, rhs: Tuple) -> Self::Output {
-        Tuple::new(
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self::new(
             self.x - rhs.x,
             self.y - rhs.y,
             self.z - rhs.z,
@@ -92,26 +96,26 @@ impl Sub for Tuple {
 }
 
 impl Neg for Tuple {
-    type Output = Tuple;
+    type Output = Self;
 
     fn neg(self) -> Self::Output {
-        Tuple::new(-self.x, -self.y, -self.z, -self.w)
+        Self::new(-self.x, -self.y, -self.z, -self.w)
     }
 }
 
 impl Mul<f64> for Tuple {
-    type Output = Tuple;
+    type Output = Self;
 
     fn mul(self, rhs: f64) -> Self::Output {
-        Tuple::new(self.x * rhs, self.y * rhs, self.z * rhs, self.w * rhs)
+        Self::new(self.x * rhs, self.y * rhs, self.z * rhs, self.w * rhs)
     }
 }
 
 impl Div<f64> for Tuple {
-    type Output = Tuple;
+    type Output = Self;
 
     fn div(self, rhs: f64) -> Self::Output {
-        Tuple::new(self.x / rhs, self.y / rhs, self.z / rhs, self.w / rhs)
+        Self::new(self.x / rhs, self.y / rhs, self.z / rhs, self.w / rhs)
     }
 }
 
@@ -279,5 +283,25 @@ mod tests {
 
         assert_eq!(v1.cross(v2), Tuple::vector(-1.0, 2.0, -1.0));
         assert_eq!(v2.cross(v1), Tuple::vector(1.0, -2.0, 1.0));
+    }
+
+    #[test]
+    fn reflecting_a_vector_approaching_at_45_degrees() {
+        let v = Tuple::vector(1.0, -1.0, 0.0);
+        let n = Tuple::vector(0.0, 1.0, 0.0);
+
+        let r = v.reflect(n);
+
+        assert_eq!(r, Tuple::vector(1.0, 1.0, 0.0));
+    }
+
+    #[test]
+    fn reflectin_a_vector_off_a_slanted_surface() {
+        let v = Tuple::vector(0.0, -1.0, 0.0);
+        let n = Tuple::vector(2_f64.sqrt() / 2.0, 2_f64.sqrt() / 2.0, 0.0);
+
+        let r = v.reflect(n);
+
+        assert_eq!(r, Tuple::vector(1.0, 0.0, 0.0));
     }
 }

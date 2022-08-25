@@ -12,8 +12,8 @@ pub struct Color {
 }
 
 impl Color {
-    pub fn new(red: f64, green: f64, blue: f64) -> Color {
-        Color { red, green, blue }
+    pub fn new(red: f64, green: f64, blue: f64) -> Self {
+        Self { red, green, blue }
     }
 
     fn clamp(value: f64) -> u8 {
@@ -26,10 +26,10 @@ impl Color {
 }
 
 impl Add for Color {
-    type Output = Color;
+    type Output = Self;
 
-    fn add(self, rhs: Color) -> Self::Output {
-        Color::new(
+    fn add(self, rhs: Self) -> Self::Output {
+        Self::new(
             self.red + rhs.red,
             self.green + rhs.green,
             self.blue + rhs.blue,
@@ -38,7 +38,7 @@ impl Add for Color {
 }
 
 impl PartialEq for Color {
-    fn eq(&self, other: &Color) -> bool {
+    fn eq(&self, other: &Self) -> bool {
         utils::approximately_eq(self.red, other.red)
             && utils::approximately_eq(self.green, other.green)
             && utils::approximately_eq(self.blue, other.blue)
@@ -46,10 +46,10 @@ impl PartialEq for Color {
 }
 
 impl Sub for Color {
-    type Output = Color;
+    type Output = Self;
 
-    fn sub(self, rhs: Color) -> Self::Output {
-        Color::new(
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self::new(
             self.red - rhs.red,
             self.green - rhs.green,
             self.blue - rhs.blue,
@@ -58,13 +58,25 @@ impl Sub for Color {
 }
 
 impl Mul for Color {
-    type Output = Color;
+    type Output = Self;
 
-    fn mul(self, rhs: Color) -> Self::Output {
-        Color::new(
+    fn mul(self, rhs: Self) -> Self::Output {
+        Self::new(
             self.red * rhs.red,
             self.green * rhs.green,
             self.blue * rhs.blue,
+        )
+    }
+}
+
+impl Mul<f64> for Color {
+    type Output = Self;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        Self::new(
+            self.red * rhs,
+            self.green * rhs,
+            self.blue * rhs,
         )
     }
 }
@@ -82,8 +94,8 @@ pub struct Canvas {
 }
 
 impl Canvas {
-    pub fn new(width: u32, height: u32) -> Canvas {
-        Canvas {
+    pub fn new(width: u32, height: u32) -> Self {
+        Self {
             width,
             height,
             pixels: HashMap::new(),
@@ -195,6 +207,13 @@ mod tests {
         let c2 = Color::new(0.9, 1.0, 0.1);
 
         assert_eq!(c1 * c2, Color::new(0.9, 0.2, 0.04));
+    }
+
+    #[test]
+    fn multiplying_a_color_by_a_scalar() {
+        let c = Color::new(0.2, 0.3, 0.4);
+
+        assert_eq!(c * 2.0, Color::new(0.4, 0.6, 0.8));
     }
 
     #[test]

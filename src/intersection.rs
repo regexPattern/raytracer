@@ -1,5 +1,7 @@
+use crate::canvas::Color;
 use crate::matrix::transformation::TransformationMatrix;
 use crate::tuple::Tuple;
+use crate::utils;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Ray {
@@ -34,11 +36,11 @@ impl Ray {
         vec![Intersection::new(t1, shape), Intersection::new(t2, shape)]
     }
 
-    fn position(&self, t: f64) -> Tuple {
+    fn position(self, t: f64) -> Tuple {
         self.origin + self.direction * t
     }
 
-    fn transform(&self, transformation: TransformationMatrix) -> Ray {
+    fn transform(self, transformation: TransformationMatrix) -> Ray {
         let origin = transformation * self.origin;
         let direction = transformation * self.direction;
 
@@ -49,15 +51,27 @@ impl Ray {
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Sphere {
     pub transform: TransformationMatrix,
+    material: Material,
 }
 
 impl Sphere {
     pub fn new() -> Sphere {
         Sphere {
             transform: TransformationMatrix::default(),
+            material: Material::default(),
         }
     }
 
+    fn normal_at(self, world_point: Tuple) -> Tuple {
+        let shape_center = Tuple::point(0.0, 0.0, 0.0);
+
+        let object_point = self.transform.inverse() * world_point;
+        let object_normal = object_point - shape_center;
+        let mut world_normal = self.transform.inverse().transpose() * object_normal;
+        world_normal.w = 0.0;
+
+        world_normal.normalize()
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -81,10 +95,88 @@ impl Intersection {
     }
 }
 
+#[derive(Copy, Clone, Debug)]
+struct PointLight {
+    position: Tuple,
+    intensity: Color,
+}
+
+impl PointLight {
+    fn new(position: Tuple, intensity: Color) -> Self {
+        Self {
+            position,
+            intensity,
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+struct Material {
+    color: Color,
+    ambient: f64,
+    diffuse: f64,
+    specular: f64,
+    shininess: f64,
+}
+
+impl Default for Material {
+    fn default() -> Self {
+        Material {
+            color: Color::new(1.0, 1.0, 1.0),
+            ambient: 0.1,
+            diffuse: 0.9,
+            specular: 0.9,
+            shininess: 200.0,
+        }
+    }
+}
+
+impl PartialEq for Material {
+    fn eq(&self, other: &Self) -> bool {
+        utils::approximately_eq(self.ambient, other.ambient)
+            && utils::approximately_eq(self.diffuse, other.diffuse)
+            && utils::approximately_eq(self.specular, other.specular)
+            && utils::approximately_eq(self.shininess, other.shininess)
+    }
+}
+
+impl Material {
+    fn lighting(self, light: PointLight, point: Tuple, eyev: Tuple, normalv: Tuple) -> Color {
+        let effective_color = self.color * light.intensity;
+        let lightv = (light.position - point).normalize();
+        let ambient = effective_color * self.ambient;
+
+        let light_dot_normal = lightv.dot(normalv);
+
+        let mut diffuse;
+        let mut specular;
+
+        if light_dot_normal < 0.0 {
+            diffuse = Color::new(0.0, 0.0, 0.0);
+            specular = Color::new(0.0, 0.0, 0.0);
+        } else {
+            diffuse = effective_color * self.diffuse * light_dot_normal;
+
+            let reflectv = (-lightv).reflect(normalv);
+            let reflect_dot_eye = reflectv.dot(eyev);
+
+            if reflect_dot_eye <= 0.0 {
+                specular = Color::new(0.0, 0.0, 0.0);
+            } else {
+                let factor = reflect_dot_eye.powf(self.shininess);
+                specular = light.intensity * self.specular * factor;
+            }
+        }
+
+        ambient + diffuse + specular
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    use crate::canvas::Color;
     use crate::matrix::transformation::Transformation;
 
     #[test]
@@ -267,7 +359,10 @@ mod tests {
     fn a_spheres_default_transformation() {
         let s = Sphere::new();
 
-        assert_eq!(s.transform, TransformationMatrix::from([[0.0; 4]; 4]).identity());
+        assert_eq!(
+            s.transform,
+            TransformationMatrix::from([[0.0; 4]; 4]).identity()
+        );
     }
 
     #[test]
@@ -302,5 +397,192 @@ mod tests {
         let xs = r.intersect(s);
 
         assert_eq!(xs.len(), 0);
+    }
+
+    #[test]
+    fn the_normal_on_a_sphere_at_a_point_on_the_x_axis() {
+        let s = Sphere::new();
+
+        let n = s.normal_at(Tuple::point(1.0, 0.0, 0.0));
+
+        assert_eq!(n, Tuple::vector(1.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn the_normal_on_a_sphere_at_a_point_on_the_y_axis() {
+        let s = Sphere::new();
+
+        let n = s.normal_at(Tuple::point(0.0, 1.0, 0.0));
+
+        assert_eq!(n, Tuple::vector(0.0, 1.0, 0.0));
+    }
+
+    #[test]
+    fn the_normal_on_a_sphere_at_a_point_on_the_z_axis() {
+        let s = Sphere::new();
+
+        let n = s.normal_at(Tuple::point(0.0, 0.0, 1.0));
+
+        assert_eq!(n, Tuple::vector(0.0, 0.0, 1.0));
+    }
+
+    #[test]
+    fn the_normal_on_a_sphere_at_a_non_axial_point() {
+        let s = Sphere::new();
+
+        let n = s.normal_at(Tuple::point(
+            3_f64.sqrt() / 3.0,
+            3_f64.sqrt() / 3.0,
+            3_f64.sqrt() / 3.0,
+        ));
+
+        assert_eq!(
+            n,
+            Tuple::vector(3_f64.sqrt() / 3.0, 3_f64.sqrt() / 3.0, 3_f64.sqrt() / 3.0)
+        );
+    }
+
+    #[test]
+    fn the_normal_is_a_normalized_vector() {
+        let s = Sphere::new();
+
+        let n = s.normal_at(Tuple::point(
+            3_f64.sqrt() / 3.0,
+            3_f64.sqrt() / 3.0,
+            3_f64.sqrt() / 3.0,
+        ));
+
+        assert_eq!(n, n.normalize());
+    }
+
+    #[test]
+    fn computing_the_normal_on_a_translated_sphere() {
+        let mut s = Sphere::new();
+        s.transform = Transformation::translation(0.0, 1.0, 0.0);
+
+        let n = s.normal_at(Tuple::point(0.0, 1.70711, -0.70711));
+
+        assert_eq!(n, Tuple::vector(0.0, 0.70711, -0.70711));
+    }
+
+    #[test]
+    fn computing_the_normal_on_a_transformed_sphere() {
+        let mut s = Sphere::new();
+        s.transform = Transformation::scaling(1.0, 0.5, 1.0)
+            * Transformation::rotation_z(std::f64::consts::PI / 5.0);
+
+        let n = s.normal_at(Tuple::point(0.0, 2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0));
+
+        assert_eq!(n, Tuple::vector(0.0, 0.97014, -0.24254));
+    }
+
+    #[test]
+    fn a_point_light_has_a_position_and_intensity() {
+        let intensity = Color::new(1.0, 1.0, 1.0);
+        let position = Tuple::point(0.0, 0.0, 0.0);
+
+        let light = PointLight::new(position, intensity);
+
+        assert_eq!(light.position, position);
+        assert_eq!(light.intensity, intensity);
+    }
+
+    #[test]
+    fn the_default_material() {
+        let m = Material::default();
+
+        assert_eq!(m.color, Color::new(1.0, 1.0, 1.0));
+        assert_eq!(m.ambient, 0.1);
+        assert_eq!(m.diffuse, 0.9);
+        assert_eq!(m.specular, 0.9);
+        assert_eq!(m.shininess, 200.0);
+    }
+
+    #[test]
+    fn a_sphere_has_a_default_material() {
+        let s = Sphere::new();
+
+        assert_eq!(s.material, Material::default());
+    }
+
+    #[test]
+    fn a_sphere_may_be_assigned_a_material() {
+        let mut s = Sphere::new();
+        let mut m = Material::default();
+        m.ambient = 1.0;
+
+        s.material = m;
+
+        assert_eq!(s.material, m);
+    }
+
+    #[test]
+    fn lighting_with_the_eye_between_the_light_and_the_surface() {
+        let m = Material::default();
+        let position = Tuple::point(0.0, 0.0, 0.0);
+
+        let eyev = Tuple::vector(0.0, 0.0, -1.0);
+        let normalv = Tuple::vector(0.0, 0.0, -1.0);
+        let light = PointLight::new(Tuple::point(0.0, 0.0, -10.0), Color::new(1.0, 1.0, 1.0));
+
+        let result = m.lighting(light, position, eyev, normalv);
+
+        assert_eq!(result, Color::new(1.9, 1.9, 1.9));
+    }
+
+    #[test]
+    fn lighting_with_the_eye_between_the_light_and_the_surface_eye_offset_45_degrees() {
+        let m = Material::default();
+        let position = Tuple::point(0.0, 0.0, 0.0);
+
+        let eyev = Tuple::vector(0.0, 2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0);
+        let normalv = Tuple::vector(0.0, 0.0, -1.0);
+        let light = PointLight::new(Tuple::point(0.0, 0.0, -10.0), Color::new(1.0, 1.0, 1.0));
+
+        let result = m.lighting(light, position, eyev, normalv);
+
+        assert_eq!(result, Color::new(1.0, 1.0, 1.0));
+    }
+
+    #[test]
+    fn lighting_with_eye_opposite_surface_light_offset_45_degrees() {
+        let m = Material::default();
+        let position = Tuple::point(0.0, 0.0, 0.0);
+
+        let eyev = Tuple::vector(0.0, 0.0, -1.0);
+        let normalv = Tuple::vector(0.0, 0.0, -1.0);
+        let light = PointLight::new(Tuple::point(0.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
+
+        let result = m.lighting(light, position, eyev, normalv);
+
+        assert_eq!(result, Color::new(0.7364, 0.7364, 0.7364));
+    }
+
+    #[test]
+    fn lighting_with_eye_in_the_path_of_the_refelction_vector() {
+        let m = Material::default();
+        let position = Tuple::point(0.0, 0.0, 0.0);
+
+        let eyev = Tuple::vector(0.0, -2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0);
+        let normalv = Tuple::vector(0.0, 0.0, -1.0);
+        let light = PointLight::new(Tuple::point(0.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
+
+        let result = m.lighting(light, position, eyev, normalv);
+
+        assert_eq!(result, Color::new(1.6364, 1.6364, 1.6364));
+    }
+
+    #[test]
+    fn lighting_with_the_light_behind_the_surface() {
+        let m = Material::default();
+        let position = Tuple::point(0.0, 0.0, 0.0);
+
+        let eyev = Tuple::vector(0.0, -2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0);
+        let normalv = Tuple::vector(0.0, 0.0, -1.0);
+        let light = PointLight::new(Tuple::point(0.0, 0.0, 10.0), Color::new(1.0, 1.0, 1.0));
+
+        let result = m.lighting(light, position, eyev, normalv);
+
+        assert_eq!(result, Color::new(0.1, 0.1, 0.1));
     }
 }

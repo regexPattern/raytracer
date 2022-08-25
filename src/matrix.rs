@@ -31,7 +31,7 @@ impl<const N: usize> Matrix<N, N> {
         identity
     }
 
-    fn transpose(self) -> Self {
+    pub fn transpose(self) -> Self {
         let mut transposed = Matrix([[0.0; N]; N]);
         for col in 0..N {
             for row in 0..N {
