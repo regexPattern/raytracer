@@ -23,9 +23,9 @@ impl Sphere {
     fn intersect(self, r: Ray) -> Vec<Intersection> {
         let sphere_to_ray = r.origin - Tuple::point(0.0, 0.0, 0.0);
 
-        let a = r.direction.dot(&r.direction);
-        let b = 2.0 * r.direction.dot(&sphere_to_ray);
-        let c = sphere_to_ray.dot(&sphere_to_ray) - 1.0;
+        let a = r.direction.dot(r.direction);
+        let b = 2.0 * r.direction.dot(sphere_to_ray);
+        let c = sphere_to_ray.dot(sphere_to_ray) - 1.0;
 
         let discriminant = b.powi(2) - 4.0 * a * c;
 
@@ -51,12 +51,35 @@ impl Intersection {
         Intersection { t, object }
     }
 
-    fn intersections(i1: Intersection, i2: Intersection) -> Vec<Intersection> {
-        vec![i1, i2]
+    fn intersections(xs: Vec<Intersection>) -> Vec<Intersection> {
+        let mut intersections = Vec::new();
+        for i in xs {
+            intersections.push(i);
+        }
+        intersections
     }
 
     fn hit(xs: &Vec<Intersection>) -> Option<&Intersection> {
-        xs.iter().find(|i| i.t.is_sign_positive())
+        let mut hit: Option<&Intersection> = None;
+
+        for i in xs {
+            if !i.t.is_sign_positive() {
+                continue;
+            }
+
+            // TODO: Refactor this.
+            // maybe an iterator or something.
+            match hit {
+                Some(h) => {
+                    if i.t < h.t {
+                        hit = Some(i)
+                    }
+                }
+                None => hit = Some(i),
+            }
+        }
+
+        hit
     }
 }
 
@@ -152,7 +175,7 @@ mod tests {
         let s = Sphere;
         let i1 = Intersection::new(1.0, s);
         let i2 = Intersection::new(2.0, s);
-        let xs = Intersection::intersections(i1, i2);
+        let xs = Intersection::intersections(vec![i1, i2]);
 
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, 1.0);
@@ -175,9 +198,9 @@ mod tests {
         let s = Sphere;
         let i1 = Intersection::new(1.0, s);
         let i2 = Intersection::new(2.0, s);
-        let xs = Intersection::intersections(i2, i1);
+        let xs = Intersection::intersections(vec![i2, i1]);
 
-        let i = Intersection::hit(xs);
+        let i = Intersection::hit(&xs);
 
         assert_eq!(i, Some(&i1));
     }
@@ -185,11 +208,11 @@ mod tests {
     #[test]
     fn the_hit_when_some_intersections_have_negative_t() {
         let s = Sphere;
-        let i1 = Intersection::new(-2.0, s);
-        let i2 = Intersection::new(-1.0, s);
-        let xs = Intersection::intersections(i2, i1);
+        let i1 = Intersection::new(-1.0, s);
+        let i2 = Intersection::new(1.0, s);
+        let xs = Intersection::intersections(vec![i2, i1]);
 
-        let i = Intersection::hit(xs);
+        let i = Intersection::hit(&xs);
 
         assert_eq!(i, Some(&i2));
     }
@@ -199,10 +222,24 @@ mod tests {
         let s = Sphere;
         let i1 = Intersection::new(-2.0, s);
         let i2 = Intersection::new(-1.0, s);
-        let xs = Intersection::intersections(i2, i2);
+        let xs = Intersection::intersections(vec![i2, i1]);
 
-        let i = Intersection::hit(xs);
+        let i = Intersection::hit(&xs);
 
         assert_eq!(i, None);
+    }
+
+    #[test]
+    fn the_hit_is_always_the_lowest_non_negative_intersection() {
+        let s = Sphere;
+        let i1 = Intersection::new(5.0, s);
+        let i2 = Intersection::new(7.0, s);
+        let i3 = Intersection::new(-3.0, s);
+        let i4 = Intersection::new(2.0, s);
+        let xs = Intersection::intersections(vec![i1, i2, i3, i4]);
+
+        let i = Intersection::hit(&xs);
+
+        assert_eq!(i, Some(&i4));
     }
 }
