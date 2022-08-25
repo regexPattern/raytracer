@@ -15,9 +15,10 @@ fn main() {
 
     let mut canvas = Canvas::new(canvas_pixels, canvas_pixels);
     let color = Color::new(1.0, 0.0, 0.0);
-    let mut shape = Sphere::new();
-    shape.transform = transformation::rotation_z(std::f64::consts::FRAC_PI_4)
+
+    let sphere_transformation = transformation::rotation_z(std::f64::consts::FRAC_PI_4)
         * transformation::scaling(1.0, 0.5, 1.0);
+    let sphere = Sphere::from(sphere_transformation);
 
     for y in 0..canvas_pixels {
         let world_y = half - pixel_size * y as f64;
@@ -28,7 +29,7 @@ fn main() {
             let position = Tuple::point(world_x, world_y, wall_z);
 
             let ray = Ray::new(ray_origin, (position - ray_origin).normalize());
-            let xs = ray.intersect(shape);
+            let xs = ray.intersect(sphere);
 
             if Intersection::hit(&xs).is_some() {
                 canvas.write_pixel(x, y, color).unwrap();

@@ -16,15 +16,9 @@ impl<const M: usize, const N: usize> From<[[f64; N]; M]> for Matrix<M, N> {
     }
 }
 
-impl Default for Matrix<4, 4> {
-    fn default() -> Self {
-        Matrix([[0.0; 4]; 4]).identity()
-    }
-}
-
 impl<const N: usize> Matrix<N, N> {
     pub fn identity(&self) -> Self {
-        let mut identity = Matrix([[0.0; N]; N]);
+        let mut identity = Matrix::from([[0.0; N]; N]);
         for n in 0..N {
             identity[n][n] = 1.0;
         }
@@ -32,7 +26,7 @@ impl<const N: usize> Matrix<N, N> {
     }
 
     pub fn transpose(self) -> Self {
-        let mut transposed = Matrix([[0.0; N]; N]);
+        let mut transposed = Matrix::from([[0.0; N]; N]);
         for col in 0..N {
             for row in 0..N {
                 transposed[col][row] = self.0[row][col];
@@ -133,7 +127,7 @@ impl Matrix<3, 3> {
     }
 
     fn submatrix(&self, removed_row: usize, removed_col: usize) -> Matrix<2, 2> {
-        let mut submatrix = Matrix([[0.0; 2]; 2]);
+        let mut submatrix = Matrix::from([[0.0; 2]; 2]);
         let mut skipped_rows = 0;
 
         for row in 0..2 {
@@ -566,20 +560,5 @@ mod tests {
         let product = m1 * m2;
 
         assert_eq!(product * m2.inverse(), m1);
-    }
-
-    #[test]
-    fn default_matrix_is_the_4x4_identity_matrix() {
-        let m = Matrix::default();
-
-        assert_eq!(
-            m,
-            Matrix::from([
-                [1.0, 0.0, 0.0, 0.0],
-                [0.0, 1.0, 0.0, 0.0],
-                [0.0, 0.0, 1.0, 0.0],
-                [0.0, 0.0, 0.0, 1.0],
-            ])
-        );
     }
 }

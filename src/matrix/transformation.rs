@@ -97,7 +97,7 @@ impl Matrix<4, 4> {
 
 #[cfg(test)]
 mod tests {
-    use crate::matrix::Matrix;
+    use crate::matrix::{self, Matrix};
     use crate::tuple::Tuple;
 
     #[test]
@@ -294,27 +294,27 @@ mod tests {
 
     #[test]
     fn translation_identity_with_fluid_api_returns_translation_matrix() {
-        let translation = Matrix([[0.0; 4]; 4]).identity().translate(1.0, 1.0, 1.0);
+        let translation = matrix::MATRIX_4X4.identity().translate(1.0, 1.0, 1.0);
 
         assert_eq!(translation, super::translation(1.0, 1.0, 1.0));
     }
 
     #[test]
     fn scaling_identity_with_fluid_api_returns_scaling_matrix() {
-        let scaling = Matrix([[0.0; 4]; 4]).identity().scale(1.0, 1.0, 1.0);
+        let scaling = matrix::MATRIX_4X4.identity().scale(1.0, 1.0, 1.0);
 
         assert_eq!(scaling, super::scaling(1.0, 1.0, 1.0));
     }
 
     #[test]
     fn rotating_identity_with_fluid_api_returns_rotation_matrix() {
-        let rotation_x = Matrix([[0.0; 4]; 4])
+        let rotation_x = matrix::MATRIX_4X4
             .identity()
             .rotate_x(std::f64::consts::FRAC_PI_2);
-        let rotation_y = Matrix([[0.0; 4]; 4])
+        let rotation_y = matrix::MATRIX_4X4
             .identity()
             .rotate_y(std::f64::consts::FRAC_PI_2);
-        let rotation_z = Matrix([[0.0; 4]; 4])
+        let rotation_z = matrix::MATRIX_4X4
             .identity()
             .rotate_z(std::f64::consts::FRAC_PI_2);
 
