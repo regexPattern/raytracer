@@ -16,11 +16,13 @@ fn main() {
     for _ in 0..12 {
         let Tuple { x, z, .. } = point * radius;
 
-        canvas.write_pixel(
-            (x + center) as u32,
-            (z + center) as u32,
-            Color::new(1.0, 1.0, 1.0),
-        );
+        canvas
+            .write_pixel(
+                (x + center) as u32,
+                (z + center) as u32,
+                Color::new(1.0, 1.0, 1.0),
+            )
+            .unwrap();
 
         point = rotate_y * point;
     }

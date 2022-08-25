@@ -10,8 +10,20 @@ pub use transformations::Transformation;
 #[derive(Copy, Clone, Debug)]
 pub struct Matrix<const M: usize, const N: usize>([[f64; N]; M]);
 
+impl<const M: usize, const N: usize> From<[[f64; N]; M]> for Matrix<M, N> {
+    fn from(array: [[f64; N]; M]) -> Matrix<M, N> {
+        Matrix(array)
+    }
+}
+
+impl Default for Matrix<4, 4> {
+    fn default() -> Matrix<4, 4> {
+        Matrix([[0.0; 4]; 4]).identity()
+    }
+}
+
 impl<const N: usize> Matrix<N, N> {
-    fn identity(&self) -> Matrix<N, N> {
+    pub fn identity(&self) -> Matrix<N, N> {
         let mut identity = Matrix([[0.0; N]; N]);
         for n in 0..N {
             identity[n][n] = 1.0;
@@ -164,7 +176,7 @@ impl Matrix<4, 4> {
         determinant
     }
 
-    fn inverse(&self) -> Matrix<4, 4> {
+    pub fn inverse(&self) -> Matrix<4, 4> {
         let determinant = self.determinant();
         let mut cofactors = Matrix([[0.0; 4]; 4]);
 
@@ -546,5 +558,28 @@ mod tests {
         let product = m1 * m2;
 
         assert_eq!(product * m2.inverse(), m1);
+    }
+
+    #[test]
+    fn constructing_a_matrix_from_array() {
+        let m = Matrix::from([[-3.0, 5.0], [1.0, -2.0]]);
+
+        assert_eq!(m[0], [-3.0, 5.0]);
+        assert_eq!(m[1], [1.0, -2.0]);
+    }
+
+    #[test]
+    fn default_matrix_is_the_4x4_identity_matrix() {
+        let m = Matrix::default();
+
+        assert_eq!(
+            m,
+            Matrix([
+                [1.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ])
+        );
     }
 }
