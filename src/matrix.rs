@@ -1,6 +1,7 @@
 use std::ops::{Index, IndexMut, Mul};
 
 use crate::tuple::Tuple;
+use crate::utils;
 
 mod transformations;
 
@@ -47,7 +48,7 @@ impl<const M: usize, const N: usize> PartialEq for Matrix<M, N> {
     fn eq(&self, other: &Matrix<M, N>) -> bool {
         for row in 0..M {
             for col in 0..N {
-                if (self.0[row][col] - other.0[row][col]).abs() > 0.00001 {
+                if !utils::approximately_eq(self.0[row][col], other.0[row][col]) {
                     return false;
                 }
             }

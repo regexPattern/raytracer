@@ -14,7 +14,7 @@ fn main() {
     let radius = 3.0 / 8.0 * canvas.width as f64;
 
     for _ in 0..12 {
-        let Tuple { x, y, z, w } = point * radius;
+        let Tuple { x, z, .. } = point * radius;
 
         canvas.write_pixel(
             (x + center) as u32,
