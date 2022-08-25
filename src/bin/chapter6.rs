@@ -1,7 +1,9 @@
 use std::fs::File;
 
 use raytracer::canvas::{Canvas, Color};
-use raytracer::intersection::{Intersection, Material, PointLight, Ray, Sphere};
+use raytracer::lighting::{Intersection, Material, PointLight, Ray};
+use raytracer::matrix::transformation;
+use raytracer::shape::Sphere;
 use raytracer::tuple::Tuple;
 
 fn main() {
@@ -16,7 +18,9 @@ fn main() {
 
     let mut sphere_material = Material::default();
     sphere_material.color = Color::new(1.0, 0.2, 1.0);
-    let sphere = Sphere::from(sphere_material);
+    let sphere_transformation = transformation::rotation_z(std::f64::consts::FRAC_PI_4)
+        * transformation::scaling(1.0, 0.5, 1.0);
+    let sphere = Sphere::new(sphere_transformation, sphere_material);
 
     let light_position = Tuple::point(-10.0, 10.0, -10.0);
     let light_color = Color::new(1.0, 1.0, 1.0);
