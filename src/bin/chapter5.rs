@@ -15,7 +15,8 @@ fn main() {
     let half = wall_size / 2.0;
 
     let mut canvas = Canvas::new(canvas_pixels, canvas_pixels);
-    let color = Color::new(1.0, 0.0, 0.0);
+
+    let sphere_color = Color::new(1.0, 0.0, 0.0);
 
     let sphere_transformation = transformation::rotation_z(std::f64::consts::FRAC_PI_4)
         * transformation::scaling(1.0, 0.5, 1.0);
@@ -32,8 +33,8 @@ fn main() {
             let ray = Ray::new(ray_origin, (position - ray_origin).normalize());
             let xs = ray.intersect(sphere);
 
-            if Intersection::hit(&xs).is_some() {
-                canvas.write_pixel(x, y, color).unwrap();
+            if Intersection::hit(xs).is_some() {
+                canvas.write_pixel(x, y, sphere_color).unwrap();
             }
         }
     }

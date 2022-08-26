@@ -18,9 +18,9 @@ impl Ray {
     pub fn intersect(self, shape: Sphere) -> Vec<Intersection> {
         let ray = self.transform(shape.transformation.inverse());
 
-        let shape_center = Tuple::point(0.0, 0.0, 0.0);
-        let sphere_to_ray = ray.origin - shape_center;
+        let sphere_to_ray = ray.origin - Tuple::point(0.0, 0.0, 0.0);
 
+        // https://gregorycernera.medium.com/an-explanation-of-basic-ray-tracing-313373c852ac#:~:text=If%20the%20discriminant%20is%20negative,will%20be%20two%20hit%20points.
         let a = ray.direction.dot(ray.direction);
         let b = 2.0 * ray.direction.dot(sphere_to_ray);
         let c = sphere_to_ray.dot(sphere_to_ray) - 1.0;
@@ -60,13 +60,9 @@ impl Intersection {
         Intersection { t, object }
     }
 
-    fn intersections(mut xs: Vec<Intersection>) -> Vec<Intersection> {
+    pub fn hit(mut xs: Vec<Intersection>) -> Option<Intersection> {
         xs.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
-        xs
-    }
-
-    pub fn hit(xs: &[Intersection]) -> Option<&Intersection> {
-        xs.iter().find(|i| i.t.is_sign_positive())
+        xs.into_iter().find(|i| i.t.is_sign_positive())
     }
 }
 
@@ -238,7 +234,7 @@ mod tests {
         let s = Sphere::default();
         let i1 = Intersection::new(1.0, s);
         let i2 = Intersection::new(2.0, s);
-        let xs = Intersection::intersections(vec![i1, i2]);
+        let xs = vec![i1, i2];
 
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, 1.0);
@@ -261,11 +257,11 @@ mod tests {
         let s = Sphere::default();
         let i1 = Intersection::new(1.0, s);
         let i2 = Intersection::new(2.0, s);
-        let xs = Intersection::intersections(vec![i2, i1]);
+        let xs = vec![i2, i1];
 
-        let i = Intersection::hit(&xs);
+        let i = Intersection::hit(xs);
 
-        assert_eq!(i, Some(&i1));
+        assert_eq!(i, Some(i1));
     }
 
     #[test]
@@ -273,11 +269,11 @@ mod tests {
         let s = Sphere::default();
         let i1 = Intersection::new(-1.0, s);
         let i2 = Intersection::new(1.0, s);
-        let xs = Intersection::intersections(vec![i2, i1]);
+        let xs = vec![i2, i1];
 
-        let i = Intersection::hit(&xs);
+        let i = Intersection::hit(xs);
 
-        assert_eq!(i, Some(&i2));
+        assert_eq!(i, Some(i2));
     }
 
     #[test]
@@ -285,9 +281,9 @@ mod tests {
         let s = Sphere::default();
         let i1 = Intersection::new(-2.0, s);
         let i2 = Intersection::new(-1.0, s);
-        let xs = Intersection::intersections(vec![i2, i1]);
+        let xs = vec![i2, i1];
 
-        let i = Intersection::hit(&xs);
+        let i = Intersection::hit(xs);
 
         assert_eq!(i, None);
     }
@@ -299,11 +295,11 @@ mod tests {
         let i2 = Intersection::new(7.0, s);
         let i3 = Intersection::new(-3.0, s);
         let i4 = Intersection::new(2.0, s);
-        let xs = Intersection::intersections(vec![i1, i2, i3, i4]);
+        let xs = vec![i1, i2, i3, i4];
 
-        let i = Intersection::hit(&xs);
+        let i = Intersection::hit(xs);
 
-        assert_eq!(i, Some(&i4));
+        assert_eq!(i, Some(i4));
     }
 
     #[test]
@@ -361,83 +357,6 @@ mod tests {
     }
 
     #[test]
-    fn the_normal_on_a_sphere_at_a_point_on_the_x_axis() {
-        let s = Sphere::default();
-
-        let n = s.normal_at(Tuple::point(1.0, 0.0, 0.0));
-
-        assert_eq!(n, Tuple::vector(1.0, 0.0, 0.0));
-    }
-
-    #[test]
-    fn the_normal_on_a_sphere_at_a_point_on_the_y_axis() {
-        let s = Sphere::default();
-
-        let n = s.normal_at(Tuple::point(0.0, 1.0, 0.0));
-
-        assert_eq!(n, Tuple::vector(0.0, 1.0, 0.0));
-    }
-
-    #[test]
-    fn the_normal_on_a_sphere_at_a_point_on_the_z_axis() {
-        let s = Sphere::default();
-
-        let n = s.normal_at(Tuple::point(0.0, 0.0, 1.0));
-
-        assert_eq!(n, Tuple::vector(0.0, 0.0, 1.0));
-    }
-
-    #[test]
-    fn the_normal_on_a_sphere_at_a_non_axial_point() {
-        let s = Sphere::default();
-
-        let n = s.normal_at(Tuple::point(
-            3_f64.sqrt() / 3.0,
-            3_f64.sqrt() / 3.0,
-            3_f64.sqrt() / 3.0,
-        ));
-
-        assert_eq!(
-            n,
-            Tuple::vector(3_f64.sqrt() / 3.0, 3_f64.sqrt() / 3.0, 3_f64.sqrt() / 3.0)
-        );
-    }
-
-    #[test]
-    fn the_normal_is_a_normalized_vector() {
-        let s = Sphere::default();
-
-        let n = s.normal_at(Tuple::point(
-            3_f64.sqrt() / 3.0,
-            3_f64.sqrt() / 3.0,
-            3_f64.sqrt() / 3.0,
-        ));
-
-        assert_eq!(n, n.normalize());
-    }
-
-    #[test]
-    fn computing_the_normal_on_a_translated_sphere() {
-        let mut s = Sphere::default();
-        s.transformation = transformation::translation(0.0, 1.0, 0.0);
-
-        let n = s.normal_at(Tuple::point(0.0, 1.70711, -0.70711));
-
-        assert_eq!(n, Tuple::vector(0.0, 0.70711, -0.70711));
-    }
-
-    #[test]
-    fn computing_the_normal_on_a_transformed_sphere() {
-        let mut s = Sphere::default();
-        s.transformation = transformation::scaling(1.0, 0.5, 1.0)
-            * transformation::rotation_z(std::f64::consts::PI / 5.0);
-
-        let n = s.normal_at(Tuple::point(0.0, 2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0));
-
-        assert_eq!(n, Tuple::vector(0.0, 0.97014, -0.24254));
-    }
-
-    #[test]
     fn a_point_light_has_a_position_and_intensity() {
         let intensity = Color::new(1.0, 1.0, 1.0);
         let position = Tuple::point(0.0, 0.0, 0.0);
@@ -448,7 +367,6 @@ mod tests {
         assert_eq!(light.intensity, intensity);
     }
 
-    // MATERIAL TESTS
     #[test]
     fn the_default_material() {
         let m = Material::default();

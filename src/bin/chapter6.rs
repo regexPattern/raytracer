@@ -37,7 +37,7 @@ fn main() {
             let ray = Ray::new(ray_origin, (position - ray_origin).normalize());
             let xs = ray.intersect(sphere);
 
-            if let Some(hit) = Intersection::hit(&xs) {
+            if let Some(hit) = Intersection::hit(xs) {
                 let point = ray.position(hit.t);
                 let normal = sphere.normal_at(point);
                 let eye = -ray.direction;

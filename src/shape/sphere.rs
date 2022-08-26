@@ -38,10 +38,8 @@ impl Sphere {
     }
 
     pub fn normal_at(self, world_point: Tuple) -> Tuple {
-        let shape_center = Tuple::point(0.0, 0.0, 0.0);
-
         let object_point = self.transformation.inverse() * world_point;
-        let object_normal = object_point - shape_center;
+        let object_normal = object_point - Tuple::point(0.0, 0.0, 0.0);
         let mut world_normal = self.transformation.inverse().transpose() * object_normal;
         world_normal.w = 0.0;
 
@@ -93,5 +91,82 @@ mod tests {
         s.material = m;
 
         assert_eq!(s.material, m);
+    }
+
+    #[test]
+    fn the_normal_on_a_sphere_at_a_point_on_the_x_axis() {
+        let s = Sphere::default();
+
+        let n = s.normal_at(Tuple::point(1.0, 0.0, 0.0));
+
+        assert_eq!(n, Tuple::vector(1.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn the_normal_on_a_sphere_at_a_point_on_the_y_axis() {
+        let s = Sphere::default();
+
+        let n = s.normal_at(Tuple::point(0.0, 1.0, 0.0));
+
+        assert_eq!(n, Tuple::vector(0.0, 1.0, 0.0));
+    }
+
+    #[test]
+    fn the_normal_on_a_sphere_at_a_point_on_the_z_axis() {
+        let s = Sphere::default();
+
+        let n = s.normal_at(Tuple::point(0.0, 0.0, 1.0));
+
+        assert_eq!(n, Tuple::vector(0.0, 0.0, 1.0));
+    }
+
+    #[test]
+    fn the_normal_on_a_sphere_at_a_non_axial_point() {
+        let s = Sphere::default();
+
+        let n = s.normal_at(Tuple::point(
+            3_f64.sqrt() / 3.0,
+            3_f64.sqrt() / 3.0,
+            3_f64.sqrt() / 3.0,
+        ));
+
+        assert_eq!(
+            n,
+            Tuple::vector(3_f64.sqrt() / 3.0, 3_f64.sqrt() / 3.0, 3_f64.sqrt() / 3.0)
+        );
+    }
+
+    #[test]
+    fn the_normal_is_a_normalized_vector() {
+        let s = Sphere::default();
+
+        let n = s.normal_at(Tuple::point(
+            3_f64.sqrt() / 3.0,
+            3_f64.sqrt() / 3.0,
+            3_f64.sqrt() / 3.0,
+        ));
+
+        assert_eq!(n, n.normalize());
+    }
+
+    #[test]
+    fn computing_the_normal_on_a_translated_sphere() {
+        let mut s = Sphere::default();
+        s.transformation = transformation::translation(0.0, 1.0, 0.0);
+
+        let n = s.normal_at(Tuple::point(0.0, 1.70711, -0.70711));
+
+        assert_eq!(n, Tuple::vector(0.0, 0.70711, -0.70711));
+    }
+
+    #[test]
+    fn computing_the_normal_on_a_transformed_sphere() {
+        let mut s = Sphere::default();
+        s.transformation = transformation::scaling(1.0, 0.5, 1.0)
+            * transformation::rotation_z(std::f64::consts::PI / 5.0);
+
+        let n = s.normal_at(Tuple::point(0.0, 2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0));
+
+        assert_eq!(n, Tuple::vector(0.0, 0.97014, -0.24254));
     }
 }

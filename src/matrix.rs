@@ -561,4 +561,9 @@ mod tests {
 
         assert_eq!(product * m2.inverse(), m1);
     }
+    /*
+    #[test]
+    fn fail() {
+        assert!(false);
+    } */
 }
