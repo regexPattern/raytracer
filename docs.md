@@ -72,7 +72,7 @@
   - https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:quadratic-functions-equations/x2f8bb11595b61c86:quadratic-formula-a1/a/discriminant-review
   - https://gregorycernera.medium.com/an-explanation-of-basic-ray-tracing-313373c852ac#:~:text=If%20the%20discriminant%20is%20negative,will%20be%20two%20hit%20points.
 
-## Transforming Rays and Spheres
+### Transforming Rays and Spheres
 
 Basicamente lo que nos tenemos que plantear para transformar las esferas, es
 mas bien transformar los rayos que impactan en estas esferas. Esto porque
@@ -81,7 +81,7 @@ ubicada en el centro y tiene radio 1 siempre. Para aplicar al rayo el efecto
 que se le aplica a la esfera, debemos utilizar la inversa de esta
 transformacion de la esfera pero sobre el rayo.
 
-## Phong's Reflection Model
+### Phong's Reflection Model
 
 Solamente necesitamos cuatro vectores para simular sombras (todos salientes
 desde el punto en cuestion:
@@ -99,3 +99,16 @@ cuestion como la normal a coordenadas del "object space".
 
 > NOTA: Parece ser que para que dos objetos independientes interaccionen
 > necesitamos hacerlo a traves del "world space".
+
+### Resumen Intersections
+
+1. Se lanza un rayo y se identifica si esta ha intersectado con la esfera o no.
+   Para esto tenemos que convertir las coordenadas de ambos a world space.
+2. Si tenemos un hit, entonces producimos un color. Para esto vamos a usar el
+   Phong's Reflection Model, por lo que vamos a necesitar el vector desde la
+   camara hasta el punto de hit, la normal en ese punto de hit, y el vector
+   desde la fuente de luz hasta ese punto de hit.
+3. Luego cada material toma en cuenta estos tres vectores para producir el
+   color especifico de este mismo en ese punto.
+4. Coloreamos la posicion en la que hay hit (la coloreamos en canvas space) con
+   el color dado.

@@ -31,7 +31,7 @@ fn main() {
             let position = Tuple::point(world_x, world_y, wall_z);
 
             let ray = Ray::new(ray_origin, (position - ray_origin).normalize());
-            let xs = ray.intersect(sphere);
+            let xs = sphere.intersect(ray);
 
             if Intersection::hit(xs).is_some() {
                 canvas.write_pixel(x, y, sphere_color).unwrap();
