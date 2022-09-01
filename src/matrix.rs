@@ -183,10 +183,6 @@ impl Matrix<4, 4> {
         cofactors.transpose()
     }
 
-    fn is_inversible(&self) -> bool {
-        self.determinant() != 0.0
-    }
-
     fn minor(&self, removed_row: usize, removed_col: usize) -> f64 {
         self.submatrix(removed_row, removed_col).determinant()
     }
@@ -489,29 +485,6 @@ mod tests {
         assert_eq!(m2.cofactor(0, 2), 210.0);
         assert_eq!(m2.cofactor(0, 3), 51.0);
         assert_eq!(m2.determinant(), -4071.0);
-    }
-
-    #[test]
-    fn testing_matrix_inversibility() {
-        let m1 = Matrix::from([
-            [6.0, 4.0, 4.0, 4.0],
-            [5.0, 5.0, 7.0, 6.0],
-            [4.0, -9.0, 3.0, -7.0],
-            [9.0, 1.0, 7.0, -6.0],
-        ]);
-
-        let m2 = Matrix::from([
-            [-4.0, 2.0, -2.0, -3.0],
-            [9.0, 6.0, 2.0, 6.0],
-            [0.0, -5.0, 1.0, -5.0],
-            [0.0, 0.0, 0.0, 0.0],
-        ]);
-
-        assert_eq!(m1.determinant(), -2120.0);
-        assert!(m1.is_inversible());
-
-        assert_eq!(m2.determinant(), 0.0);
-        assert!(!m2.is_inversible());
     }
 
     #[test]

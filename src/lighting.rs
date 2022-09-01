@@ -66,8 +66,8 @@ pub struct Material {
     shininess: f64,
 }
 
-impl Material {
-    pub fn new() -> Self {
+impl Default for Material {
+    fn default() -> Self {
         Self {
             color: Color::new(1.0, 1.0, 1.0),
             ambient: 0.1,
@@ -76,7 +76,9 @@ impl Material {
             shininess: 200.0,
         }
     }
+}
 
+impl Material {
     pub fn lighting(self, light: PointLight, point: Tuple, eyev: Tuple, normalv: Tuple) -> Color {
         let effective_color = self.color * light.intensity;
         let lightv = (light.position - point).normalize();
@@ -85,8 +87,8 @@ impl Material {
 
         let light_dot_normal = lightv.dot(normalv);
 
-        let mut diffuse;
-        let mut specular;
+        let diffuse;
+        let specular;
 
         if light_dot_normal < 0.0 {
             diffuse = Color::new(0.0, 0.0, 0.0);
@@ -139,7 +141,7 @@ mod tests {
 
     #[test]
     fn an_intersection_encapsulates_t_and_object() {
-        let s = Sphere::new();
+        let s = Sphere::default();
         let i = Intersection::new(3.5, s);
 
         assert_eq!(i.t, 3.5);
@@ -148,7 +150,7 @@ mod tests {
 
     #[test]
     fn aggregating_intersections() {
-        let s = Sphere::new();
+        let s = Sphere::default();
         let i1 = Intersection::new(1.0, s);
         let i2 = Intersection::new(2.0, s);
 
@@ -162,7 +164,7 @@ mod tests {
     #[test]
     fn intersect_sets_the_object_on_the_intersection() {
         let r = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
-        let s = Sphere::new();
+        let s = Sphere::default();
 
         let xs = s.intersect(r);
 
@@ -173,7 +175,7 @@ mod tests {
 
     #[test]
     fn the_hit_when_all_intersections_have_positive_t() {
-        let s = Sphere::new();
+        let s = Sphere::default();
         let i1 = Intersection::new(1.0, s);
         let i2 = Intersection::new(2.0, s);
         let xs = vec![i2, i1];
@@ -185,7 +187,7 @@ mod tests {
 
     #[test]
     fn the_hit_when_some_intersections_have_negative_t() {
-        let s = Sphere::new();
+        let s = Sphere::default();
         let i1 = Intersection::new(-1.0, s);
         let i2 = Intersection::new(1.0, s);
         let xs = vec![i2, i1];
@@ -197,7 +199,7 @@ mod tests {
 
     #[test]
     fn the_hit_when_all_intersections_have_negative_t() {
-        let s = Sphere::new();
+        let s = Sphere::default();
         let i1 = Intersection::new(-2.0, s);
         let i2 = Intersection::new(-1.0, s);
         let xs = vec![i2, i1];
@@ -209,7 +211,7 @@ mod tests {
 
     #[test]
     fn the_hit_is_always_the_lowest_nonnegative_intersection() {
-        let s = Sphere::new();
+        let s = Sphere::default();
         let i1 = Intersection::new(5.0, s);
         let i2 = Intersection::new(7.0, s);
         let i3 = Intersection::new(-3.0, s);
@@ -256,7 +258,7 @@ mod tests {
 
     #[test]
     fn the_default_material() {
-        let mut m = Material::new();
+        let m = Material::default();
 
         assert_eq!(m.color, Color::new(1.0, 1.0, 1.0));
         assert_eq!(m.ambient, 0.1);
@@ -267,7 +269,7 @@ mod tests {
 
     #[test]
     fn lighting_with_the_eye_between_the_light_and_the_surface() {
-        let m = Material::new();
+        let m = Material::default();
         let position = Tuple::point(0.0, 0.0, 0.0);
 
         let eyev = Tuple::vector(0.0, 0.0, -1.0);
@@ -281,7 +283,7 @@ mod tests {
 
     #[test]
     fn lighting_with_the_eye_between_the_light_and_the_surface_eye_offset_45_degrees() {
-        let m = Material::new();
+        let m = Material::default();
         let position = Tuple::point(0.0, 0.0, 0.0);
 
         let eyev = Tuple::vector(0.0, 2_f64.sqrt() / 2.0, 2_f64.sqrt() / 2.0);
@@ -295,7 +297,7 @@ mod tests {
 
     #[test]
     fn lighting_with_the_eye_opposite_surface_light_offset_45_degrees() {
-        let m = Material::new();
+        let m = Material::default();
         let position = Tuple::point(0.0, 0.0, 0.0);
 
         let eyev = Tuple::vector(0.0, 0.0, -1.0);
@@ -309,7 +311,7 @@ mod tests {
 
     #[test]
     fn lighting_with_the_eye_in_the_path_of_the_reflection_vector() {
-        let m = Material::new();
+        let m = Material::default();
         let position = Tuple::point(0.0, 0.0, 0.0);
 
         let eyev = Tuple::vector(0.0, -2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0);
@@ -323,7 +325,7 @@ mod tests {
 
     #[test]
     fn lighting_with_light_behind_the_surface() {
-        let m = Material::new();
+        let m = Material::default();
         let position = Tuple::point(0.0, 0.0, 0.0);
 
         let eyev = Tuple::vector(0.0, 0.0, -1.0);

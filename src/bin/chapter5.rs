@@ -10,7 +10,7 @@ fn main() {
     let mut canvas = Canvas::new(canvas_pixels, canvas_pixels);
     let color = Color::new(1.0, 0.0, 0.0);
 
-    let shape = Sphere::new();
+    let shape = Sphere::default();
 
     let ray_origin = Tuple::point(0.0, 0.0, -5.0);
 

@@ -19,9 +19,8 @@ fn main() {
     let pixel_size = wall_size / canvas_pixels as f64;
     let half = wall_size / 2.0;
 
-    let mut shape = Sphere::new();
-    // I cant' figure out how to translate a sphere with the right proportions.
-    shape.transform = transformation::translation(25.0 * pixel_size, 0.0, 0.0);
+    let shape_transform = transformation::translation(25.0 * pixel_size, 0.0, 0.0);
+    let shape = Sphere::from(shape_transform);
 
     for y in 0..canvas_pixels {
         let world_y = half - pixel_size * y as f64;
