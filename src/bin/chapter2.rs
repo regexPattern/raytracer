@@ -38,7 +38,7 @@ fn main() {
         .write_pixel(
             p.position.x as u32,
             canvas.height - p.position.y as u32,
-            Color::new(1.0, 1.0, 1.0),
+            Color::white(),
         )
         .is_ok()
     {

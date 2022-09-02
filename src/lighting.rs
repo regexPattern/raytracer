@@ -103,7 +103,7 @@ pub struct Material {
 impl Default for Material {
     fn default() -> Self {
         Self {
-            color: Color::new(1.0, 1.0, 1.0),
+            color: Color::white(),
             ambient: 0.1,
             diffuse: 0.9,
             specular: 0.9,
@@ -121,21 +121,16 @@ impl Material {
 
         let light_dot_normal = lightv.dot(normalv);
 
-        let diffuse;
-        let specular;
+        let mut diffuse = Color::black();
+        let mut specular = Color::black();
 
-        if light_dot_normal < 0.0 {
-            diffuse = Color::new(0.0, 0.0, 0.0);
-            specular = Color::new(0.0, 0.0, 0.0);
-        } else {
+        if light_dot_normal >= 0.0 {
             diffuse = effective_color * self.diffuse * light_dot_normal;
 
             let reflectv = -lightv.reflect(normalv);
             let reflect_dot_eye = reflectv.dot(eyev);
 
-            if reflect_dot_eye <= 0.0 {
-                specular = Color::new(0.0, 0.0, 0.0);
-            } else {
+            if reflect_dot_eye > 0.0 {
                 let factor = reflect_dot_eye.powf(self.shininess);
                 specular = light.intensity * self.specular * factor;
             }
@@ -281,7 +276,7 @@ mod tests {
 
     #[test]
     fn a_point_light_has_a_position_and_intensity() {
-        let intensity = Color::new(1.0, 1.0, 1.0);
+        let intensity = Color::white();
         let position = Tuple::point(0.0, 0.0, 0.0);
 
         let light = PointLight::new(position, intensity);
@@ -294,7 +289,7 @@ mod tests {
     fn the_default_material() {
         let m = Material::default();
 
-        assert_eq!(m.color, Color::new(1.0, 1.0, 1.0));
+        assert_eq!(m.color, Color::white());
         assert_eq!(m.ambient, 0.1);
         assert_eq!(m.diffuse, 0.9);
         assert_eq!(m.specular, 0.9);
@@ -308,7 +303,7 @@ mod tests {
 
         let eyev = Tuple::vector(0.0, 0.0, -1.0);
         let normalv = Tuple::vector(0.0, 0.0, -1.0);
-        let light = PointLight::new(Tuple::point(0.0, 0.0, -10.0), Color::new(1.0, 1.0, 1.0));
+        let light = PointLight::new(Tuple::point(0.0, 0.0, -10.0), Color::white());
 
         let result = m.lighting(light, position, eyev, normalv);
 
@@ -322,11 +317,11 @@ mod tests {
 
         let eyev = Tuple::vector(0.0, 2_f64.sqrt() / 2.0, 2_f64.sqrt() / 2.0);
         let normalv = Tuple::vector(0.0, 0.0, -1.0);
-        let light = PointLight::new(Tuple::point(0.0, 0.0, -10.0), Color::new(1.0, 1.0, 1.0));
+        let light = PointLight::new(Tuple::point(0.0, 0.0, -10.0), Color::white());
 
         let result = m.lighting(light, position, eyev, normalv);
 
-        assert_eq!(result, Color::new(1.0, 1.0, 1.0));
+        assert_eq!(result, Color::white());
     }
 
     #[test]
@@ -336,7 +331,7 @@ mod tests {
 
         let eyev = Tuple::vector(0.0, 0.0, -1.0);
         let normalv = Tuple::vector(0.0, 0.0, -1.0);
-        let light = PointLight::new(Tuple::point(0.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
+        let light = PointLight::new(Tuple::point(0.0, 10.0, -10.0), Color::white());
 
         let result = m.lighting(light, position, eyev, normalv);
 
@@ -350,7 +345,7 @@ mod tests {
 
         let eyev = Tuple::vector(0.0, -2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0);
         let normalv = Tuple::vector(0.0, 0.0, -1.0);
-        let light = PointLight::new(Tuple::point(0.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
+        let light = PointLight::new(Tuple::point(0.0, 10.0, -10.0), Color::white());
 
         let result = m.lighting(light, position, eyev, normalv);
 
@@ -364,7 +359,7 @@ mod tests {
 
         let eyev = Tuple::vector(0.0, 0.0, -1.0);
         let normalv = Tuple::vector(0.0, 0.0, -1.0);
-        let light = PointLight::new(Tuple::point(0.0, 0.0, 10.0), Color::new(1.0, 1.0, 1.0));
+        let light = PointLight::new(Tuple::point(0.0, 0.0, 10.0), Color::white());
 
         let result = m.lighting(light, position, eyev, normalv);
 

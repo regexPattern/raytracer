@@ -23,6 +23,14 @@ impl Color {
             x => (x * 255.0) as u8,
         }
     }
+
+    pub fn black() -> Self {
+        Self::new(0.0, 0.0, 0.0)
+    }
+
+    pub fn white() -> Self {
+        Self::new(1.0, 1.0, 1.0)
+    }
 }
 
 impl Add for Color {
@@ -124,7 +132,7 @@ impl Canvas {
 
         let color = match self.pixels.get(&coordinate) {
             Some(color) => color.to_owned(),
-            None => Color::new(0.0, 0.0, 0.0),
+            None => Color::black(),
         };
 
         Some(color)
@@ -223,7 +231,7 @@ mod tests {
         assert_eq!(c.width, 10);
         assert_eq!(c.height, 20);
 
-        assert_eq!(c.pixel_at(5, 5), Some(Color::new(0.0, 0.0, 0.0)));
+        assert_eq!(c.pixel_at(5, 5), Some(Color::black()));
     }
 
     #[test]
@@ -239,7 +247,7 @@ mod tests {
     #[test]
     fn writing_pixel_outside_canvas() {
         let mut canvas = Canvas::new(10, 20);
-        let color = Color::new(0.0, 0.0, 0.0);
+        let color = Color::black();
 
         assert_eq!(
             canvas.write_pixel(100, 100, color),
@@ -385,5 +393,15 @@ mod tests {
         let mut reader = BufReader::new(file);
 
         assert_eq!(reader.fill_buf().unwrap().last(), Some(&b'\n'));
+    }
+
+    #[test]
+    fn getting_black_color() {
+        assert_eq!(Color::black(), Color::new(0.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn getting_white_color() {
+        assert_eq!(Color::white(), Color::new(1.0, 1.0, 1.0));
     }
 }

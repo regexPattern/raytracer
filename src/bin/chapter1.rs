@@ -1,6 +1,7 @@
-use raytracer::tuple::Tuple;
 use std::thread;
 use std::time::Duration;
+
+use raytracer::tuple::Tuple;
 
 struct Projectile {
     position: Tuple,
