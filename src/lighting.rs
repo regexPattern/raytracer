@@ -33,8 +33,7 @@ pub struct Intersection {
 
 #[derive(Copy, Clone, Debug)]
 pub struct IntersectionComputation {
-    t: f64,
-    pub object: Sphere,
+    pub intersection: Intersection,
     pub point: Tuple,
     pub eyev: Tuple,
     pub normalv: Tuple,
@@ -52,11 +51,9 @@ impl Intersection {
     }
 
     pub fn prepare_computations(self, ray: Ray) -> IntersectionComputation {
-        let t = self.t;
-        let object = self.object;
-        let point = ray.position(t);
+        let point = ray.position(self.t);
         let eyev = -ray.direction;
-        let mut normalv = object.normal_at(point);
+        let mut normalv = self.object.normal_at(point);
 
         let inside = if normalv.dot(eyev) < 0.0 {
             normalv = -normalv;
@@ -66,8 +63,7 @@ impl Intersection {
         };
 
         IntersectionComputation {
-            t,
-            object,
+            intersection: self,
             point,
             eyev,
             normalv,
@@ -78,8 +74,8 @@ impl Intersection {
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct PointLight {
-    position: Tuple,
-    intensity: Color,
+    pub position: Tuple,
+    pub intensity: Color,
 }
 
 impl PointLight {
@@ -88,55 +84,6 @@ impl PointLight {
             position,
             intensity,
         }
-    }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Material {
-    pub color: Color,
-    pub ambient: f64,
-    pub diffuse: f64,
-    pub specular: f64,
-    pub shininess: f64,
-}
-
-impl Default for Material {
-    fn default() -> Self {
-        Self {
-            color: Color::white(),
-            ambient: 0.1,
-            diffuse: 0.9,
-            specular: 0.9,
-            shininess: 200.0,
-        }
-    }
-}
-
-impl Material {
-    pub fn lighting(self, light: PointLight, point: Tuple, eyev: Tuple, normalv: Tuple) -> Color {
-        let effective_color = self.color * light.intensity;
-        let lightv = (light.position - point).normalize();
-
-        let ambient = effective_color * self.ambient;
-
-        let light_dot_normal = lightv.dot(normalv);
-
-        let mut diffuse = Color::black();
-        let mut specular = Color::black();
-
-        if light_dot_normal >= 0.0 {
-            diffuse = effective_color * self.diffuse * light_dot_normal;
-
-            let reflectv = -lightv.reflect(normalv);
-            let reflect_dot_eye = reflectv.dot(eyev);
-
-            if reflect_dot_eye > 0.0 {
-                let factor = reflect_dot_eye.powf(self.shininess);
-                specular = light.intensity * self.specular * factor;
-            }
-        }
-
-        ambient + diffuse + specular
     }
 }
 
@@ -286,88 +233,6 @@ mod tests {
     }
 
     #[test]
-    fn the_default_material() {
-        let m = Material::default();
-
-        assert_eq!(m.color, Color::white());
-        assert_eq!(m.ambient, 0.1);
-        assert_eq!(m.diffuse, 0.9);
-        assert_eq!(m.specular, 0.9);
-        assert_eq!(m.shininess, 200.0);
-    }
-
-    #[test]
-    fn lighting_with_the_eye_between_the_light_and_the_surface() {
-        let m = Material::default();
-        let position = Tuple::point(0.0, 0.0, 0.0);
-
-        let eyev = Tuple::vector(0.0, 0.0, -1.0);
-        let normalv = Tuple::vector(0.0, 0.0, -1.0);
-        let light = PointLight::new(Tuple::point(0.0, 0.0, -10.0), Color::white());
-
-        let result = m.lighting(light, position, eyev, normalv);
-
-        assert_eq!(result, Color::new(1.9, 1.9, 1.9));
-    }
-
-    #[test]
-    fn lighting_with_the_eye_between_the_light_and_the_surface_eye_offset_45_degrees() {
-        let m = Material::default();
-        let position = Tuple::point(0.0, 0.0, 0.0);
-
-        let eyev = Tuple::vector(0.0, 2_f64.sqrt() / 2.0, 2_f64.sqrt() / 2.0);
-        let normalv = Tuple::vector(0.0, 0.0, -1.0);
-        let light = PointLight::new(Tuple::point(0.0, 0.0, -10.0), Color::white());
-
-        let result = m.lighting(light, position, eyev, normalv);
-
-        assert_eq!(result, Color::white());
-    }
-
-    #[test]
-    fn lighting_with_the_eye_opposite_surface_light_offset_45_degrees() {
-        let m = Material::default();
-        let position = Tuple::point(0.0, 0.0, 0.0);
-
-        let eyev = Tuple::vector(0.0, 0.0, -1.0);
-        let normalv = Tuple::vector(0.0, 0.0, -1.0);
-        let light = PointLight::new(Tuple::point(0.0, 10.0, -10.0), Color::white());
-
-        let result = m.lighting(light, position, eyev, normalv);
-
-        assert_eq!(result, Color::new(0.7364, 0.7364, 0.7364));
-    }
-
-    #[test]
-    fn lighting_with_the_eye_in_the_path_of_the_reflection_vector() {
-        let m = Material::default();
-        let position = Tuple::point(0.0, 0.0, 0.0);
-
-        let eyev = Tuple::vector(0.0, -2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0);
-        let normalv = Tuple::vector(0.0, 0.0, -1.0);
-        let light = PointLight::new(Tuple::point(0.0, 10.0, -10.0), Color::white());
-
-        let result = m.lighting(light, position, eyev, normalv);
-
-        assert_eq!(result, Color::new(1.6364, 1.6364, 1.6364));
-    }
-
-    #[test]
-    fn lighting_with_light_behind_the_surface() {
-        let m = Material::default();
-        let position = Tuple::point(0.0, 0.0, 0.0);
-
-        let eyev = Tuple::vector(0.0, 0.0, -1.0);
-        let normalv = Tuple::vector(0.0, 0.0, -1.0);
-        let light = PointLight::new(Tuple::point(0.0, 0.0, 10.0), Color::white());
-
-        let result = m.lighting(light, position, eyev, normalv);
-
-        assert_eq!(result, Color::new(0.1, 0.1, 0.1));
-    }
-
-    #[test]
-    // TODO: Move structs to their own files.
     fn precomputing_the_state_of_an_intersection() {
         let r = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
         let shape = Sphere::default();
@@ -375,7 +240,7 @@ mod tests {
 
         let comps = i.prepare_computations(r);
 
-        assert_eq!(comps.object, i.object);
+        assert_eq!(comps.intersection.object, i.object);
         assert_eq!(comps.point, Tuple::point(0.0, 0.0, -1.0));
         assert_eq!(comps.eyev, Tuple::vector(0.0, 0.0, -1.0));
         assert_eq!(comps.normalv, Tuple::vector(0.0, 0.0, -1.0));

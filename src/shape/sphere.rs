@@ -1,4 +1,5 @@
-use crate::lighting::{Intersection, Material, Ray};
+use crate::lighting::{Intersection, Ray};
+use crate::material::Material;
 use crate::matrix::{Matrix, MATRIX_4X4};
 use crate::tuple::Tuple;
 

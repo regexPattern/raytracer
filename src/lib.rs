@@ -1,5 +1,6 @@
 pub mod canvas;
 pub mod lighting;
+pub mod material;
 pub mod matrix;
 pub mod shape;
 pub mod tuple;

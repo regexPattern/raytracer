@@ -1,5 +1,6 @@
 use crate::canvas::Color;
-use crate::lighting::{Intersection, IntersectionComputation, Material, PointLight, Ray};
+use crate::lighting::{Intersection, IntersectionComputation, PointLight, Ray};
+use crate::material::Material;
 use crate::matrix::transformation;
 use crate::shape::Sphere;
 use crate::tuple::Tuple;
@@ -55,6 +56,7 @@ impl World {
 
     fn shade_hit(&self, comps: IntersectionComputation) -> Color {
         comps
+            .intersection
             .object
             .material
             .lighting(self.light.unwrap(), comps.point, comps.eyev, comps.normalv)
@@ -72,11 +74,6 @@ impl World {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    use crate::lighting::Material;
-    use crate::matrix::transformation;
-    use crate::shape::Sphere;
-    use crate::tuple::Tuple;
 
     #[test]
     fn creating_a_world() {

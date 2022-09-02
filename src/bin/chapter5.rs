@@ -1,4 +1,4 @@
-se std::fs::File;
+use std::fs::File;
 
 use raytracer::canvas::{Canvas, Color};
 use raytracer::lighting::{Intersection, Ray};
