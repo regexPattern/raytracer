@@ -54,13 +54,11 @@ impl Intersection {
         let point = ray.position(self.t);
         let eyev = -ray.direction;
         let mut normalv = self.object.normal_at(point);
+        let inside = normalv.dot(eyev) < 0.0;
 
-        let inside = if normalv.dot(eyev) < 0.0 {
+        if inside {
             normalv = -normalv;
-            true
-        } else {
-            false
-        };
+        }
 
         IntersectionComputation {
             intersection: self,

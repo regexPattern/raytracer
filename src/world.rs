@@ -42,6 +42,7 @@ impl World {
     fn intersect(&self, ray: Ray) -> Vec<Intersection> {
         let mut intersections = Vec::new();
 
+        // TODO: Make this more idiomatic.
         for object in &self.objects {
             let xs = object.intersect(ray);
             for intersection in xs {
@@ -55,11 +56,13 @@ impl World {
     }
 
     fn shade_hit(&self, comps: IntersectionComputation) -> Color {
-        comps
-            .intersection
-            .object
-            .material
-            .lighting(self.light.unwrap(), comps.point, comps.eyev, comps.normalv)
+        comps.intersection.object.material.lighting(
+            // TODO: Handle this `unwrap`.
+            self.light.unwrap(),
+            comps.point,
+            comps.eyev,
+            comps.normalv,
+        )
     }
 
     fn color_at(&self, ray: Ray) -> Color {
@@ -153,18 +156,19 @@ mod tests {
 
     #[test]
     fn the_color_with_an_intersection_behind_the_ray() {
-        let w = World::default();
+        let mut w = World::default();
 
-        let mut outer = w.objects[0];
+        let outer = &mut w.objects[0];
         outer.material.ambient = 1.0;
 
-        let mut inner = w.objects[1];
+        let inner = &mut w.objects[1];
         inner.material.ambient = 1.0;
 
         let r = Ray::new(Tuple::point(0.0, 0.0, 0.75), Tuple::vector(0.0, 0.0, -1.0));
 
         let c = w.color_at(r);
 
-        // assert_eq!(c, inner.material.color);
+        let inner = w.objects[1];
+        assert_eq!(c, inner.material.color);
     }
 }
