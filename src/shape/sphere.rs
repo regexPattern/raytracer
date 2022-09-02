@@ -1,6 +1,7 @@
-use crate::lighting::{Intersection, Ray};
+use crate::intersection::Intersection;
 use crate::material::Material;
 use crate::matrix::{Matrix, MATRIX_4X4};
+use crate::ray::Ray;
 use crate::tuple::Tuple;
 
 #[derive(Copy, Clone, Debug, PartialEq)]

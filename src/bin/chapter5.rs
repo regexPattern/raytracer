@@ -1,7 +1,8 @@
 use std::fs::File;
 
 use raytracer::canvas::{Canvas, Color};
-use raytracer::lighting::{Intersection, Ray};
+use raytracer::intersection::Intersection;
+use raytracer::ray::Ray;
 use raytracer::shape::Sphere;
 use raytracer::tuple::Tuple;
 

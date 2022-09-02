@@ -1,7 +1,9 @@
 use crate::canvas::Color;
-use crate::lighting::{Intersection, IntersectionComputation, PointLight, Ray};
+use crate::intersection::{ComputedIntersection, Intersection};
+use crate::light::PointLight;
 use crate::material::Material;
 use crate::matrix::transformation;
+use crate::ray::Ray;
 use crate::shape::Sphere;
 use crate::tuple::Tuple;
 
@@ -14,11 +16,12 @@ impl Default for World {
     fn default() -> Self {
         let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::white());
 
-        let mut s1_material = Material::default();
-        s1_material.color = Color::new(0.8, 1.0, 0.6);
-        s1_material.diffuse = 0.7;
-        s1_material.specular = 0.2;
-
+        let s1_material = Material {
+            color: Color::new(0.8, 1.0, 0.6),
+            diffuse: 0.7,
+            specular: 0.2,
+            ..Material::default()
+        };
         let s1 = Sphere::from(s1_material);
 
         let s2_transform = transformation::scaling(0.5, 0.5, 0.5);
@@ -55,7 +58,7 @@ impl World {
         intersections
     }
 
-    fn shade_hit(&self, comps: IntersectionComputation) -> Color {
+    fn shade_hit(&self, comps: ComputedIntersection) -> Color {
         comps.intersection.object.material.lighting(
             // TODO: Handle this `unwrap`.
             self.light.unwrap(),

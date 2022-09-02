@@ -81,11 +81,7 @@ impl Mul<f64> for Color {
     type Output = Self;
 
     fn mul(self, rhs: f64) -> Self::Output {
-        Self::new(
-            self.red * rhs,
-            self.green * rhs,
-            self.blue * rhs,
-        )
+        Self::new(self.red * rhs, self.green * rhs, self.blue * rhs)
     }
 }
 

@@ -1,29 +1,6 @@
-use crate::canvas::Color;
-use crate::matrix::Matrix;
+use crate::ray::Ray;
 use crate::shape::Sphere;
 use crate::tuple::Tuple;
-
-#[derive(Copy, Clone, Debug)]
-pub struct Ray {
-    pub origin: Tuple,
-    pub direction: Tuple,
-}
-
-impl Ray {
-    pub fn new(origin: Tuple, direction: Tuple) -> Self {
-        Self { origin, direction }
-    }
-
-    pub fn position(self, t: f64) -> Tuple {
-        self.origin + self.direction * t
-    }
-
-    pub fn transform(self, m: Matrix<4, 4>) -> Self {
-        let origin = m * self.origin;
-        let direction = m * self.direction;
-        Self::new(origin, direction)
-    }
-}
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Intersection {
@@ -32,7 +9,7 @@ pub struct Intersection {
 }
 
 #[derive(Copy, Clone, Debug)]
-pub struct IntersectionComputation {
+pub struct ComputedIntersection {
     pub intersection: Intersection,
     pub point: Tuple,
     pub eyev: Tuple,
@@ -50,7 +27,7 @@ impl Intersection {
         xs.into_iter().find(|i| i.t.is_sign_positive())
     }
 
-    pub fn prepare_computations(self, ray: Ray) -> IntersectionComputation {
+    pub fn prepare_computations(self, ray: Ray) -> ComputedIntersection {
         let point = ray.position(self.t);
         let eyev = -ray.direction;
         let mut normalv = self.object.normal_at(point);
@@ -60,27 +37,12 @@ impl Intersection {
             normalv = -normalv;
         }
 
-        IntersectionComputation {
+        ComputedIntersection {
             intersection: self,
             point,
             eyev,
             normalv,
             inside,
-        }
-    }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub struct PointLight {
-    pub position: Tuple,
-    pub intensity: Color,
-}
-
-impl PointLight {
-    pub fn new(position: Tuple, intensity: Color) -> Self {
-        Self {
-            position,
-            intensity,
         }
     }
 }
@@ -91,27 +53,6 @@ mod tests {
 
     use crate::matrix::transformation;
     use crate::shape::Sphere;
-
-    #[test]
-    fn creating_and_querying_a_ray() {
-        let origin = Tuple::point(1.0, 2.0, 3.0);
-        let direction = Tuple::vector(4.0, 5.0, 6.0);
-
-        let r = Ray::new(origin, direction);
-
-        assert_eq!(r.origin, origin);
-        assert_eq!(r.direction, direction);
-    }
-
-    #[test]
-    fn computing_a_point_from_a_distance() {
-        let r = Ray::new(Tuple::point(2.0, 3.0, 4.0), Tuple::vector(1.0, 0.0, 0.0));
-
-        assert_eq!(r.position(0.0), Tuple::point(2.0, 3.0, 4.0));
-        assert_eq!(r.position(1.0), Tuple::point(3.0, 3.0, 4.0));
-        assert_eq!(r.position(-1.0), Tuple::point(1.0, 3.0, 4.0));
-        assert_eq!(r.position(2.5), Tuple::point(4.5, 3.0, 4.0));
-    }
 
     #[test]
     fn an_intersection_encapsulates_t_and_object() {
@@ -217,17 +158,6 @@ mod tests {
 
         assert_eq!(r2.origin, Tuple::point(2.0, 6.0, 12.0));
         assert_eq!(r2.direction, Tuple::vector(0.0, 3.0, 0.0));
-    }
-
-    #[test]
-    fn a_point_light_has_a_position_and_intensity() {
-        let intensity = Color::white();
-        let position = Tuple::point(0.0, 0.0, 0.0);
-
-        let light = PointLight::new(position, intensity);
-
-        assert_eq!(light.position, position);
-        assert_eq!(light.intensity, intensity);
     }
 
     #[test]

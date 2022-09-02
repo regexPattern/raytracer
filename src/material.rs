@@ -1,5 +1,5 @@
 use crate::canvas::Color;
-use crate::lighting::PointLight;
+use crate::light::PointLight;
 use crate::tuple::Tuple;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -13,17 +13,21 @@ pub struct Material {
 
 impl Default for Material {
     fn default() -> Self {
-        Self {
-            color: Color::white(),
-            ambient: 0.1,
-            diffuse: 0.9,
-            specular: 0.9,
-            shininess: 200.0,
-        }
+        Self::new(Color::white(), 0.1, 0.9, 0.9, 200.0)
     }
 }
 
 impl Material {
+    pub fn new(color: Color, ambient: f64, diffuse: f64, specular: f64, shininess: f64) -> Self {
+        Self {
+            color,
+            ambient,
+            diffuse,
+            specular,
+            shininess,
+        }
+    }
+
     pub fn lighting(self, light: PointLight, point: Tuple, eyev: Tuple, normalv: Tuple) -> Color {
         let effective_color = self.color * light.intensity;
         let lightv = (light.position - point).normalize();
