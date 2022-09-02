@@ -31,6 +31,16 @@ pub struct Intersection {
     pub object: Sphere,
 }
 
+#[derive(Copy, Clone, Debug)]
+pub struct IntersectionComputation {
+    t: f64,
+    pub object: Sphere,
+    pub point: Tuple,
+    pub eyev: Tuple,
+    pub normalv: Tuple,
+    inside: bool,
+}
+
 impl Intersection {
     pub fn new(t: f64, object: Sphere) -> Self {
         Self { t, object }
@@ -40,9 +50,33 @@ impl Intersection {
         xs.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
         xs.into_iter().find(|i| i.t.is_sign_positive())
     }
+
+    pub fn prepare_computations(self, ray: Ray) -> IntersectionComputation {
+        let t = self.t;
+        let object = self.object;
+        let point = ray.position(t);
+        let eyev = -ray.direction;
+        let mut normalv = object.normal_at(point);
+
+        let inside = if normalv.dot(eyev) < 0.0 {
+            normalv = -normalv;
+            true
+        } else {
+            false
+        };
+
+        IntersectionComputation {
+            t,
+            object,
+            point,
+            eyev,
+            normalv,
+            inside,
+        }
+    }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct PointLight {
     position: Tuple,
     intensity: Color,
@@ -61,9 +95,9 @@ impl PointLight {
 pub struct Material {
     pub color: Color,
     pub ambient: f64,
-    diffuse: f64,
-    specular: f64,
-    shininess: f64,
+    pub diffuse: f64,
+    pub specular: f64,
+    pub shininess: f64,
 }
 
 impl Default for Material {
@@ -335,5 +369,45 @@ mod tests {
         let result = m.lighting(light, position, eyev, normalv);
 
         assert_eq!(result, Color::new(0.1, 0.1, 0.1));
+    }
+
+    #[test]
+    // TODO: Move structs to their own files.
+    fn precomputing_the_state_of_an_intersection() {
+        let r = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
+        let shape = Sphere::default();
+        let i = Intersection::new(4.0, shape);
+
+        let comps = i.prepare_computations(r);
+
+        assert_eq!(comps.object, i.object);
+        assert_eq!(comps.point, Tuple::point(0.0, 0.0, -1.0));
+        assert_eq!(comps.eyev, Tuple::vector(0.0, 0.0, -1.0));
+        assert_eq!(comps.normalv, Tuple::vector(0.0, 0.0, -1.0));
+    }
+
+    #[test]
+    fn the_hit_when_an_intersection_occurs_on_the_outside() {
+        let r = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
+        let shape = Sphere::default();
+        let i = Intersection::new(4.0, shape);
+
+        let comps = i.prepare_computations(r);
+
+        assert!(!comps.inside);
+    }
+
+    #[test]
+    fn the_hit_when_an_intersection_occurs_on_the_inside() {
+        let r = Ray::new(Tuple::point(0.0, 0.0, 0.0), Tuple::vector(0.0, 0.0, 1.0));
+        let shape = Sphere::default();
+        let i = Intersection::new(1.0, shape);
+
+        let comps = i.prepare_computations(r);
+
+        assert_eq!(comps.point, Tuple::point(0.0, 0.0, 1.0));
+        assert_eq!(comps.eyev, Tuple::vector(0.0, 0.0, -1.0));
+        assert!(comps.inside);
+        assert_eq!(comps.normalv, Tuple::vector(0.0, 0.0, -1.0));
     }
 }

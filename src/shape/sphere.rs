@@ -20,6 +20,12 @@ impl From<Matrix<4, 4>> for Sphere {
     }
 }
 
+impl From<Material> for Sphere {
+    fn from(material: Material) -> Self {
+        Self::new(MATRIX_4X4.identity(), material)
+    }
+}
+
 impl Sphere {
     fn new(transform: Matrix<4, 4>, material: Material) -> Self {
         Self {
@@ -64,6 +70,7 @@ impl Sphere {
 mod tests {
     use super::*;
 
+    use crate::canvas::Color;
     use crate::matrix::transformation;
     use crate::tuple::Tuple;
 
@@ -153,7 +160,15 @@ mod tests {
     }
 
     #[test]
-    fn constructing_a_sphere_from_a_material() {}
+    fn constructing_a_sphere_from_a_material() {
+        let mut m = Material::default();
+        m.color = Color::new(1.0, 0.0, 0.0);
+
+        let s = Sphere::from(m);
+
+        assert_eq!(s.material, m);
+        assert_eq!(s.transform, MATRIX_4X4.identity());
+    }
 
     #[test]
     fn intersecting_a_scaled_sphere_with_a_ray() {
