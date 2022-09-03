@@ -2,9 +2,9 @@ use crate::canvas::Color;
 use crate::intersection::{ComputedIntersection, Intersection};
 use crate::light::PointLight;
 use crate::material::Material;
-use crate::matrix::transformation;
 use crate::ray::Ray;
 use crate::shape::Sphere;
+use crate::transformation;
 use crate::tuple::Tuple;
 
 pub struct World {
@@ -55,7 +55,7 @@ impl World {
         intersections
     }
 
-    fn shade_hit(&self, comps: ComputedIntersection) -> Color {
+    fn shade_hit(&self, comps: &ComputedIntersection) -> Color {
         comps.intersection.object.material.lighting(
             // TODO: Handle this `unwrap`.
             self.light.unwrap(),
@@ -68,7 +68,7 @@ impl World {
     pub fn color_at(&self, ray: Ray) -> Color {
         let xs = self.intersect(ray);
         match Intersection::hit(xs) {
-            Some(hit) => self.shade_hit(hit.prepare_computations(ray)),
+            Some(hit) => self.shade_hit(&hit.prepare_computations(ray)),
             None => Color::black(),
         }
     }
@@ -129,7 +129,7 @@ mod tests {
         let i = Intersection::new(4.0, shape);
 
         let comps = i.prepare_computations(r);
-        let c = w.shade_hit(comps);
+        let c = w.shade_hit(&comps);
 
         assert_eq!(c, Color::new(0.38066, 0.47583, 0.2855));
     }

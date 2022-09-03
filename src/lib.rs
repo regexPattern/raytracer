@@ -6,6 +6,7 @@ pub mod material;
 pub mod matrix;
 pub mod ray;
 pub mod shape;
+pub mod transformation;
 pub mod tuple;
 pub mod world;
 

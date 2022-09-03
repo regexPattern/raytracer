@@ -4,8 +4,8 @@ use raytracer::camera::Camera;
 use raytracer::canvas::Color;
 use raytracer::light::PointLight;
 use raytracer::material::Material;
-use raytracer::matrix::transformation;
 use raytracer::shape::Sphere;
+use raytracer::transformation;
 use raytracer::tuple::Tuple;
 use raytracer::world::World;
 

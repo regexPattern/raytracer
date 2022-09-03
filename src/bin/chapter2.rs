@@ -1,8 +1,9 @@
-use raytracer::canvas::{Canvas, Color};
-use raytracer::tuple::Tuple;
+use std::fs::File;
 use std::thread;
 use std::time::Duration;
-use tempfile::NamedTempFile;
+
+use raytracer::canvas::{Canvas, Color};
+use raytracer::tuple::Tuple;
 
 struct Projectile {
     position: Tuple,
@@ -48,9 +49,7 @@ fn main() {
         thread::sleep(Duration::from_millis(10));
     }
 
-    let mut file = NamedTempFile::new().unwrap();
-    canvas.to_ppm(&mut file);
-
-    let (_, path) = file.keep().unwrap();
-    println!("Canvas written to: {:?}", path);
+    if let Ok(mut file) = File::create("image.ppm") {
+        canvas.to_ppm(&mut file);
+    }
 }

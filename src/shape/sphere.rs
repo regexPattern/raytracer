@@ -2,34 +2,35 @@ use crate::intersection::Intersection;
 use crate::material::Material;
 use crate::matrix::Matrix;
 use crate::ray::Ray;
+use crate::transformation::Transformation;
 use crate::tuple::Tuple;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Sphere {
-    pub transform: Matrix<4, 4>,
+    pub transform: Transformation,
     pub material: Material,
 }
 
 impl Default for Sphere {
     fn default() -> Self {
-        Self::new(Matrix::default(), Material::default())
+        Self::new(Matrix::identity(), Material::default())
     }
 }
 
-impl From<Matrix<4, 4>> for Sphere {
-    fn from(transform: Matrix<4, 4>) -> Self {
+impl From<Transformation> for Sphere {
+    fn from(transform: Transformation) -> Self {
         Self::new(transform, Material::default())
     }
 }
 
 impl From<Material> for Sphere {
     fn from(material: Material) -> Self {
-        Self::new(Matrix::default(), material)
+        Self::new(Matrix::identity(), material)
     }
 }
 
 impl Sphere {
-    pub fn new(transform: Matrix<4, 4>, material: Material) -> Self {
+    pub fn new(transform: Transformation, material: Material) -> Self {
         Self {
             transform,
             material,
@@ -73,7 +74,7 @@ mod tests {
     use super::*;
 
     use crate::canvas::Color;
-    use crate::matrix::transformation;
+    use crate::transformation;
     use crate::tuple::Tuple;
 
     #[test]
@@ -138,7 +139,7 @@ mod tests {
     fn a_spheres_default_transformation() {
         let s = Sphere::default();
 
-        assert_eq!(s.transform, Matrix::default());
+        assert_eq!(s.transform, Matrix::identity());
     }
 
     #[test]
@@ -169,7 +170,7 @@ mod tests {
         let s = Sphere::from(m);
 
         assert_eq!(s.material, m);
-        assert_eq!(s.transform, Matrix::default());
+        assert_eq!(s.transform, Matrix::identity());
     }
 
     #[test]

@@ -1,6 +1,7 @@
 use crate::canvas::Canvas;
 use crate::matrix::Matrix;
 use crate::ray::Ray;
+use crate::transformation::Transformation;
 use crate::tuple::Tuple;
 use crate::world::World;
 
@@ -9,7 +10,7 @@ pub struct Camera {
     hsize: u32,
     vsize: u32,
     field_of_view: f64,
-    pub transform: Matrix<4, 4>,
+    pub transform: Transformation,
     pixel_size: f64,
     half_width: f64,
     half_height: f64,
@@ -18,7 +19,7 @@ pub struct Camera {
 impl Camera {
     pub fn new(hsize: u32, vsize: u32, field_of_view: f64) -> Self {
         let half_view = (field_of_view / 2.0).tan();
-        let aspect = (hsize as f64) / (vsize as f64);
+        let aspect = f64::from(hsize) / f64::from(vsize);
 
         let (half_width, half_height) = if aspect >= 1.0 {
             (half_view, half_view / aspect)
@@ -26,13 +27,13 @@ impl Camera {
             (half_view * aspect, half_view)
         };
 
-        let pixel_size = (half_width * 2.0) / (hsize as f64);
+        let pixel_size = (half_width * 2.0) / f64::from(hsize);
 
         Self {
             hsize,
             vsize,
             field_of_view,
-            transform: Matrix::default(),
+            transform: Matrix::identity(),
             pixel_size,
             half_width,
             half_height,
@@ -40,8 +41,8 @@ impl Camera {
     }
 
     fn ray_for_pixel(self, px: u32, py: u32) -> Ray {
-        let xoffset = (px as f64 + 0.5) * self.pixel_size;
-        let yoffset = (py as f64 + 0.5) * self.pixel_size;
+        let xoffset = (f64::from(px) + 0.5) * self.pixel_size;
+        let yoffset = (f64::from(py) + 0.5) * self.pixel_size;
 
         let world_x = self.half_width - xoffset;
         let world_y = self.half_height - yoffset;
@@ -60,7 +61,8 @@ impl Camera {
             for x in 0..self.hsize {
                 let ray = self.ray_for_pixel(x, y);
                 let color = world.color_at(ray);
-                image.write_pixel(x, y, color).unwrap();
+
+                image.write_pixel(x, y, color);
             }
         }
 
@@ -73,7 +75,7 @@ mod tests {
     use super::*;
 
     use crate::canvas::Color;
-    use crate::matrix::transformation;
+    use crate::transformation;
     use crate::utils;
 
     #[test]
@@ -87,7 +89,7 @@ mod tests {
         assert_eq!(c.hsize, 160);
         assert_eq!(c.vsize, 120);
         assert_eq!(c.field_of_view, std::f64::consts::FRAC_PI_2);
-        assert_eq!(c.transform, Matrix::default());
+        assert_eq!(c.transform, Matrix::identity());
     }
 
     #[test]

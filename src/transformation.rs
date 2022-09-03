@@ -1,8 +1,10 @@
 use crate::matrix::Matrix;
 use crate::tuple::Tuple;
 
-pub fn translation(x: f64, y: f64, z: f64) -> Matrix<4, 4> {
-    let mut identity = Matrix::default();
+pub type Transformation = Matrix<4, 4>;
+
+pub fn translation(x: f64, y: f64, z: f64) -> Transformation {
+    let mut identity = Matrix::identity();
 
     identity[0][3] = x;
     identity[1][3] = y;
@@ -11,8 +13,8 @@ pub fn translation(x: f64, y: f64, z: f64) -> Matrix<4, 4> {
     identity
 }
 
-pub fn scaling(x: f64, y: f64, z: f64) -> Matrix<4, 4> {
-    let mut identity = Matrix::default();
+pub fn scaling(x: f64, y: f64, z: f64) -> Transformation {
+    let mut identity = Matrix::identity();
 
     identity[0][0] = x;
     identity[1][1] = y;
@@ -22,8 +24,8 @@ pub fn scaling(x: f64, y: f64, z: f64) -> Matrix<4, 4> {
     identity
 }
 
-pub fn rotation_x(radians: f64) -> Matrix<4, 4> {
-    let mut identity = Matrix::default();
+pub fn rotation_x(radians: f64) -> Transformation {
+    let mut identity = Matrix::identity();
 
     identity[0][0] = 1.0;
     identity[1][1] = radians.cos();
@@ -35,8 +37,8 @@ pub fn rotation_x(radians: f64) -> Matrix<4, 4> {
     identity
 }
 
-pub fn rotation_y(radians: f64) -> Matrix<4, 4> {
-    let mut identity = Matrix::default();
+pub fn rotation_y(radians: f64) -> Transformation {
+    let mut identity = Matrix::identity();
 
     identity[0][0] = radians.cos();
     identity[0][2] = radians.sin();
@@ -48,8 +50,8 @@ pub fn rotation_y(radians: f64) -> Matrix<4, 4> {
     identity
 }
 
-pub fn rotation_z(radians: f64) -> Matrix<4, 4> {
-    let mut identity = Matrix::default();
+pub fn rotation_z(radians: f64) -> Transformation {
+    let mut identity = Matrix::identity();
 
     identity[0][0] = radians.cos();
     identity[0][1] = -radians.sin();
@@ -61,8 +63,8 @@ pub fn rotation_z(radians: f64) -> Matrix<4, 4> {
     identity
 }
 
-pub fn shearing(xy: f64, xz: f64, yx: f64, yz: f64, zx: f64, zy: f64) -> Matrix<4, 4> {
-    let mut identity = Matrix::default();
+pub fn shearing(xy: f64, xz: f64, yx: f64, yz: f64, zx: f64, zy: f64) -> Transformation {
+    let mut identity = Matrix::identity();
 
     identity[0][1] = xy;
     identity[0][2] = xz;
@@ -74,7 +76,7 @@ pub fn shearing(xy: f64, xz: f64, yx: f64, yz: f64, zx: f64, zy: f64) -> Matrix<
     identity
 }
 
-pub fn view(from: Tuple, to: Tuple, up: Tuple) -> Matrix<4, 4> {
+pub fn view(from: Tuple, to: Tuple, up: Tuple) -> Transformation {
     let forward = (to - from).normalize();
     let up = up.normalize();
     let left = forward.cross(up);
@@ -90,7 +92,7 @@ pub fn view(from: Tuple, to: Tuple, up: Tuple) -> Matrix<4, 4> {
     orientation * translation(-from.x, -from.y, -from.z)
 }
 
-impl Matrix<4, 4> {
+impl Transformation {
     pub fn translate(self, x: f64, y: f64, z: f64) -> Self {
         translation(x, y, z) * self
     }
@@ -310,23 +312,23 @@ mod tests {
 
     #[test]
     fn translation_identity_with_fluid_api_returns_translation_matrix() {
-        let translation_m = Matrix::default().translate(1.0, 1.0, 1.0);
+        let translation_m = Matrix::identity().translate(1.0, 1.0, 1.0);
 
         assert_eq!(translation_m, translation(1.0, 1.0, 1.0));
     }
 
     #[test]
     fn scaling_identity_with_fluid_api_returns_scaling_matrix() {
-        let scaling_m = Matrix::default().scale(1.0, 1.0, 1.0);
+        let scaling_m = Matrix::identity().scale(1.0, 1.0, 1.0);
 
         assert_eq!(scaling_m, scaling(1.0, 1.0, 1.0));
     }
 
     #[test]
     fn rotating_identity_with_fluid_api_returns_rotation_matrix() {
-        let rotation_x_m = Matrix::default().rotate_x(std::f64::consts::FRAC_PI_2);
-        let rotation_y_m = Matrix::default().rotate_y(std::f64::consts::FRAC_PI_2);
-        let rotation_z_m = Matrix::default().rotate_z(std::f64::consts::FRAC_PI_2);
+        let rotation_x_m = Matrix::identity().rotate_x(std::f64::consts::FRAC_PI_2);
+        let rotation_y_m = Matrix::identity().rotate_y(std::f64::consts::FRAC_PI_2);
+        let rotation_z_m = Matrix::identity().rotate_z(std::f64::consts::FRAC_PI_2);
 
         assert_eq!(rotation_x_m, rotation_x(std::f64::consts::FRAC_PI_2));
         assert_eq!(rotation_y_m, rotation_y(std::f64::consts::FRAC_PI_2));
@@ -336,8 +338,7 @@ mod tests {
     #[test]
     fn chained_transformations_with_fluid_api() {
         let p = Tuple::point(1.0, 0.0, 1.0);
-        let transformation = Matrix([[0.0; 4]; 4])
-            .identity()
+        let transformation = Matrix::identity()
             .rotate_x(std::f64::consts::FRAC_PI_2)
             .scale(5.0, 5.0, 5.0)
             .translate(10.0, 5.0, 7.0);
@@ -353,7 +354,7 @@ mod tests {
 
         let t = view(from, to, up);
 
-        assert_eq!(t, Matrix::default());
+        assert_eq!(t, Matrix::identity());
     }
 
     #[test]

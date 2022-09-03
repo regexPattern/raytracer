@@ -22,7 +22,7 @@ impl Intersection {
         Self { t, object }
     }
 
-    pub fn hit(mut xs: Vec<Intersection>) -> Option<Intersection> {
+    pub fn hit(mut xs: Vec<Self>) -> Option<Self> {
         xs.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
         xs.into_iter().find(|i| i.t.is_sign_positive())
     }

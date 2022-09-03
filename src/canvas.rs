@@ -127,7 +127,7 @@ impl Canvas {
         }
 
         let color = match self.pixels.get(&coordinate) {
-            Some(color) => color.to_owned(),
+            Some(color) => *color,
             None => Color::black(),
         };
 
@@ -149,6 +149,7 @@ impl Canvas {
             let mut line = String::new();
 
             for x in 0..self.width {
+                // TODO
                 let pixel = self.pixel_at(x, y).unwrap();
                 let colors = [
                     Color::clamp(pixel.red),
@@ -176,8 +177,10 @@ impl Canvas {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     use std::fs::File;
     use std::io::{BufRead, BufReader};
+
     use tempfile::NamedTempFile;
 
     #[test]

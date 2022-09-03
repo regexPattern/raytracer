@@ -1,7 +1,7 @@
 use std::fs::File;
 
 use raytracer::canvas::{Canvas, Color};
-use raytracer::matrix::transformation;
+use raytracer::transformation;
 use raytracer::tuple::Tuple;
 
 fn main() {

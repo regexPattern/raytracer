@@ -3,39 +3,35 @@ use std::ops::{Index, IndexMut, Mul};
 use crate::tuple::Tuple;
 use crate::utils;
 
-pub mod transformation;
-
 #[derive(Copy, Clone, Debug)]
 pub struct Matrix<const M: usize, const N: usize>([[f64; N]; M]);
 
-impl Default for Matrix<4, 4> {
-    fn default() -> Matrix<4, 4> {
-        Matrix::from([[0.0; 4]; 4]).identity()
-    }
-}
-
 impl<const M: usize, const N: usize> From<[[f64; N]; M]> for Matrix<M, N> {
     fn from(array: [[f64; N]; M]) -> Self {
-        Matrix(array)
+        Self(array)
     }
 }
 
 impl<const N: usize> Matrix<N, N> {
-    pub fn identity(&self) -> Self {
-        let mut identity = Matrix::from([[0.0; N]; N]);
+    pub fn identity() -> Self {
+        let mut identity = Self::from([[0.0; N]; N]);
+
         for n in 0..N {
             identity[n][n] = 1.0;
         }
+
         identity
     }
 
     pub fn transpose(self) -> Self {
-        let mut transposed = Matrix::from([[0.0; N]; N]);
+        let mut transposed = Self::from([[0.0; N]; N]);
+
         for col in 0..N {
             for row in 0..N {
                 transposed[col][row] = self.0[row][col];
             }
         }
+
         transposed
     }
 }
@@ -78,7 +74,7 @@ impl<const M1: usize, const N1: usize, const N2: usize> Mul<Matrix<N1, N2>> for 
             for col2 in 0..N2 {
                 let mut value = 0.0;
                 for col1 in 0..N1 {
-                    value += self.0[row1][col1] * rhs.0[col1][col2]
+                    value += self.0[row1][col1] * rhs.0[col1][col2];
                 }
                 result[row1][col2] = value;
             }
@@ -176,7 +172,7 @@ impl Matrix<4, 4> {
 
     pub fn inverse(&self) -> Self {
         let determinant = self.determinant();
-        let mut cofactors = Matrix::from([[0.0; 4]; 4]);
+        let mut cofactors = Self::from([[0.0; 4]; 4]);
 
         for row in 0..4 {
             for col in 0..4 {
@@ -359,10 +355,10 @@ mod tests {
         let m2 = Matrix::from([[3.0, 4.0], [5.0, 6.0]]);
         let m3 = Matrix::from([[11.0, 12.0, 13.0], [14.0, 15.0, 16.0], [17.0, 18.0, 19.0]]);
 
-        assert_eq!(m1.identity(), Matrix::from([[1.0]]));
-        assert_eq!(m2.identity(), Matrix::from([[1.0, 0.0], [0.0, 1.0]]));
+        assert_eq!(Matrix::identity(), Matrix::from([[1.0]]));
+        assert_eq!(Matrix::identity(), Matrix::from([[1.0, 0.0], [0.0, 1.0]]));
         assert_eq!(
-            m3.identity(),
+            Matrix::identity(),
             Matrix::from([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
         );
     }
@@ -405,16 +401,6 @@ mod tests {
                 [9.0, 8.0, 8.0, 0.0],
                 [3.0, 0.0, 5.0, 5.0],
                 [0.0, 8.0, 3.0, 8.0],
-            ])
-        );
-
-        assert_eq!(
-            m.transpose().identity(),
-            Matrix::from([
-                [1.0, 0.0, 0.0, 0.0],
-                [0.0, 1.0, 0.0, 0.0],
-                [0.0, 0.0, 1.0, 0.0],
-                [0.0, 0.0, 0.0, 1.0],
             ])
         );
     }
@@ -537,12 +523,5 @@ mod tests {
         let product = m1 * m2;
 
         assert_eq!(product * m2.inverse(), m1);
-    }
-
-    #[test]
-    fn the_default_matrix_is_the_4x4_identity_matrix() {
-        let i = Matrix::from([[0.0; 4]; 4]).identity();
-
-        assert_eq!(Matrix::default(), i);
     }
 }

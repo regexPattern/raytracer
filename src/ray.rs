@@ -1,4 +1,4 @@
-use crate::matrix::Matrix;
+use crate::transformation::Transformation;
 use crate::tuple::Tuple;
 
 #[derive(Copy, Clone, Debug)]
@@ -16,7 +16,7 @@ impl Ray {
         self.origin + self.direction * t
     }
 
-    pub fn transform(self, m: Matrix<4, 4>) -> Self {
+    pub fn transform(self, m: Transformation) -> Self {
         let origin = m * self.origin;
         let direction = m * self.direction;
         Self::new(origin, direction)
@@ -27,7 +27,7 @@ impl Ray {
 mod tests {
     use super::*;
 
-    use crate::matrix::transformation;
+    use crate::transformation;
 
     #[test]
     fn creating_and_querying_a_ray() {
