@@ -1,13 +1,14 @@
+use std::error::Error;
 use std::fs::File;
 
-use raytracer::canvas::{Canvas, Color};
+use raytracer::canvas::Canvas;
 use raytracer::intersection::Intersection;
 use raytracer::ray::Ray;
 use raytracer::shape::Sphere;
 use raytracer::transformation;
-use raytracer::tuple::Tuple;
+use raytracer::tuple::{Color, Tuple};
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
     let canvas_pixels = 100;
     let mut canvas = Canvas::new(canvas_pixels, canvas_pixels);
     let color = Color::new(1.0, 0.0, 0.0);
@@ -35,11 +36,12 @@ fn main() {
             let xs = shape.intersect(ray);
 
             if Intersection::hit(xs).is_some() {
-                canvas.write_pixel(x, y, color).unwrap();
+                canvas.write_pixel(x, y, color)?;
             }
         }
     }
 
-    let mut file = File::create("image.ppm").unwrap();
-    canvas.to_ppm(&mut file);
+    let mut file = File::create("image.ppm")?;
+    canvas.to_ppm(&mut file)?;
+    Ok(())
 }

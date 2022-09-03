@@ -1,6 +1,5 @@
-use crate::canvas::Color;
 use crate::light::PointLight;
-use crate::tuple::Tuple;
+use crate::tuple::{Color, Tuple};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Material {

@@ -351,10 +351,6 @@ mod tests {
 
     #[test]
     fn getting_the_identity_matrix_for_squared_matrices() {
-        let m1 = Matrix::from([[5.0]]);
-        let m2 = Matrix::from([[3.0, 4.0], [5.0, 6.0]]);
-        let m3 = Matrix::from([[11.0, 12.0, 13.0], [14.0, 15.0, 16.0], [17.0, 18.0, 19.0]]);
-
         assert_eq!(Matrix::identity(), Matrix::from([[1.0]]));
         assert_eq!(Matrix::identity(), Matrix::from([[1.0, 0.0], [0.0, 1.0]]));
         assert_eq!(

@@ -4,76 +4,76 @@ use crate::tuple::Tuple;
 pub type Transformation = Matrix<4, 4>;
 
 pub fn translation(x: f64, y: f64, z: f64) -> Transformation {
-    let mut identity = Matrix::identity();
+    let mut transformation = Matrix::identity();
 
-    identity[0][3] = x;
-    identity[1][3] = y;
-    identity[2][3] = z;
+    transformation[0][3] = x;
+    transformation[1][3] = y;
+    transformation[2][3] = z;
 
-    identity
+    transformation
 }
 
 pub fn scaling(x: f64, y: f64, z: f64) -> Transformation {
-    let mut identity = Matrix::identity();
+    let mut transformation = Matrix::identity();
 
-    identity[0][0] = x;
-    identity[1][1] = y;
-    identity[2][2] = z;
-    identity[3][3] = 1.0;
+    transformation[0][0] = x;
+    transformation[1][1] = y;
+    transformation[2][2] = z;
+    transformation[3][3] = 1.0;
 
-    identity
+    transformation
 }
 
 pub fn rotation_x(radians: f64) -> Transformation {
-    let mut identity = Matrix::identity();
+    let mut transformation = Matrix::identity();
 
-    identity[0][0] = 1.0;
-    identity[1][1] = radians.cos();
-    identity[1][2] = -radians.sin();
-    identity[2][1] = radians.sin();
-    identity[2][2] = radians.cos();
-    identity[3][3] = 1.0;
+    transformation[0][0] = 1.0;
+    transformation[1][1] = radians.cos();
+    transformation[1][2] = -radians.sin();
+    transformation[2][1] = radians.sin();
+    transformation[2][2] = radians.cos();
+    transformation[3][3] = 1.0;
 
-    identity
+    transformation
 }
 
 pub fn rotation_y(radians: f64) -> Transformation {
-    let mut identity = Matrix::identity();
+    let mut transformation = Matrix::identity();
 
-    identity[0][0] = radians.cos();
-    identity[0][2] = radians.sin();
-    identity[1][1] = 1.0;
-    identity[2][0] = -radians.sin();
-    identity[2][2] = radians.cos();
-    identity[3][3] = 1.0;
+    transformation[0][0] = radians.cos();
+    transformation[0][2] = radians.sin();
+    transformation[1][1] = 1.0;
+    transformation[2][0] = -radians.sin();
+    transformation[2][2] = radians.cos();
+    transformation[3][3] = 1.0;
 
-    identity
+    transformation
 }
 
 pub fn rotation_z(radians: f64) -> Transformation {
-    let mut identity = Matrix::identity();
+    let mut transformation = Matrix::identity();
 
-    identity[0][0] = radians.cos();
-    identity[0][1] = -radians.sin();
-    identity[1][0] = radians.sin();
-    identity[1][1] = radians.cos();
-    identity[2][2] = 1.0;
-    identity[3][3] = 1.0;
+    transformation[0][0] = radians.cos();
+    transformation[0][1] = -radians.sin();
+    transformation[1][0] = radians.sin();
+    transformation[1][1] = radians.cos();
+    transformation[2][2] = 1.0;
+    transformation[3][3] = 1.0;
 
-    identity
+    transformation
 }
 
 pub fn shearing(xy: f64, xz: f64, yx: f64, yz: f64, zx: f64, zy: f64) -> Transformation {
-    let mut identity = Matrix::identity();
+    let mut transformation = Matrix::identity();
 
-    identity[0][1] = xy;
-    identity[0][2] = xz;
-    identity[1][0] = yx;
-    identity[1][2] = yz;
-    identity[2][0] = zx;
-    identity[2][1] = zy;
+    transformation[0][1] = xy;
+    transformation[0][2] = xz;
+    transformation[1][0] = yx;
+    transformation[1][2] = yz;
+    transformation[2][0] = zx;
+    transformation[2][1] = zy;
 
-    identity
+    transformation
 }
 
 pub fn view(from: Tuple, to: Tuple, up: Tuple) -> Transformation {

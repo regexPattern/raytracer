@@ -1,17 +1,18 @@
-use crate::canvas::Color;
 use crate::intersection::{ComputedIntersection, Intersection};
 use crate::light::PointLight;
 use crate::material::Material;
 use crate::ray::Ray;
 use crate::shape::Sphere;
 use crate::transformation;
-use crate::tuple::Tuple;
+use crate::tuple::{Color, Tuple};
 
 pub struct World {
     objects: Vec<Sphere>,
-    light: Option<PointLight>,
+    light: PointLight,
 }
 
+// TODO: Some of these structs don't need the `Default` trait (usage, not necesarilly
+// implementation) because I'm mutating many values from the default value.
 impl Default for World {
     fn default() -> Self {
         let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::white());
@@ -28,14 +29,14 @@ impl Default for World {
         let s2 = Sphere::from(s2_transform);
 
         let objects = vec![s1, s2];
-        let light = Some(light);
+        let light = light;
 
         Self { objects, light }
     }
 }
 
 impl World {
-    pub fn new(objects: Vec<Sphere>, light: Option<PointLight>) -> Self {
+    pub fn new(objects: Vec<Sphere>, light: PointLight) -> Self {
         Self { objects, light }
     }
 
@@ -57,8 +58,7 @@ impl World {
 
     fn shade_hit(&self, comps: &ComputedIntersection) -> Color {
         comps.intersection.object.material.lighting(
-            // TODO: Handle this `unwrap`.
-            self.light.unwrap(),
+            self.light,
             comps.point,
             comps.eyev,
             comps.normalv,
@@ -79,14 +79,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn creating_a_world() {
-        let w = World::new(Vec::new(), None);
-
-        assert_eq!(w.objects.len(), 0);
-        assert_eq!(w.light, None);
-    }
-
-    #[test]
     fn the_default_world() {
         let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::white());
 
@@ -102,7 +94,7 @@ mod tests {
 
         let w = World::default();
 
-        assert_eq!(w.light, Some(light));
+        assert_eq!(w.light, light);
         assert!(w.objects.contains(&s1));
         assert!(w.objects.contains(&s2));
     }

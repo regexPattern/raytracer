@@ -54,7 +54,7 @@ impl Camera {
         Ray::new(origin, direction)
     }
 
-    pub fn render(self, world: &World) -> Canvas {
+    pub fn render(self, world: &World) -> Result<Canvas, String> {
         let mut image = Canvas::new(self.hsize, self.vsize);
 
         for y in 0..self.vsize {
@@ -62,11 +62,11 @@ impl Camera {
                 let ray = self.ray_for_pixel(x, y);
                 let color = world.color_at(ray);
 
-                image.write_pixel(x, y, color);
+                image.write_pixel(x, y, color)?;
             }
         }
 
-        image
+        Ok(image)
     }
 }
 
@@ -74,8 +74,8 @@ impl Camera {
 mod tests {
     use super::*;
 
-    use crate::canvas::Color;
     use crate::transformation;
+    use crate::tuple::Color;
     use crate::utils;
 
     #[test]
@@ -151,7 +151,7 @@ mod tests {
         let up = Tuple::vector(0.0, 1.0, 0.0);
         c.transform = transformation::view(from, to, up);
 
-        let image = c.render(&w);
+        let image = c.render(&w).unwrap();
 
         assert_eq!(
             image.pixel_at(5, 5),

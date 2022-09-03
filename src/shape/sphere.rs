@@ -73,9 +73,8 @@ impl Sphere {
 mod tests {
     use super::*;
 
-    use crate::canvas::Color;
     use crate::transformation;
-    use crate::tuple::Tuple;
+    use crate::tuple::Color;
 
     #[test]
     fn a_ray_intersects_a_sphere_at_two_points() {

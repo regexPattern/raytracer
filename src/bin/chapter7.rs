@@ -1,15 +1,15 @@
+use std::error::Error;
 use std::fs::File;
 
 use raytracer::camera::Camera;
-use raytracer::canvas::Color;
 use raytracer::light::PointLight;
 use raytracer::material::Material;
 use raytracer::shape::Sphere;
 use raytracer::transformation;
-use raytracer::tuple::Tuple;
+use raytracer::tuple::{Color, Tuple};
 use raytracer::world::World;
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
     let floor_transform = transformation::scaling(10.0, 0.01, 10.0);
     let floor_material = Material {
         color: Color::new(1.0, 0.9, 0.9),
@@ -59,7 +59,7 @@ fn main() {
 
     let world = World::new(
         vec![floor, left_wall, right_wall, middle, right, left],
-        Some(light),
+        light,
     );
 
     let mut camera = Camera::new(300, 150, std::f64::consts::FRAC_PI_3);
@@ -69,8 +69,9 @@ fn main() {
         Tuple::vector(0.0, 1.0, 0.0),
     );
 
-    let canvas = camera.render(&world);
+    let canvas = camera.render(&world)?;
 
-    let mut file = File::create("image.ppm").unwrap();
-    canvas.to_ppm(&mut file);
+    let mut file = File::create("image.ppm")?;
+    canvas.to_ppm(&mut file)?;
+    Ok(())
 }

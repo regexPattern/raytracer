@@ -1,9 +1,10 @@
+use std::error::Error;
 use std::fs::File;
 use std::thread;
 use std::time::Duration;
 
-use raytracer::canvas::{Canvas, Color};
-use raytracer::tuple::Tuple;
+use raytracer::canvas::Canvas;
+use raytracer::tuple::{Color, Tuple};
 
 struct Projectile {
     position: Tuple,
@@ -22,7 +23,7 @@ fn tick(p: Projectile, env: &Environment) -> Projectile {
     Projectile { position, velocity }
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
     let mut p = Projectile {
         position: Tuple::point(0.0, 1.0, 0.0),
         velocity: Tuple::normalize(Tuple::vector(1.0, 1.8, 0.0)) * 11.25,
@@ -49,7 +50,7 @@ fn main() {
         thread::sleep(Duration::from_millis(10));
     }
 
-    if let Ok(mut file) = File::create("image.ppm") {
-        canvas.to_ppm(&mut file);
-    }
+    let mut file = File::create("image.ppm")?;
+    canvas.to_ppm(&mut file)?;
+    Ok(())
 }

@@ -1,10 +1,11 @@
+use std::error::Error;
 use std::fs::File;
 
-use raytracer::canvas::{Canvas, Color};
+use raytracer::canvas::Canvas;
 use raytracer::transformation;
-use raytracer::tuple::Tuple;
+use raytracer::tuple::{Color, Tuple};
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
     let mut canvas = Canvas::new(256, 256);
     let center = 127.0;
 
@@ -23,6 +24,7 @@ fn main() {
         point = rotate_z * point;
     }
 
-    let mut file = File::create("image.ppm").unwrap();
-    canvas.to_ppm(&mut file);
+    let mut file = File::create("image.ppm")?;
+    canvas.to_ppm(&mut file)?;
+    Ok(())
 }
