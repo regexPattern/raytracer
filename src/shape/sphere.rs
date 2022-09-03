@@ -1,6 +1,6 @@
 use crate::intersection::Intersection;
 use crate::material::Material;
-use crate::matrix::{Matrix, MATRIX_4X4};
+use crate::matrix::Matrix;
 use crate::ray::Ray;
 use crate::tuple::Tuple;
 
@@ -12,7 +12,7 @@ pub struct Sphere {
 
 impl Default for Sphere {
     fn default() -> Self {
-        Self::new(MATRIX_4X4.identity(), Material::default())
+        Self::new(Matrix::default(), Material::default())
     }
 }
 
@@ -24,12 +24,12 @@ impl From<Matrix<4, 4>> for Sphere {
 
 impl From<Material> for Sphere {
     fn from(material: Material) -> Self {
-        Self::new(MATRIX_4X4.identity(), material)
+        Self::new(Matrix::default(), material)
     }
 }
 
 impl Sphere {
-    fn new(transform: Matrix<4, 4>, material: Material) -> Self {
+    pub fn new(transform: Matrix<4, 4>, material: Material) -> Self {
         Self {
             transform,
             material,
@@ -138,7 +138,7 @@ mod tests {
     fn a_spheres_default_transformation() {
         let s = Sphere::default();
 
-        assert_eq!(s.transform, MATRIX_4X4.identity());
+        assert_eq!(s.transform, Matrix::default());
     }
 
     #[test]
@@ -169,7 +169,7 @@ mod tests {
         let s = Sphere::from(m);
 
         assert_eq!(s.material, m);
-        assert_eq!(s.transform, MATRIX_4X4.identity());
+        assert_eq!(s.transform, Matrix::default());
     }
 
     #[test]

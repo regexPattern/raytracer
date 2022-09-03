@@ -120,7 +120,7 @@ impl Canvas {
         Ok(())
     }
 
-    fn pixel_at(&self, x: u32, y: u32) -> Option<Color> {
+    pub fn pixel_at(&self, x: u32, y: u32) -> Option<Color> {
         let coordinate = Coordinate { x, y };
         if !self.contains(&coordinate) {
             return None;

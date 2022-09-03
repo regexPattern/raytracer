@@ -51,7 +51,6 @@ impl Intersection {
 mod tests {
     use super::*;
 
-    use crate::matrix::transformation;
     use crate::shape::Sphere;
 
     #[test]
@@ -136,28 +135,6 @@ mod tests {
         let i = Intersection::hit(xs);
 
         assert_eq!(i, Some(i4));
-    }
-
-    #[test]
-    fn translating_a_ray() {
-        let r = Ray::new(Tuple::point(1.0, 2.0, 3.0), Tuple::vector(0.0, 1.0, 0.0));
-        let m = transformation::translation(3.0, 4.0, 5.0);
-
-        let r2 = r.transform(m);
-
-        assert_eq!(r2.origin, Tuple::point(4.0, 6.0, 8.0));
-        assert_eq!(r2.direction, Tuple::vector(0.0, 1.0, 0.0));
-    }
-
-    #[test]
-    fn scaling_a_ray() {
-        let r = Ray::new(Tuple::point(1.0, 2.0, 3.0), Tuple::vector(0.0, 1.0, 0.0));
-        let m = transformation::scaling(2.0, 3.0, 4.0);
-
-        let r2 = r.transform(m);
-
-        assert_eq!(r2.origin, Tuple::point(2.0, 6.0, 12.0));
-        assert_eq!(r2.direction, Tuple::vector(0.0, 3.0, 0.0));
     }
 
     #[test]

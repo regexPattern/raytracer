@@ -5,10 +5,14 @@ use crate::utils;
 
 pub mod transformation;
 
-pub const MATRIX_4X4: Matrix<4, 4> = Matrix([[0.0; 4]; 4]);
-
 #[derive(Copy, Clone, Debug)]
 pub struct Matrix<const M: usize, const N: usize>([[f64; N]; M]);
+
+impl Default for Matrix<4, 4> {
+    fn default() -> Matrix<4, 4> {
+        Matrix::from([[0.0; 4]; 4]).identity()
+    }
+}
 
 impl<const M: usize, const N: usize> From<[[f64; N]; M]> for Matrix<M, N> {
     fn from(array: [[f64; N]; M]) -> Self {
@@ -534,9 +538,11 @@ mod tests {
 
         assert_eq!(product * m2.inverse(), m1);
     }
-    /*
+
     #[test]
-    fn fail() {
-        assert!(false);
-    } */
+    fn the_default_matrix_is_the_4x4_identity_matrix() {
+        let i = Matrix::from([[0.0; 4]; 4]).identity();
+
+        assert_eq!(Matrix::default(), i);
+    }
 }

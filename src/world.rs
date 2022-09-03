@@ -7,7 +7,7 @@ use crate::ray::Ray;
 use crate::shape::Sphere;
 use crate::tuple::Tuple;
 
-struct World {
+pub struct World {
     objects: Vec<Sphere>,
     light: Option<PointLight>,
 }
@@ -35,11 +35,8 @@ impl Default for World {
 }
 
 impl World {
-    fn new() -> Self {
-        Self {
-            objects: Vec::new(),
-            light: None,
-        }
+    pub fn new(objects: Vec<Sphere>, light: Option<PointLight>) -> Self {
+        Self { objects, light }
     }
 
     fn intersect(&self, ray: Ray) -> Vec<Intersection> {
@@ -68,7 +65,7 @@ impl World {
         )
     }
 
-    fn color_at(&self, ray: Ray) -> Color {
+    pub fn color_at(&self, ray: Ray) -> Color {
         let xs = self.intersect(ray);
         match Intersection::hit(xs) {
             Some(hit) => self.shade_hit(hit.prepare_computations(ray)),
@@ -83,7 +80,7 @@ mod tests {
 
     #[test]
     fn creating_a_world() {
-        let w = World::new();
+        let w = World::new(Vec::new(), None);
 
         assert_eq!(w.objects.len(), 0);
         assert_eq!(w.light, None);
