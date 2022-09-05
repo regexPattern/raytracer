@@ -41,17 +41,13 @@ impl World {
     }
 
     fn intersect(&self, ray: Ray) -> Vec<Intersection> {
-        let mut intersections = Vec::new();
+        let mut intersections: Vec<Intersection> = self
+            .objects
+            .iter()
+            .map(|object| object.intersect(ray))
+            .flatten()
+            .collect();
 
-        // TODO: Make this more idiomatic.
-        for object in &self.objects {
-            let xs = object.intersect(ray);
-            for intersection in xs {
-                intersections.push(intersection);
-            }
-        }
-
-        // TODO: Move this sorting logic to `Intersection`. This logic is also used in `lighting.rs`.
         intersections.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
         intersections
     }

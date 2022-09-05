@@ -55,7 +55,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
     let left = Sphere::new(left_transform, left_material);
 
-    let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
+    let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::white());
 
     let world = World::new(
         vec![floor, left_wall, right_wall, middle, right, left],

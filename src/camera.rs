@@ -103,7 +103,6 @@ mod tests {
     fn the_pixel_size_for_a_vertical_canvas() {
         let c = Camera::new(125, 200, std::f64::consts::FRAC_PI_2);
 
-        // TODO: Hacer una macro que me permita compara floats mejor.
         assert!(utils::approximately_eq(c.pixel_size, 0.01));
     }
 
