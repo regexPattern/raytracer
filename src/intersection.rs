@@ -1,6 +1,7 @@
 use crate::ray::Ray;
 use crate::shape::Sphere;
 use crate::tuple::Tuple;
+use crate::utils;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Intersection {
@@ -15,6 +16,7 @@ pub struct ComputedIntersection {
     pub eyev: Tuple,
     pub normalv: Tuple,
     inside: bool,
+    pub over_point: Tuple,
 }
 
 impl Intersection {
@@ -37,12 +39,15 @@ impl Intersection {
             normalv = -normalv;
         }
 
+        let over_point = point + normalv * utils::EPSILON;
+
         ComputedIntersection {
             intersection: self,
             point,
             eyev,
             normalv,
             inside,
+            over_point,
         }
     }
 }
@@ -52,6 +57,7 @@ mod tests {
     use super::*;
 
     use crate::shape::Sphere;
+    use crate::transformation;
 
     #[test]
     fn an_intersection_encapsulates_t_and_object() {
@@ -174,5 +180,17 @@ mod tests {
         assert_eq!(comps.eyev, Tuple::vector(0.0, 0.0, -1.0));
         assert!(comps.inside);
         assert_eq!(comps.normalv, Tuple::vector(0.0, 0.0, -1.0));
+    }
+
+    #[test]
+    fn the_hit_should_offset_the_point() {
+        let r = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
+        let shape = Sphere::from(transformation::translation(0.0, 0.0, 1.0));
+        let i = Intersection::new(5.0, shape);
+
+        let comps = i.prepare_computations(r);
+
+        assert!(comps.over_point.z < -utils::EPSILON / 2.0);
+        assert!(comps.point.z > comps.over_point.z);
     }
 }

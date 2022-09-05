@@ -62,7 +62,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         light,
     );
 
-    let mut camera = Camera::new(300, 150, std::f64::consts::FRAC_PI_3);
+    let mut camera = Camera::new(1280, 720, std::f64::consts::FRAC_PI_3);
     camera.transform = transformation::view(
         Tuple::point(0.0, 1.5, -5.0),
         Tuple::point(0.0, 1.0, 0.0),

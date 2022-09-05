@@ -54,6 +54,7 @@ impl Camera {
         Ray::new(origin, direction)
     }
 
+    // TODO: En vez de tener Err(String) deberia tener un tipo de Error Err(Error).
     pub fn render(self, world: &World) -> Result<Canvas, String> {
         let mut image = Canvas::new(self.hsize, self.vsize);
 
