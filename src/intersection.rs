@@ -1,6 +1,6 @@
 use crate::ray::Ray;
 use crate::shape::Sphere;
-use crate::tuple::Tuple;
+use crate::tuple::{Point, Vector};
 use crate::utils;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -12,11 +12,11 @@ pub struct Intersection {
 #[derive(Copy, Clone, Debug)]
 pub struct ComputedIntersection {
     pub intersection: Intersection,
-    pub point: Tuple,
-    pub eyev: Tuple,
-    pub normalv: Tuple,
+    pub point: Point,
+    pub eyev: Vector,
+    pub normalv: Vector,
     inside: bool,
-    pub over_point: Tuple,
+    pub over_point: Point,
 }
 
 impl Intersection {
@@ -83,7 +83,7 @@ mod tests {
 
     #[test]
     fn intersect_sets_the_object_on_the_intersection() {
-        let r = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
+        let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
         let s = Sphere::default();
 
         let xs = s.intersect(r);
@@ -145,21 +145,21 @@ mod tests {
 
     #[test]
     fn precomputing_the_state_of_an_intersection() {
-        let r = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
+        let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
         let shape = Sphere::default();
         let i = Intersection::new(4.0, shape);
 
         let comps = i.prepare_computations(r);
 
         assert_eq!(comps.intersection.object, i.object);
-        assert_eq!(comps.point, Tuple::point(0.0, 0.0, -1.0));
-        assert_eq!(comps.eyev, Tuple::vector(0.0, 0.0, -1.0));
-        assert_eq!(comps.normalv, Tuple::vector(0.0, 0.0, -1.0));
+        assert_eq!(comps.point, Point::new(0.0, 0.0, -1.0));
+        assert_eq!(comps.eyev, Vector::new(0.0, 0.0, -1.0));
+        assert_eq!(comps.normalv, Vector::new(0.0, 0.0, -1.0));
     }
 
     #[test]
     fn the_hit_when_an_intersection_occurs_on_the_outside() {
-        let r = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
+        let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
         let shape = Sphere::default();
         let i = Intersection::new(4.0, shape);
 
@@ -170,27 +170,27 @@ mod tests {
 
     #[test]
     fn the_hit_when_an_intersection_occurs_on_the_inside() {
-        let r = Ray::new(Tuple::point(0.0, 0.0, 0.0), Tuple::vector(0.0, 0.0, 1.0));
+        let r = Ray::new(Point::new(0.0, 0.0, 0.0), Vector::new(0.0, 0.0, 1.0));
         let shape = Sphere::default();
         let i = Intersection::new(1.0, shape);
 
         let comps = i.prepare_computations(r);
 
-        assert_eq!(comps.point, Tuple::point(0.0, 0.0, 1.0));
-        assert_eq!(comps.eyev, Tuple::vector(0.0, 0.0, -1.0));
+        assert_eq!(comps.point, Point::new(0.0, 0.0, 1.0));
+        assert_eq!(comps.eyev, Vector::new(0.0, 0.0, -1.0));
         assert!(comps.inside);
-        assert_eq!(comps.normalv, Tuple::vector(0.0, 0.0, -1.0));
+        assert_eq!(comps.normalv, Vector::new(0.0, 0.0, -1.0));
     }
 
     #[test]
     fn the_hit_should_offset_the_point() {
-        let r = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
+        let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
         let shape = Sphere::from(transformation::translation(0.0, 0.0, 1.0));
         let i = Intersection::new(5.0, shape);
 
         let comps = i.prepare_computations(r);
 
-        assert!(comps.over_point.z < -utils::EPSILON / 2.0);
-        assert!(comps.point.z > comps.over_point.z);
+        assert!(comps.over_point.0.z < -utils::EPSILON / 2.0);
+        assert!(comps.point.0.z > comps.over_point.0.z);
     }
 }

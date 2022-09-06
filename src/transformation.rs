@@ -1,5 +1,5 @@
 use crate::matrix::Matrix;
-use crate::tuple::Tuple;
+use crate::tuple::{Point, Vector};
 
 pub type Transformation = Matrix<4, 4>;
 
@@ -76,20 +76,20 @@ pub fn shearing(xy: f64, xz: f64, yx: f64, yz: f64, zx: f64, zy: f64) -> Transfo
     transformation
 }
 
-pub fn view(from: Tuple, to: Tuple, up: Tuple) -> Transformation {
+pub fn view(from: Point, to: Point, up: Vector) -> Transformation {
     let forward = (to - from).normalize();
     let up = up.normalize();
     let left = forward.cross(up);
     let true_up = left.cross(forward);
 
     let orientation = Matrix::from([
-        [left.x, left.y, left.z, 0.0],
-        [true_up.x, true_up.y, true_up.z, 0.0],
-        [-forward.x, -forward.y, -forward.z, 0.0],
+        [left.0.x, left.0.y, left.0.z, 0.0],
+        [true_up.0.x, true_up.0.y, true_up.0.z, 0.0],
+        [-forward.0.x, -forward.0.y, -forward.0.z, 0.0],
         [0.0, 0.0, 0.0, 1.0],
     ]);
 
-    orientation * translation(-from.x, -from.y, -from.z)
+    orientation * translation(-from.0.x, -from.0.y, -from.0.z)
 }
 
 impl Transformation {
@@ -121,24 +121,24 @@ mod tests {
     #[test]
     fn multiplying_by_a_transformation_matrix() {
         let translation_m = translation(5.0, -3.0, 2.0);
-        let p = Tuple::point(-3.0, 4.0, 5.0);
+        let p = Point::new(-3.0, 4.0, 5.0);
 
-        assert_eq!(translation_m * p, Tuple::point(2.0, 1.0, 7.0));
+        assert_eq!(translation_m * p, Point::new(2.0, 1.0, 7.0));
     }
 
     #[test]
     fn multiplying_by_the_inverse_of_a_transformation_matrix() {
         let translation_m = translation(5.0, -3.0, 2.0);
         let inv = translation_m.inverse();
-        let p = Tuple::point(-3.0, 4.0, 5.0);
+        let p = Point::new(-3.0, 4.0, 5.0);
 
-        assert_eq!(inv * p, Tuple::point(-8.0, 7.0, 3.0));
+        assert_eq!(inv * p, Point::new(-8.0, 7.0, 3.0));
     }
 
     #[test]
     fn translation_does_not_affect_vectors() {
         let translation_m = translation(5.0, -3.0, 2.0);
-        let v = Tuple::vector(-3.0, 4.0, 5.0);
+        let v = Vector::new(-3.0, 4.0, 5.0);
 
         assert_eq!(translation_m * v, v);
     }
@@ -146,168 +146,168 @@ mod tests {
     #[test]
     fn scaling_matrix_applied_to_a_point() {
         let scaling_m = scaling(2.0, 3.0, 4.0);
-        let p = Tuple::point(-4.0, 6.0, 8.0);
+        let p = Point::new(-4.0, 6.0, 8.0);
 
-        assert_eq!(scaling_m * p, Tuple::point(-8.0, 18.0, 32.0));
+        assert_eq!(scaling_m * p, Point::new(-8.0, 18.0, 32.0));
     }
 
     #[test]
     fn scaling_matrix_applied_to_a_vector() {
         let scaling_m = scaling(2.0, 3.0, 4.0);
-        let v = Tuple::vector(-4.0, 6.0, 8.0);
+        let v = Vector::new(-4.0, 6.0, 8.0);
 
-        assert_eq!(scaling_m * v, Tuple::vector(-8.0, 18.0, 32.0));
+        assert_eq!(scaling_m * v, Vector::new(-8.0, 18.0, 32.0));
     }
 
     #[test]
     fn multiplying_by_the_inverse_of_a_scaling_matrix() {
         let scaling_m = scaling(2.0, 3.0, 4.0);
         let inv = scaling_m.inverse();
-        let v = Tuple::vector(-4.0, 6.0, 8.0);
+        let v = Vector::new(-4.0, 6.0, 8.0);
 
-        assert_eq!(inv * v, Tuple::vector(-2.0, 2.0, 2.0));
+        assert_eq!(inv * v, Vector::new(-2.0, 2.0, 2.0));
     }
 
     #[test]
     fn reflection_is_scaling_by_a_negative_value() {
         let scaling_m = scaling(-1.0, 1.0, 1.0);
-        let p = Tuple::point(2.0, 3.0, 4.0);
+        let p = Point::new(2.0, 3.0, 4.0);
 
-        assert_eq!(scaling_m * p, Tuple::point(-2.0, 3.0, 4.0));
+        assert_eq!(scaling_m * p, Point::new(-2.0, 3.0, 4.0));
     }
 
     #[test]
     fn rotating_a_point_around_the_x_axis() {
-        let p = Tuple::point(0.0, 1.0, 0.0);
+        let p = Point::new(0.0, 1.0, 0.0);
         let half_quarter = rotation_x(std::f64::consts::FRAC_PI_4);
         let full_quarter = rotation_x(std::f64::consts::FRAC_PI_2);
 
         assert_eq!(
             half_quarter * p,
-            Tuple::point(0.0, 2_f64.sqrt() / 2.0, 2_f64.sqrt() / 2.0)
+            Point::new(0.0, 2_f64.sqrt() / 2.0, 2_f64.sqrt() / 2.0)
         );
 
-        assert_eq!(full_quarter * p, Tuple::point(0.0, 0.0, 1.0));
+        assert_eq!(full_quarter * p, Point::new(0.0, 0.0, 1.0));
     }
 
     #[test]
     fn inverse_of_an_x_rotation_rotates_in_the_opposite_direction() {
-        let p = Tuple::point(0.0, 1.0, 0.0);
+        let p = Point::new(0.0, 1.0, 0.0);
         let half_quarter = rotation_x(std::f64::consts::FRAC_PI_4);
         let inv = half_quarter.inverse();
 
         assert_eq!(
             inv * p,
-            Tuple::point(0.0, 2_f64.sqrt() / 2.0, -(2_f64.sqrt()) / 2.0)
+            Point::new(0.0, 2_f64.sqrt() / 2.0, -(2_f64.sqrt()) / 2.0)
         );
     }
 
     #[test]
     fn rotating_a_point_around_the_y_axis() {
-        let p = Tuple::point(0.0, 0.0, 1.0);
+        let p = Point::new(0.0, 0.0, 1.0);
         let half_quarter = rotation_y(std::f64::consts::FRAC_PI_4);
         let full_quarter = rotation_y(std::f64::consts::FRAC_PI_2);
 
         assert_eq!(
             half_quarter * p,
-            Tuple::point(2_f64.sqrt() / 2.0, 0.0, 2_f64.sqrt() / 2.0)
+            Point::new(2_f64.sqrt() / 2.0, 0.0, 2_f64.sqrt() / 2.0)
         );
 
-        assert_eq!(full_quarter * p, Tuple::point(1.0, 0.0, 0.0));
+        assert_eq!(full_quarter * p, Point::new(1.0, 0.0, 0.0));
     }
 
     #[test]
     fn rotating_a_point_around_the_z_axis() {
-        let p = Tuple::point(0.0, 1.0, 0.0);
+        let p = Point::new(0.0, 1.0, 0.0);
         let half_quarter = rotation_z(std::f64::consts::FRAC_PI_4);
         let full_quarter = rotation_z(std::f64::consts::FRAC_PI_2);
 
         assert_eq!(
             half_quarter * p,
-            Tuple::point(-2_f64.sqrt() / 2.0, 2_f64.sqrt() / 2.0, 0.0)
+            Point::new(-2_f64.sqrt() / 2.0, 2_f64.sqrt() / 2.0, 0.0)
         );
 
-        assert_eq!(full_quarter * p, Tuple::point(-1.0, 0.0, 0.0));
+        assert_eq!(full_quarter * p, Point::new(-1.0, 0.0, 0.0));
     }
 
     #[test]
     fn shearing_transformation_moves_x_in_proportion_to_y() {
         let shearing_m = shearing(1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-        let p = Tuple::point(2.0, 3.0, 4.0);
+        let p = Point::new(2.0, 3.0, 4.0);
 
-        assert_eq!(shearing_m * p, Tuple::point(5.0, 3.0, 4.0));
+        assert_eq!(shearing_m * p, Point::new(5.0, 3.0, 4.0));
     }
 
     #[test]
     fn shearing_transformation_moves_x_in_proportion_to_z() {
         let shearing_m = shearing(0.0, 1.0, 0.0, 0.0, 0.0, 0.0);
-        let p = Tuple::point(2.0, 3.0, 4.0);
+        let p = Point::new(2.0, 3.0, 4.0);
 
-        assert_eq!(shearing_m * p, Tuple::point(6.0, 3.0, 4.0));
+        assert_eq!(shearing_m * p, Point::new(6.0, 3.0, 4.0));
     }
 
     #[test]
     fn shearing_transformation_moves_y_in_proportion_to_x() {
         let shearing_m = shearing(0.0, 0.0, 1.0, 0.0, 0.0, 0.0);
-        let p = Tuple::point(2.0, 3.0, 4.0);
+        let p = Point::new(2.0, 3.0, 4.0);
 
-        assert_eq!(shearing_m * p, Tuple::point(2.0, 5.0, 4.0));
+        assert_eq!(shearing_m * p, Point::new(2.0, 5.0, 4.0));
     }
 
     #[test]
     fn shearing_transformation_moves_y_in_proportion_to_z() {
         let shearing_m = shearing(0.0, 0.0, 0.0, 1.0, 0.0, 0.0);
-        let p = Tuple::point(2.0, 3.0, 4.0);
+        let p = Point::new(2.0, 3.0, 4.0);
 
-        assert_eq!(shearing_m * p, Tuple::point(2.0, 7.0, 4.0));
+        assert_eq!(shearing_m * p, Point::new(2.0, 7.0, 4.0));
     }
 
     #[test]
     fn shearing_transformation_moves_z_in_proportion_to_x() {
         let shearing_m = shearing(0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-        let p = Tuple::point(2.0, 3.0, 4.0);
+        let p = Point::new(2.0, 3.0, 4.0);
 
-        assert_eq!(shearing_m * p, Tuple::point(2.0, 3.0, 6.0));
+        assert_eq!(shearing_m * p, Point::new(2.0, 3.0, 6.0));
     }
 
     #[test]
     fn shearing_transformation_moves_z_in_proportion_to_y() {
         let shearing_m = shearing(0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
-        let p = Tuple::point(2.0, 3.0, 4.0);
+        let p = Point::new(2.0, 3.0, 4.0);
 
-        assert_eq!(shearing_m * p, Tuple::point(2.0, 3.0, 7.0));
+        assert_eq!(shearing_m * p, Point::new(2.0, 3.0, 7.0));
     }
 
     #[test]
     fn individual_transformations_are_applied_in_sequence() {
-        let p = Tuple::point(1.0, 0.0, 1.0);
+        let p = Point::new(1.0, 0.0, 1.0);
         let rotation_m = rotation_x(std::f64::consts::FRAC_PI_2);
         let scaling_m = scaling(5.0, 5.0, 5.0);
         let translation_m = translation(10.0, 5.0, 7.0);
 
         let p2 = rotation_m * p;
 
-        assert_eq!(p2, Tuple::point(1.0, -1.0, 0.0));
+        assert_eq!(p2, Point::new(1.0, -1.0, 0.0));
 
         let p3 = scaling_m * p2;
 
-        assert_eq!(p3, Tuple::point(5.0, -5.0, 0.0));
+        assert_eq!(p3, Point::new(5.0, -5.0, 0.0));
 
         let p4 = translation_m * p3;
 
-        assert_eq!(p4, Tuple::point(15.0, 0.0, 7.0));
+        assert_eq!(p4, Point::new(15.0, 0.0, 7.0));
     }
 
     #[test]
     fn chained_transformations_must_be_applied_in_reverse_order() {
-        let p = Tuple::point(1.0, 0.0, 1.0);
+        let p = Point::new(1.0, 0.0, 1.0);
         let rotation_m = rotation_x(std::f64::consts::FRAC_PI_2);
         let scaling_m = scaling(5.0, 5.0, 5.0);
         let translation_m = translation(10.0, 5.0, 7.0);
 
         let t = translation_m * scaling_m * rotation_m;
 
-        assert_eq!(t * p, Tuple::point(15.0, 0.0, 7.0));
+        assert_eq!(t * p, Point::new(15.0, 0.0, 7.0));
     }
 
     #[test]
@@ -337,20 +337,20 @@ mod tests {
 
     #[test]
     fn chained_transformations_with_fluid_api() {
-        let p = Tuple::point(1.0, 0.0, 1.0);
+        let p = Point::new(1.0, 0.0, 1.0);
         let transformation = Matrix::identity()
             .rotate_x(std::f64::consts::FRAC_PI_2)
             .scale(5.0, 5.0, 5.0)
             .translate(10.0, 5.0, 7.0);
 
-        assert_eq!(transformation * p, Tuple::point(15.0, 0.0, 7.0));
+        assert_eq!(transformation * p, Point::new(15.0, 0.0, 7.0));
     }
 
     #[test]
     fn the_transformation_matrix_for_the_default_orientation() {
-        let from = Tuple::point(0.0, 0.0, 0.0);
-        let to = Tuple::point(0.0, 0.0, -1.0);
-        let up = Tuple::vector(0.0, 1.0, 0.0);
+        let from = Point::new(0.0, 0.0, 0.0);
+        let to = Point::new(0.0, 0.0, -1.0);
+        let up = Vector::new(0.0, 1.0, 0.0);
 
         let t = view(from, to, up);
 
@@ -359,9 +359,9 @@ mod tests {
 
     #[test]
     fn a_view_transformation_matrix_looking_in_positive_z_direction() {
-        let from = Tuple::point(0.0, 0.0, 0.0);
-        let to = Tuple::point(0.0, 0.0, 1.0);
-        let up = Tuple::vector(0.0, 1.0, 0.0);
+        let from = Point::new(0.0, 0.0, 0.0);
+        let to = Point::new(0.0, 0.0, 1.0);
+        let up = Vector::new(0.0, 1.0, 0.0);
 
         let t = view(from, to, up);
 
@@ -370,9 +370,9 @@ mod tests {
 
     #[test]
     fn the_view_transformation_moves_the_world() {
-        let from = Tuple::point(0.0, 0.0, 8.0);
-        let to = Tuple::point(0.0, 0.0, 0.0);
-        let up = Tuple::vector(0.0, 1.0, 0.0);
+        let from = Point::new(0.0, 0.0, 8.0);
+        let to = Point::new(0.0, 0.0, 0.0);
+        let up = Vector::new(0.0, 1.0, 0.0);
 
         let t = view(from, to, up);
 
@@ -381,9 +381,9 @@ mod tests {
 
     #[test]
     fn an_arbitrary_view_transformation() {
-        let from = Tuple::point(1.0, 3.0, 2.0);
-        let to = Tuple::point(4.0, -2.0, 8.0);
-        let up = Tuple::vector(1.0, 1.0, 0.0);
+        let from = Point::new(1.0, 3.0, 2.0);
+        let to = Point::new(4.0, -2.0, 8.0);
+        let up = Vector::new(1.0, 1.0, 0.0);
 
         let t = view(from, to, up);
 

@@ -2,7 +2,7 @@ use crate::canvas::Canvas;
 use crate::matrix::Matrix;
 use crate::ray::Ray;
 use crate::transformation::Transformation;
-use crate::tuple::Tuple;
+use crate::tuple::Point;
 use crate::world::World;
 
 #[derive(Copy, Clone, Debug)]
@@ -47,8 +47,8 @@ impl Camera {
         let world_x = self.half_width - xoffset;
         let world_y = self.half_height - yoffset;
 
-        let pixel = self.transform.inverse() * Tuple::point(world_x, world_y, -1.0);
-        let origin = self.transform.inverse() * Tuple::point(0.0, 0.0, 0.0);
+        let pixel = self.transform.inverse() * Point::new(world_x, world_y, -1.0);
+        let origin = self.transform.inverse() * Point::new(0.0, 0.0, 0.0);
         let direction = (pixel - origin).normalize();
 
         Ray::new(origin, direction)
@@ -76,7 +76,7 @@ mod tests {
     use super::*;
 
     use crate::transformation;
-    use crate::tuple::Color;
+    use crate::tuple::{Color, Vector};
     use crate::utils;
 
     #[test]
@@ -113,8 +113,8 @@ mod tests {
 
         let r = c.ray_for_pixel(100, 50);
 
-        assert_eq!(r.origin, Tuple::point(0.0, 0.0, 0.0));
-        assert_eq!(r.direction, Tuple::vector(0.0, 0.0, -1.0));
+        assert_eq!(r.origin, Point::new(0.0, 0.0, 0.0));
+        assert_eq!(r.direction, Vector::new(0.0, 0.0, -1.0));
     }
 
     #[test]
@@ -123,8 +123,8 @@ mod tests {
 
         let r = c.ray_for_pixel(0, 0);
 
-        assert_eq!(r.origin, Tuple::point(0.0, 0.0, 0.0));
-        assert_eq!(r.direction, Tuple::vector(0.66519, 0.33259, -0.66851));
+        assert_eq!(r.origin, Point::new(0.0, 0.0, 0.0));
+        assert_eq!(r.direction, Vector::new(0.66519, 0.33259, -0.66851));
     }
 
     #[test]
@@ -135,10 +135,10 @@ mod tests {
 
         let r = c.ray_for_pixel(100, 50);
 
-        assert_eq!(r.origin, Tuple::point(0.0, 2.0, -5.0));
+        assert_eq!(r.origin, Point::new(0.0, 2.0, -5.0));
         assert_eq!(
             r.direction,
-            Tuple::vector(2_f64.sqrt() / 2.0, 0.0, -2_f64.sqrt() / 2.0)
+            Vector::new(2_f64.sqrt() / 2.0, 0.0, -2_f64.sqrt() / 2.0)
         );
     }
 
@@ -146,9 +146,9 @@ mod tests {
     fn rendering_a_world_with_a_camera() {
         let w = World::default();
         let mut c = Camera::new(11, 11, std::f64::consts::FRAC_PI_2);
-        let from = Tuple::point(0.0, 0.0, -5.0);
-        let to = Tuple::point(0.0, 0.0, 0.0);
-        let up = Tuple::vector(0.0, 1.0, 0.0);
+        let from = Point::new(0.0, 0.0, -5.0);
+        let to = Point::new(0.0, 0.0, 0.0);
+        let up = Vector::new(0.0, 1.0, 0.0);
         c.transform = transformation::view(from, to, up);
 
         let image = c.render(&w).unwrap();

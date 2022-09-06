@@ -6,7 +6,7 @@ use raytracer::light::PointLight;
 use raytracer::material::Material;
 use raytracer::shape::Sphere;
 use raytracer::transformation;
-use raytracer::tuple::{Color, Tuple};
+use raytracer::tuple::{Color, Point, Vector};
 use raytracer::world::World;
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -55,7 +55,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
     let left = Sphere::new(left_transform, left_material);
 
-    let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::white());
+    let light = PointLight::new(Point::new(-10.0, 10.0, -10.0), Color::white());
 
     let world = World::new(
         vec![floor, left_wall, right_wall, middle, right, left],
@@ -64,9 +64,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut camera = Camera::new(1280, 720, std::f64::consts::FRAC_PI_3);
     camera.transform = transformation::view(
-        Tuple::point(0.0, 1.5, -5.0),
-        Tuple::point(0.0, 1.0, 0.0),
-        Tuple::vector(0.0, 1.0, 0.0),
+        Point::new(0.0, 1.5, -5.0),
+        Point::new(0.0, 1.0, 0.0),
+        Vector::new(0.0, 1.0, 0.0),
     );
 
     let canvas = camera.render(&world)?;

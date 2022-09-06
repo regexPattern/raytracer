@@ -6,14 +6,14 @@ use raytracer::intersection::Intersection;
 use raytracer::ray::Ray;
 use raytracer::shape::Sphere;
 use raytracer::transformation;
-use raytracer::tuple::{Color, Tuple};
+use raytracer::tuple::{Color, Point};
 
 fn main() -> Result<(), Box<dyn Error>> {
     let canvas_pixels = 100;
     let mut canvas = Canvas::new(canvas_pixels, canvas_pixels);
     let color = Color::new(1.0, 0.0, 0.0);
 
-    let ray_origin = Tuple::point(2.0, 2.0, -5.0);
+    let ray_origin = Point::new(2.0, 2.0, -5.0);
 
     let wall_z = 10.0;
     let wall_size = 6.0;
@@ -30,7 +30,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         for x in 0..canvas_pixels {
             let world_x = -half + pixel_size * x as f64;
 
-            let position = Tuple::vector(world_x, world_y, wall_z);
+            let position = Point::new(world_x, world_y, wall_z);
             let ray = Ray::new(ray_origin, (position - ray_origin).normalize());
 
             let xs = shape.intersect(ray);

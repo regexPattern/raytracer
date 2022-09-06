@@ -6,20 +6,20 @@ use raytracer::intersection::Intersection;
 use raytracer::light::PointLight;
 use raytracer::ray::Ray;
 use raytracer::shape::Sphere;
-use raytracer::tuple::{Color, Tuple};
+use raytracer::tuple::{Color, Point};
 
 fn main() -> Result<(), Box<dyn Error>> {
     let canvas_pixels = 100;
     let mut canvas = Canvas::new(canvas_pixels, canvas_pixels);
 
-    let light_position = Tuple::point(-10.0, 10.0, -10.0);
+    let light_position = Point::new(-10.0, 10.0, -10.0);
     let light_color = Color::white();
     let light = PointLight::new(light_position, light_color);
 
     let mut sphere = Sphere::default();
     sphere.material.color = Color::new(1.0, 0.2, 1.0);
 
-    let ray_origin = Tuple::point(0.0, 0.0, -5.0);
+    let ray_origin = Point::new(0.0, 0.0, -5.0);
 
     let wall_z = 10.0;
     let wall_size = 7.0;
@@ -33,7 +33,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         for x in 0..canvas_pixels {
             let world_x = -half + pixel_size * x as f64;
 
-            let position = Tuple::vector(world_x, world_y, wall_z);
+            let position = Point::new(world_x, world_y, wall_z);
             let ray = Ray::new(ray_origin, (position - ray_origin).normalize());
 
             let xs = sphere.intersect(ray);
@@ -43,7 +43,10 @@ fn main() -> Result<(), Box<dyn Error>> {
                 let normal = hit.object.normal_at(point);
                 let eye = -ray.direction;
 
-                let color = hit.object.material.lighting(light, point, eye, normal, false);
+                let color = hit
+                    .object
+                    .material
+                    .lighting(light, point, eye, normal, false);
                 canvas.write_pixel(x, y, color)?;
             }
         }

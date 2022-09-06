@@ -1,6 +1,6 @@
 use std::ops::{Index, IndexMut, Mul};
 
-use crate::tuple::Tuple;
+use crate::tuple::{Point, Tuple, Vector};
 use crate::utils;
 
 #[derive(Copy, Clone, Debug)]
@@ -91,7 +91,28 @@ impl Mul<Tuple> for Matrix<4, 4> {
         let column_matrix = Matrix([[rhs.x], [rhs.y], [rhs.z], [rhs.w]]);
         let result = self * column_matrix;
 
-        Tuple::new(result[0][0], result[1][0], result[2][0], result[3][0])
+        Tuple {
+            x: result[0][0],
+            y: result[1][0],
+            z: result[2][0],
+            w: result[3][0],
+        }
+    }
+}
+
+impl Mul<Point> for Matrix<4, 4> {
+    type Output = Point;
+
+    fn mul(self, rhs: Point) -> Self::Output {
+        Point(self * rhs.0)
+    }
+}
+
+impl Mul<Vector> for Matrix<4, 4> {
+    type Output = Vector;
+
+    fn mul(self, rhs: Vector) -> Self::Output {
+        Vector(self * rhs.0)
     }
 }
 
@@ -357,6 +378,37 @@ mod tests {
             Matrix::identity(),
             Matrix::from([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
         );
+    }
+
+    #[test]
+    fn a_matrix_multiplied_by_a_tuple() {
+        let m = Matrix::from([
+            [1.0, 2.0, 3.0, 4.0],
+            [2.0, 4.0, 4.0, 2.0],
+            [8.0, 6.0, 4.0, 1.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]);
+
+        let t = Tuple {
+            x: 1.0,
+            y: 2.0,
+            z: 3.0,
+            w: 1.0,
+        };
+        let p = Point::new(1.0, 2.0, 3.0);
+        let v = Vector::new(1.0, 2.0, 3.0);
+
+        assert_eq!(
+            m * t,
+            Tuple {
+                x: 18.0,
+                y: 24.0,
+                z: 33.0,
+                w: 1.0
+            }
+        );
+        assert_eq!(m * p, Point::new(18.0, 24.0, 33.0));
+        assert_eq!(m * v, Vector::new(14.0, 22.0, 32.0));
     }
 
     #[test]

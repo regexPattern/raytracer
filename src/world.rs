@@ -4,7 +4,7 @@ use crate::material::Material;
 use crate::ray::Ray;
 use crate::shape::Sphere;
 use crate::transformation;
-use crate::tuple::{Color, Tuple};
+use crate::tuple::{Color, Point};
 
 pub struct World {
     objects: Vec<Sphere>,
@@ -13,7 +13,7 @@ pub struct World {
 
 impl Default for World {
     fn default() -> Self {
-        let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::white());
+        let light = PointLight::new(Point::new(-10.0, 10.0, -10.0), Color::white());
 
         let s1_material = Material {
             color: Color::new(0.8, 1.0, 0.6),
@@ -42,8 +42,7 @@ impl World {
         let mut intersections: Vec<Intersection> = self
             .objects
             .iter()
-            .map(|object| object.intersect(ray))
-            .flatten()
+            .flat_map(|object| object.intersect(ray))
             .collect();
 
         intersections.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
@@ -69,7 +68,7 @@ impl World {
         }
     }
 
-    fn is_shadowed(&self, point: Tuple) -> bool {
+    fn is_shadowed(&self, point: Point) -> bool {
         let v = self.light.position - point;
         let distance = v.magnitude();
         let direction = v.normalize();
@@ -89,9 +88,11 @@ impl World {
 mod tests {
     use super::*;
 
+    use crate::tuple::Vector;
+
     #[test]
     fn the_default_world() {
-        let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::white());
+        let light = PointLight::new(Point::new(-10.0, 10.0, -10.0), Color::white());
 
         let mut s1_material = Material::default();
         s1_material.color = Color::new(0.8, 1.0, 0.6);
@@ -113,7 +114,7 @@ mod tests {
     #[test]
     fn intersect_a_world_with_a_ray() {
         let w = World::default();
-        let r = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
+        let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
 
         let xs = w.intersect(r);
 
@@ -127,7 +128,7 @@ mod tests {
     #[test]
     fn shading_an_intersection() {
         let w = World::default();
-        let r = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
+        let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
         let shape = w.objects[0];
         let i = Intersection::new(4.0, shape);
 
@@ -140,7 +141,7 @@ mod tests {
     #[test]
     fn the_color_when_a_ray_misses() {
         let w = World::default();
-        let r = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 1.0, 0.0));
+        let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 1.0, 0.0));
 
         let c = w.color_at(r);
 
@@ -150,7 +151,7 @@ mod tests {
     #[test]
     fn the_color_when_a_ray_hits() {
         let w = World::default();
-        let r = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
+        let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
 
         let c = w.color_at(r);
 
@@ -167,7 +168,7 @@ mod tests {
         let inner = &mut w.objects[1];
         inner.material.ambient = 1.0;
 
-        let r = Ray::new(Tuple::point(0.0, 0.0, 0.75), Tuple::vector(0.0, 0.0, -1.0));
+        let r = Ray::new(Point::new(0.0, 0.0, 0.75), Vector::new(0.0, 0.0, -1.0));
 
         let c = w.color_at(r);
 
@@ -178,7 +179,7 @@ mod tests {
     #[test]
     fn there_is_no_shadow_when_nothing_is_collinear_with_point_and_light() {
         let w = World::default();
-        let p = Tuple::point(0.0, 10.0, 0.0);
+        let p = Point::new(0.0, 10.0, 0.0);
 
         assert!(!w.is_shadowed(p));
     }
@@ -186,7 +187,7 @@ mod tests {
     #[test]
     fn the_shadow_when_an_object_is_between_the_point_and_the_light() {
         let w = World::default();
-        let p = Tuple::point(10.0, -10.0, 10.0);
+        let p = Point::new(10.0, -10.0, 10.0);
 
         assert!(w.is_shadowed(p));
     }
@@ -194,7 +195,7 @@ mod tests {
     #[test]
     fn there_is_no_shadow_when_an_object_is_behind_the_light() {
         let w = World::default();
-        let p = Tuple::point(-20.0, 20.0, -20.0);
+        let p = Point::new(-20.0, 20.0, -20.0);
 
         assert!(!w.is_shadowed(p));
     }
@@ -202,20 +203,20 @@ mod tests {
     #[test]
     fn there_is_no_shadow_when_an_object_is_behind_the_point() {
         let w = World::default();
-        let p = Tuple::point(-2.0, -2.0, -2.0);
+        let p = Point::new(-2.0, -2.0, -2.0);
 
         assert!(!w.is_shadowed(p));
     }
 
     #[test]
     fn shade_hit_is_given_an_intersection_in_shadow() {
-        let light = PointLight::new(Tuple::point(0.0, 0.0, -10.0), Color::white());
+        let light = PointLight::new(Point::new(0.0, 0.0, -10.0), Color::white());
         let s1 = Sphere::default();
         let s2 = Sphere::from(transformation::translation(0.0, 0.0, 10.0));
 
         let w = World::new(vec![s1, s2], light);
 
-        let r = Ray::new(Tuple::point(0.0, 0.0, 5.0), Tuple::vector(0.0, 0.0, 1.0));
+        let r = Ray::new(Point::new(0.0, 0.0, 5.0), Vector::new(0.0, 0.0, 1.0));
         // TODO: Puedo mejorar la performance de una intersection pasando una referencia al shape?
         let i = Intersection::new(4.0, s2);
 

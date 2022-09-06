@@ -1,18 +1,18 @@
 use crate::transformation::Transformation;
-use crate::tuple::Tuple;
+use crate::tuple::{Point, Vector};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Ray {
-    pub origin: Tuple,
-    pub direction: Tuple,
+    pub origin: Point,
+    pub direction: Vector,
 }
 
 impl Ray {
-    pub fn new(origin: Tuple, direction: Tuple) -> Self {
+    pub fn new(origin: Point, direction: Vector) -> Self {
         Self { origin, direction }
     }
 
-    pub fn position(self, t: f64) -> Tuple {
+    pub fn position(self, t: f64) -> Point {
         self.origin + self.direction * t
     }
 
@@ -31,8 +31,8 @@ mod tests {
 
     #[test]
     fn creating_and_querying_a_ray() {
-        let origin = Tuple::point(1.0, 2.0, 3.0);
-        let direction = Tuple::vector(4.0, 5.0, 6.0);
+        let origin = Point::new(1.0, 2.0, 3.0);
+        let direction = Vector::new(4.0, 5.0, 6.0);
 
         let r = Ray::new(origin, direction);
 
@@ -42,33 +42,33 @@ mod tests {
 
     #[test]
     fn computing_a_point_from_a_distance() {
-        let r = Ray::new(Tuple::point(2.0, 3.0, 4.0), Tuple::vector(1.0, 0.0, 0.0));
+        let r = Ray::new(Point::new(2.0, 3.0, 4.0), Vector::new(1.0, 0.0, 0.0));
 
-        assert_eq!(r.position(0.0), Tuple::point(2.0, 3.0, 4.0));
-        assert_eq!(r.position(1.0), Tuple::point(3.0, 3.0, 4.0));
-        assert_eq!(r.position(-1.0), Tuple::point(1.0, 3.0, 4.0));
-        assert_eq!(r.position(2.5), Tuple::point(4.5, 3.0, 4.0));
+        assert_eq!(r.position(0.0), Point::new(2.0, 3.0, 4.0));
+        assert_eq!(r.position(1.0), Point::new(3.0, 3.0, 4.0));
+        assert_eq!(r.position(-1.0), Point::new(1.0, 3.0, 4.0));
+        assert_eq!(r.position(2.5), Point::new(4.5, 3.0, 4.0));
     }
 
     #[test]
     fn translating_a_ray() {
-        let r = Ray::new(Tuple::point(1.0, 2.0, 3.0), Tuple::vector(0.0, 1.0, 0.0));
+        let r = Ray::new(Point::new(1.0, 2.0, 3.0), Vector::new(0.0, 1.0, 0.0));
         let m = transformation::translation(3.0, 4.0, 5.0);
 
         let r2 = r.transform(m);
 
-        assert_eq!(r2.origin, Tuple::point(4.0, 6.0, 8.0));
-        assert_eq!(r2.direction, Tuple::vector(0.0, 1.0, 0.0));
+        assert_eq!(r2.origin, Point::new(4.0, 6.0, 8.0));
+        assert_eq!(r2.direction, Vector::new(0.0, 1.0, 0.0));
     }
 
     #[test]
     fn scaling_a_ray() {
-        let r = Ray::new(Tuple::point(1.0, 2.0, 3.0), Tuple::vector(0.0, 1.0, 0.0));
+        let r = Ray::new(Point::new(1.0, 2.0, 3.0), Vector::new(0.0, 1.0, 0.0));
         let m = transformation::scaling(2.0, 3.0, 4.0);
 
         let r2 = r.transform(m);
 
-        assert_eq!(r2.origin, Tuple::point(2.0, 6.0, 12.0));
-        assert_eq!(r2.direction, Tuple::vector(0.0, 3.0, 0.0));
+        assert_eq!(r2.origin, Point::new(2.0, 6.0, 12.0));
+        assert_eq!(r2.direction, Vector::new(0.0, 3.0, 0.0));
     }
 }
