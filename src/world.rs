@@ -129,7 +129,7 @@ mod tests {
     fn shading_an_intersection() {
         let w = World::default();
         let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
-        let shape = w.objects[0];
+        let shape = &w.objects[0];
         let i = Intersection::new(4.0, shape);
 
         let comps = i.prepare_computations(r);
@@ -172,7 +172,7 @@ mod tests {
 
         let c = w.color_at(r);
 
-        let inner = w.objects[1];
+        let inner = &w.objects[1];
         assert_eq!(c, inner.material.color);
     }
 
@@ -217,7 +217,7 @@ mod tests {
         let w = World::new(vec![s1, s2], light);
 
         let r = Ray::new(Point::new(0.0, 0.0, 5.0), Vector::new(0.0, 0.0, 1.0));
-        // TODO: Puedo mejorar la performance de una intersection pasando una referencia al shape?
+        let s2 = &w.objects[1];
         let i = Intersection::new(4.0, s2);
 
         let comps = i.prepare_computations(r);

@@ -5,7 +5,7 @@ use crate::ray::Ray;
 use crate::transformation::Transformation;
 use crate::tuple::{Point, Vector};
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct Sphere {
     pub transform: Transformation,
     pub material: Material,
@@ -37,7 +37,7 @@ impl Sphere {
         }
     }
 
-    pub fn intersect(self, ray: Ray) -> Vec<Intersection> {
+    pub fn intersect(&self, ray: Ray) -> Vec<Intersection> {
         let ray = ray.transform(self.transform.inverse());
 
         let sphere_to_ray = ray.origin - Point::new(0.0, 0.0, 0.0);
@@ -56,10 +56,10 @@ impl Sphere {
         let t1 = (-b - discriminant.sqrt()) / (2.0 * a);
         let t2 = (-b + discriminant.sqrt()) / (2.0 * a);
 
-        vec![Intersection::new(t1, self), Intersection::new(t2, self)]
+        vec![Intersection::new(t1, &self), Intersection::new(t2, &self)]
     }
 
-    pub fn normal_at(self, point: Point) -> Vector {
+    pub fn normal_at(&self, point: Point) -> Vector {
         let object_point = self.transform.inverse() * point;
         let object_normal = object_point - Point::new(0.0, 0.0, 0.0);
         let mut world_normal = self.transform.inverse().transpose() * object_normal;
