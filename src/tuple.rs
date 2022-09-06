@@ -13,55 +13,16 @@ pub struct Tuple {
     pub w: f64,
 }
 
-impl Tuple {
-    fn new(x: f64, y: f64, z: f64, w: f64) -> Self {
-        Self { x, y, z, w }
-    }
-
-    pub fn point(x: f64, y: f64, z: f64) -> Self {
-        Self::new(x, y, z, POINT_W)
-    }
-
-    pub fn vector(x: f64, y: f64, z: f64) -> Self {
-        Self::new(x, y, z, VECTOR_W)
-    }
-
-    pub fn cross(self, other: Self) -> Self {
-        Self::vector(
-            self.y * other.z - self.z * other.y,
-            self.z * other.x - self.x * other.z,
-            self.x * other.y - self.y * other.x,
-        )
-    }
-
-    pub fn dot(self, other: Self) -> f64 {
-        self.x * other.x + self.y * other.y + self.z * other.z + self.w * other.w
-    }
-
-    pub fn magnitude(self) -> f64 {
-        (self.x.powi(2) + self.y.powi(2) + self.z.powi(2) + self.w.powi(2)).sqrt()
-    }
-
-    pub fn normalize(self) -> Self {
-        let magnitude = self.magnitude();
-        self / magnitude
-    }
-
-    pub fn reflect(self, normal: Self) -> Self {
-        self - normal * 2.0 * self.dot(normal)
-    }
-}
-
 impl Add for Tuple {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        Self::new(
-            self.x + rhs.x,
-            self.y + rhs.y,
-            self.z + rhs.z,
-            self.w + rhs.w,
-        )
+        Self {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+            z: self.z + rhs.z,
+            w: self.w + rhs.w,
+        }
     }
 }
 
@@ -78,12 +39,12 @@ impl Sub for Tuple {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        Self::new(
-            self.x - rhs.x,
-            self.y - rhs.y,
-            self.z - rhs.z,
-            self.w - rhs.w,
-        )
+        Self {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+            z: self.z - rhs.z,
+            w: self.w - rhs.w,
+        }
     }
 }
 
@@ -91,7 +52,12 @@ impl Neg for Tuple {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
-        Self::new(-self.x, -self.y, -self.z, -self.w)
+        Self {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
+            w: -self.w,
+        }
     }
 }
 
@@ -99,7 +65,12 @@ impl Mul<f64> for Tuple {
     type Output = Self;
 
     fn mul(self, rhs: f64) -> Self::Output {
-        Self::new(self.x * rhs, self.y * rhs, self.z * rhs, self.w * rhs)
+        Self {
+            x: self.x * rhs,
+            y: self.y * rhs,
+            z: self.z * rhs,
+            w: self.w * rhs,
+        }
     }
 }
 
@@ -107,7 +78,12 @@ impl Div<f64> for Tuple {
     type Output = Self;
 
     fn div(self, rhs: f64) -> Self::Output {
-        Self::new(self.x / rhs, self.y / rhs, self.z / rhs, self.w / rhs)
+        Self {
+            x: self.x / rhs,
+            y: self.y / rhs,
+            z: self.z / rhs,
+            w: self.w / rhs,
+        }
     }
 }
 

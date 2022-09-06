@@ -1,16 +1,16 @@
 use std::thread;
 use std::time::Duration;
 
-use raytracer::tuple::Tuple;
+use raytracer::tuple::{Point, Vector};
 
 struct Projectile {
-    position: Tuple,
-    velocity: Tuple,
+    position: Point,
+    velocity: Vector,
 }
 
 struct Environment {
-    gravity: Tuple,
-    wind: Tuple,
+    gravity: Vector,
+    wind: Vector,
 }
 
 fn tick(p: Projectile, env: &Environment) -> Projectile {
@@ -22,16 +22,16 @@ fn tick(p: Projectile, env: &Environment) -> Projectile {
 
 fn main() {
     let mut p = Projectile {
-        position: Tuple::point(0.0, 1.0, 0.0),
-        velocity: Tuple::normalize(Tuple::vector(1.0, 1.0, 0.0)),
+        position: Point::new(0.0, 1.0, 0.0),
+        velocity: Vector::new(1.0, 1.0, 0.0).normalize(),
     };
 
     let env = Environment {
-        gravity: Tuple::vector(0.0, -0.1, 0.0),
-        wind: Tuple::vector(-0.01, 0.0, 0.0),
+        gravity: Vector::new(0.0, -0.1, 0.0),
+        wind: Vector::new(-0.01, 0.0, 0.0),
     };
 
-    while p.position.y >= 0.0 {
+    while p.position.0.y >= 0.0 {
         println!("{:?}", &p.position);
         p = tick(p, &env);
 
