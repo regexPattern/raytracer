@@ -42,7 +42,7 @@ impl<'a> Intersection<'a> {
         let over_point = point + normalv * utils::EPSILON;
 
         ComputedIntersection {
-            intersection: &self,
+            intersection: self,
             point,
             eyev,
             normalv,
