@@ -3,7 +3,7 @@ use std::fs::File;
 
 use raytracer::camera::Camera;
 use raytracer::light::PointLight;
-use raytracer::shape::Sphere;
+use raytracer::shape::{Shape, Sphere};
 use raytracer::transformation;
 use raytracer::tuple::{Color, Point, Vector};
 use raytracer::world::World;

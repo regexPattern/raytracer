@@ -4,7 +4,7 @@ use std::io::{self, Write};
 use crate::tuple::Color;
 
 #[derive(Eq, Hash, PartialEq)]
-struct Coordinate {
+struct Pixel {
     x: u32,
     y: u32,
 }
@@ -12,7 +12,7 @@ struct Coordinate {
 pub struct Canvas {
     pub width: u32,
     pub height: u32,
-    pixels: HashMap<Coordinate, Color>,
+    pixels: HashMap<Pixel, Color>,
 }
 
 impl Canvas {
@@ -25,8 +25,8 @@ impl Canvas {
     }
 
     pub fn write_pixel(&mut self, x: u32, y: u32, color: Color) -> Result<(), String> {
-        let coordinate = Coordinate { x, y };
-        if !self.contains(&coordinate) {
+        let pixel = Pixel { x, y };
+        if !self.contains(&pixel) {
             return Err(format!(
                 "invalid x: `{}` and y: `{}` values.\
                 must be between canvas limits width: `{}` and height: `{}`",
@@ -34,17 +34,17 @@ impl Canvas {
             ));
         }
 
-        self.pixels.insert(coordinate, color);
+        self.pixels.insert(pixel, color);
         Ok(())
     }
 
     pub fn pixel_at(&self, x: u32, y: u32) -> Option<Color> {
-        let coordinate = Coordinate { x, y };
-        if !self.contains(&coordinate) {
+        let pixel = Pixel { x, y };
+        if !self.contains(&pixel) {
             return None;
         }
 
-        let color = match self.pixels.get(&coordinate) {
+        let color = match self.pixels.get(&pixel) {
             Some(color) => *color,
             None => Color::black(),
         };
@@ -52,8 +52,8 @@ impl Canvas {
         Some(color)
     }
 
-    fn contains(&self, coordinate: &Coordinate) -> bool {
-        (0..self.width).contains(&coordinate.x) && (0..self.height).contains(&coordinate.y)
+    fn contains(&self, pixel: &Pixel) -> bool {
+        (0..self.width).contains(&pixel.x) && (0..self.height).contains(&pixel.y)
     }
 
     pub fn to_ppm(&self, w: &mut impl Write) -> Result<(), io::Error> {
@@ -137,11 +137,11 @@ mod tests {
     }
 
     #[test]
-    fn canvas_contains_coordinate() {
-        let c = Canvas::new(10, 20);
+    fn canvas_contains_pixel() {
+        let p = Canvas::new(10, 20);
 
-        assert!(c.contains(&Coordinate { x: 5, y: 5 }));
-        assert!(!c.contains(&Coordinate { x: 100, y: 100 }));
+        assert!(p.contains(&Pixel { x: 5, y: 5 }));
+        assert!(!p.contains(&Pixel { x: 100, y: 100 }));
     }
 
     #[test]

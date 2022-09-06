@@ -4,7 +4,7 @@ use std::fs::File;
 use raytracer::canvas::Canvas;
 use raytracer::intersection::Intersection;
 use raytracer::ray::Ray;
-use raytracer::shape::Sphere;
+use raytracer::shape::{Shape, Sphere};
 use raytracer::tuple::{Color, Point};
 
 fn main() -> Result<(), Box<dyn Error>> {

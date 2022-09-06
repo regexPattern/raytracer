@@ -2,13 +2,13 @@ use crate::intersection::{ComputedIntersection, Intersection};
 use crate::light::PointLight;
 use crate::material::Material;
 use crate::ray::Ray;
-use crate::shape::Sphere;
+use crate::shape::{Shape, Sphere};
 use crate::transformation;
 use crate::tuple::{Color, Point};
 
 pub struct World {
-    objects: Vec<Sphere>,
-    light: PointLight,
+    pub objects: Vec<Sphere>,
+    pub light: PointLight,
 }
 
 impl Default for World {
@@ -26,10 +26,10 @@ impl Default for World {
         let s2_transform = transformation::scaling(0.5, 0.5, 0.5);
         let s2 = Sphere::from(s2_transform);
 
-        let objects = vec![s1, s2];
-        let light = light;
-
-        Self { objects, light }
+        Self {
+            objects: vec![s1, s2],
+            light,
+        }
     }
 }
 
