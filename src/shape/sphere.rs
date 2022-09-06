@@ -5,7 +5,7 @@ use crate::shape::Shape;
 use crate::transformation::Transformation;
 use crate::tuple::{Point, Vector};
 
-#[derive(Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Sphere {
     pub transform: Transformation,
     pub material: Material,
@@ -16,24 +16,6 @@ impl Default for Sphere {
         Self {
             transform: Transformation::identity(),
             material: Material::default(),
-        }
-    }
-}
-
-impl From<Transformation> for Sphere {
-    fn from(transform: Transformation) -> Self {
-        Self {
-            transform,
-            material: Material::default(),
-        }
-    }
-}
-
-impl From<Material> for Sphere {
-    fn from(material: Material) -> Self {
-        Self {
-            transform: Transformation::identity(),
-            material,
         }
     }
 }
@@ -56,7 +38,10 @@ impl Shape for Sphere {
         let t1 = (-b - discriminant.sqrt()) / (2.0 * a);
         let t2 = (-b + discriminant.sqrt()) / (2.0 * a);
 
-        vec![Intersection::new(t1, self), Intersection::new(t2, self)]
+        vec![
+            Intersection::new(t1, *self),
+            Intersection::new(t2, *self),
+        ]
     }
 
     fn local_normal_at(&self, object_point: Point) -> Vector {
@@ -71,9 +56,6 @@ impl Shape for Sphere {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    use crate::transformation;
-    use crate::tuple::Color;
 
     #[test]
     fn a_ray_intersects_a_sphere_at_two_points() {
@@ -131,29 +113,6 @@ mod tests {
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, -6.0);
         assert_eq!(xs[1].t, -4.0);
-    }
-
-    #[test]
-    fn constructing_a_sphere_from_a_transformation() {
-        let m = transformation::translation(1.0, 1.0, 1.0);
-
-        let s = Sphere::from(m);
-
-        assert_eq!(s.transform, m);
-        assert_eq!(s.material, Material::default());
-    }
-
-    #[test]
-    fn constructing_a_sphere_from_a_material() {
-        let m = Material {
-            color: Color::new(1.0, 0.0, 0.0),
-            ..Material::default()
-        };
-
-        let s = Sphere::from(m);
-
-        assert_eq!(s.material, m);
-        assert_eq!(s.transform, Transformation::identity());
     }
 
     #[test]

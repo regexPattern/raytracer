@@ -21,8 +21,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let pixel_size = wall_size / canvas_pixels as f64;
     let half = wall_size / 2.0;
 
-    let shape_transform = transformation::translation(25.0 * pixel_size, 0.0, 0.0);
-    let shape = Sphere::from(shape_transform);
+    let shape = Sphere {
+        transform: transformation::translation(25.0 * pixel_size, 0.0, 0.0),
+        ..Sphere::default()
+    };
 
     for y in 0..canvas_pixels {
         let world_y = half - pixel_size * y as f64;
