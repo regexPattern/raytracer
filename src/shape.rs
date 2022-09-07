@@ -1,4 +1,5 @@
 use crate::intersection::Intersection;
+use crate::material::Material;
 use crate::ray::Ray;
 use crate::transformation::Transformation;
 use crate::tuple::{Point, Vector};
@@ -7,7 +8,13 @@ mod sphere;
 
 pub use sphere::Sphere;
 
-pub trait Shape {
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum Shape {
+    Sphere(Sphere),
+    Plane(Sphere),
+}
+
+pub trait Intersectable {
     fn intersect(&self, ray: Ray) -> Vec<Intersection> {
         let ray = self.local_ray(ray);
         self.local_intersect(ray)
@@ -26,11 +33,43 @@ pub trait Shape {
         world_ray.transform(self.transform().inverse())
     }
 
-    fn local_intersect(&self, _: Ray) -> Vec<Intersection>;
+    fn local_intersect(&self, ray: Ray) -> Vec<Intersection>;
 
     fn local_normal_at(&self, object_point: Point) -> Vector;
 
+    fn material(&self) -> Material;
+
     fn transform(&self) -> Transformation;
+}
+
+impl Intersectable for Shape {
+    fn local_intersect(&self, ray: Ray) -> Vec<Intersection> {
+        match self {
+            Shape::Sphere(s) => s.local_intersect(ray),
+            Shape::Plane(p) => p.local_intersect(ray),
+        }
+    }
+
+    fn local_normal_at(&self, object_point: Point) -> Vector {
+        match self {
+            Shape::Sphere(s) => s.local_normal_at(object_point),
+            Shape::Plane(p) => p.local_normal_at(object_point),
+        }
+    }
+
+    fn material(&self) -> Material {
+        match self {
+            Shape::Sphere(s) => s.material(),
+            Shape::Plane(p) => p.material(),
+        }
+    }
+
+    fn transform(&self) -> Transformation {
+        match self {
+            Shape::Sphere(s) => s.transform(),
+            Shape::Plane(p) => p.transform(),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -54,13 +93,17 @@ mod tests {
         }
     }
 
-    impl Shape for TestShape {
+    impl Intersectable for TestShape {
         fn local_intersect(&self, _: Ray) -> Vec<Intersection> {
             Vec::new()
         }
 
         fn local_normal_at(&self, object_point: Point) -> Vector {
             Vector::new(object_point.0.x, object_point.0.y, object_point.0.z)
+        }
+
+        fn material(&self) -> Material {
+            self.material
         }
 
         fn transform(&self) -> Transformation {

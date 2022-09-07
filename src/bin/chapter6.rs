@@ -4,8 +4,9 @@ use std::fs::File;
 use raytracer::canvas::Canvas;
 use raytracer::intersection::Intersection;
 use raytracer::light::PointLight;
+use raytracer::material::Material;
 use raytracer::ray::Ray;
-use raytracer::shape::{Shape, Sphere};
+use raytracer::shape::{Intersectable, Shape, Sphere};
 use raytracer::tuple::{Color, Point};
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -16,8 +17,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     let light_color = Color::white();
     let light = PointLight::new(light_position, light_color);
 
-    let mut sphere = Sphere::default();
-    sphere.material.color = Color::new(1.0, 0.2, 1.0);
+    let sphere = Shape::Sphere(Sphere {
+        material: Material {
+            color: Color::new(1.0, 0.2, 1.0),
+            ..Material::default()
+        },
+        ..Sphere::default()
+    });
 
     let ray_origin = Point::new(0.0, 0.0, -5.0);
 
@@ -45,7 +51,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                 let color = hit
                     .object
-                    .material
+                    .material()
                     .lighting(light, point, eye, normal, false);
                 canvas.write_pixel(x, y, color)?;
             }

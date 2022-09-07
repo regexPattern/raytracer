@@ -1,7 +1,7 @@
 use crate::intersection::Intersection;
 use crate::material::Material;
 use crate::ray::Ray;
-use crate::shape::Shape;
+use crate::shape::{Intersectable, Shape};
 use crate::transformation::Transformation;
 use crate::tuple::{Point, Vector};
 
@@ -20,7 +20,7 @@ impl Default for Sphere {
     }
 }
 
-impl Shape for Sphere {
+impl Intersectable for Sphere {
     fn local_intersect(&self, ray: Ray) -> Vec<Intersection> {
         let sphere_to_ray = ray.origin - Point::new(0.0, 0.0, 0.0);
 
@@ -39,13 +39,17 @@ impl Shape for Sphere {
         let t2 = (-b + discriminant.sqrt()) / (2.0 * a);
 
         vec![
-            Intersection::new(t1, *self),
-            Intersection::new(t2, *self),
+            Intersection::new(t1, Shape::Sphere(*self)),
+            Intersection::new(t2, Shape::Sphere(*self)),
         ]
     }
 
     fn local_normal_at(&self, object_point: Point) -> Vector {
         object_point - Point::new(0.0, 0.0, 0.0)
+    }
+
+    fn material(&self) -> Material {
+        self.material
     }
 
     fn transform(&self) -> Transformation {

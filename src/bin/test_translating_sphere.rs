@@ -4,7 +4,7 @@ use std::fs::File;
 use raytracer::canvas::Canvas;
 use raytracer::intersection::Intersection;
 use raytracer::ray::Ray;
-use raytracer::shape::{Shape, Sphere};
+use raytracer::shape::{Intersectable, Sphere};
 use raytracer::transformation;
 use raytracer::tuple::{Color, Point};
 

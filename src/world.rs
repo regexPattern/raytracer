@@ -2,12 +2,12 @@ use crate::intersection::{ComputedIntersection, Intersection};
 use crate::light::PointLight;
 use crate::material::Material;
 use crate::ray::Ray;
-use crate::shape::{Shape, Sphere};
+use crate::shape::{Intersectable, Shape, Sphere};
 use crate::transformation;
 use crate::tuple::{Color, Point};
 
 pub struct World {
-    pub objects: Vec<Sphere>,
+    pub objects: Vec<Shape>,
     pub light: PointLight,
 }
 
@@ -15,7 +15,7 @@ impl Default for World {
     fn default() -> Self {
         let light = PointLight::new(Point::new(-10.0, 10.0, -10.0), Color::white());
 
-        let s1 = Sphere {
+        let s1 = Shape::Sphere(Sphere {
             material: Material {
                 color: Color::new(0.8, 1.0, 0.6),
                 diffuse: 0.7,
@@ -23,12 +23,12 @@ impl Default for World {
                 ..Material::default()
             },
             ..Sphere::default()
-        };
+        });
 
-        let s2 = Sphere {
+        let s2 = Shape::Sphere(Sphere {
             transform: transformation::scaling(0.5, 0.5, 0.5),
             ..Sphere::default()
-        };
+        });
 
         Self {
             objects: vec![s1, s2],
@@ -38,7 +38,7 @@ impl Default for World {
 }
 
 impl World {
-    pub fn new(objects: Vec<Sphere>, light: PointLight) -> Self {
+    pub fn new(objects: Vec<Shape>, light: PointLight) -> Self {
         Self { objects, light }
     }
 
@@ -55,7 +55,7 @@ impl World {
 
     fn shade_hit(&self, comps: &ComputedIntersection) -> Color {
         let shadowed = self.is_shadowed(comps.over_point);
-        comps.intersection.object.material.lighting(
+        comps.intersection.object.material().lighting(
             self.light,
             comps.point,
             comps.eyev,
@@ -98,7 +98,7 @@ mod tests {
     fn the_default_world() {
         let light = PointLight::new(Point::new(-10.0, 10.0, -10.0), Color::white());
 
-        let s1 = Sphere {
+        let s1 = Shape::Sphere(Sphere {
             material: Material {
                 color: Color::new(0.8, 1.0, 0.6),
                 diffuse: 0.7,
@@ -106,12 +106,12 @@ mod tests {
                 ..Material::default()
             },
             ..Sphere::default()
-        };
+        });
 
-        let s2 = Sphere {
+        let s2 = Shape::Sphere(Sphere {
             transform: transformation::scaling(0.5, 0.5, 0.5),
             ..Sphere::default()
-        };
+        });
 
         let w = World::default();
 
@@ -169,20 +169,35 @@ mod tests {
 
     #[test]
     fn the_color_with_an_intersection_behind_the_ray() {
-        let mut w = World::default();
+        let outer = Shape::Sphere(Sphere {
+            material: Material {
+                color: Color::new(0.8, 1.0, 0.6),
+                diffuse: 0.7,
+                specular: 0.2,
+                ambient: 1.0,
+                ..Material::default()
+            },
+            ..Sphere::default()
+        });
 
-        let outer = &mut w.objects[0];
-        outer.material.ambient = 1.0;
+        let inner = Shape::Sphere(Sphere {
+            material: Material {
+                ambient: 1.0,
+                ..Material::default()
+            },
+            transform: transformation::scaling(0.5, 0.5, 0.5),
+        });
 
-        let inner = &mut w.objects[1];
-        inner.material.ambient = 1.0;
+        let w = World {
+            objects: vec![outer, inner],
+            ..World::default()
+        };
 
         let r = Ray::new(Point::new(0.0, 0.0, 0.75), Vector::new(0.0, 0.0, -1.0));
 
         let c = w.color_at(r);
 
-        let inner = &w.objects[1];
-        assert_eq!(c, inner.material.color);
+        assert_eq!(c, inner.material().color);
     }
 
     #[test]
@@ -220,11 +235,11 @@ mod tests {
     #[test]
     fn shade_hit_is_given_an_intersection_in_shadow() {
         let light = PointLight::new(Point::new(0.0, 0.0, -10.0), Color::white());
-        let s1 = Sphere::default();
-        let s2 = Sphere {
+        let s1 = Shape::Sphere(Sphere::default());
+        let s2 = Shape::Sphere(Sphere {
             transform: transformation::translation(0.0, 0.0, 10.0),
             ..Sphere::default()
-        };
+        });
 
         let w = World::new(vec![s1, s2], light);
 

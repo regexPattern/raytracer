@@ -3,16 +3,16 @@ use std::fs::File;
 
 use raytracer::camera::Camera;
 use raytracer::light::PointLight;
-use raytracer::shape::Sphere;
+use raytracer::shape::{Shape, Sphere};
 use raytracer::transformation;
 use raytracer::tuple::{Color, Point, Vector};
 use raytracer::world::World;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let s1 = Sphere {
+    let s1 = Shape::Sphere(Sphere {
         transform: transformation::scaling(2.0, 1.0, 2.0),
         ..Sphere::default()
-    };
+    });
 
     let objects = vec![s1];
     let light = PointLight::new(Point::new(0.0, 0.0, -5.0), Color::new(1.0, 0.0, 0.0));
