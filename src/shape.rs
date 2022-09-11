@@ -4,14 +4,16 @@ use crate::ray::Ray;
 use crate::transformation::Transformation;
 use crate::tuple::{Point, Vector};
 
+mod plane;
 mod sphere;
 
+pub use plane::Plane;
 pub use sphere::Sphere;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Shape {
     Sphere(Sphere),
-    Plane(Sphere),
+    Plane(Plane),
 }
 
 pub trait Intersectable {
@@ -115,7 +117,7 @@ mod tests {
     fn the_default_transformation() {
         let s = TestShape::default();
 
-        assert_eq!(s.transform, Transformation::identity());
+        assert_eq!(s.transform(), Transformation::identity());
     }
 
     #[test]
@@ -126,14 +128,14 @@ mod tests {
             ..TestShape::default()
         };
 
-        assert_eq!(s.transform, t);
+        assert_eq!(s.transform(), t);
     }
 
     #[test]
     fn the_default_material() {
         let s = TestShape::default();
 
-        assert_eq!(s.material, Material::default());
+        assert_eq!(s.material(), Material::default());
     }
 
     #[test]

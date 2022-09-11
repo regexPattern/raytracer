@@ -66,7 +66,7 @@ mod tests {
         let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
         let s = Sphere::default();
 
-        let xs = s.intersect(r);
+        let xs = s.local_intersect(r);
 
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, 4.0);
@@ -78,7 +78,7 @@ mod tests {
         let r = Ray::new(Point::new(0.0, 1.0, -5.0), Vector::new(0.0, 0.0, 1.0));
         let s = Sphere::default();
 
-        let xs = s.intersect(r);
+        let xs = s.local_intersect(r);
 
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, 5.0);
@@ -90,7 +90,7 @@ mod tests {
         let r = Ray::new(Point::new(0.0, 2.0, -5.0), Vector::new(0.0, 0.0, 1.0));
         let s = Sphere::default();
 
-        let xs = s.intersect(r);
+        let xs = s.local_intersect(r);
 
         assert_eq!(xs.len(), 0);
     }
@@ -100,7 +100,7 @@ mod tests {
         let r = Ray::new(Point::new(0.0, 0.0, 0.0), Vector::new(0.0, 0.0, 1.0));
         let s = Sphere::default();
 
-        let xs = s.intersect(r);
+        let xs = s.local_intersect(r);
 
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, -1.0);
@@ -112,7 +112,7 @@ mod tests {
         let r = Ray::new(Point::new(0.0, 0.0, 5.0), Vector::new(0.0, 0.0, 1.0));
         let s = Sphere::default();
 
-        let xs = s.intersect(r);
+        let xs = s.local_intersect(r);
 
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, -6.0);
@@ -123,7 +123,7 @@ mod tests {
     fn the_normal_on_a_sphere_at_a_point_on_the_x_axis() {
         let s = Sphere::default();
 
-        let n = s.normal_at(Point::new(1.0, 0.0, 0.0));
+        let n = s.local_normal_at(Point::new(1.0, 0.0, 0.0));
 
         assert_eq!(n, Vector::new(1.0, 0.0, 0.0));
     }
@@ -132,7 +132,7 @@ mod tests {
     fn the_normal_on_a_sphere_at_a_point_on_the_y_axis() {
         let s = Sphere::default();
 
-        let n = s.normal_at(Point::new(0.0, 1.0, 0.0));
+        let n = s.local_normal_at(Point::new(0.0, 1.0, 0.0));
 
         assert_eq!(n, Vector::new(0.0, 1.0, 0.0));
     }
@@ -141,7 +141,7 @@ mod tests {
     fn the_normal_on_a_sphere_at_a_point_on_the_z_axis() {
         let s = Sphere::default();
 
-        let n = s.normal_at(Point::new(0.0, 0.0, 1.0));
+        let n = s.local_normal_at(Point::new(0.0, 0.0, 1.0));
 
         assert_eq!(n, Vector::new(0.0, 0.0, 1.0));
     }
@@ -150,7 +150,7 @@ mod tests {
     fn the_normal_on_a_sphere_at_a_point_at_a_nonaxial_point() {
         let s = Sphere::default();
 
-        let n = s.normal_at(Point::new(
+        let n = s.local_normal_at(Point::new(
             3_f64.sqrt() / 3.0,
             3_f64.sqrt() / 3.0,
             3_f64.sqrt() / 3.0,
@@ -166,7 +166,7 @@ mod tests {
     fn the_normal_is_a_normalized_vector() {
         let s = Sphere::default();
 
-        let n = s.normal_at(Point::new(
+        let n = s.local_normal_at(Point::new(
             3_f64.sqrt() / 3.0,
             3_f64.sqrt() / 3.0,
             3_f64.sqrt() / 3.0,
