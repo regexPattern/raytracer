@@ -94,7 +94,7 @@ impl Vector {
 
 #[cfg(test)]
 mod tests {
-    use crate::float::assert_approx;
+    use crate::assert_approx;
 
     use super::*;
 
@@ -115,10 +115,10 @@ mod tests {
             w: 1.0,
         };
 
-        assert_approx(a.x, 4.3);
-        assert_approx(a.y, -4.2);
-        assert_approx(a.z, 3.1);
-        assert_approx(a.w, 1.0);
+        assert_approx!(a.x, 4.3);
+        assert_approx!(a.y, -4.2);
+        assert_approx!(a.z, 3.1);
+        assert_approx!(a.w, 1.0);
         assert!(tuple_is_a_point(a));
         assert!(!tuple_is_a_vector(a));
     }
@@ -132,10 +132,10 @@ mod tests {
             w: 0.0,
         };
 
-        assert_approx(a.x, 4.3);
-        assert_approx(a.y, -4.2);
-        assert_approx(a.z, 3.1);
-        assert_approx(a.w, 0.0);
+        assert_approx!(a.x, 4.3);
+        assert_approx!(a.y, -4.2);
+        assert_approx!(a.z, 3.1);
+        assert_approx!(a.w, 0.0);
         assert!(tuple_is_a_vector(a));
         assert!(!tuple_is_a_point(a));
     }
@@ -176,14 +176,13 @@ mod tests {
         let j = Vector::new(0.0, 1.0, 0.0);
         let k = Vector::new(0.0, 0.0, 1.0);
 
-        /* TODO: Convert `assert_approx` to a macro that takes a string.
         assert_approx!(i.magnitude(), 1.0, "Magnitude of î is `1.0`");
         assert_approx!(j.magnitude(), 1.0, "Magnitude of ĵ is `1.0`");
-        assert_approx!(k.magnitude(), 1.0, "Magnitude of k̂ is `1.0`"); */
+        assert_approx!(k.magnitude(), 1.0, "Magnitude of k̂ is `1.0`");
 
-        assert_approx(i.magnitude(), 1.0);
-        assert_approx(j.magnitude(), 1.0);
-        assert_approx(k.magnitude(), 1.0);
+        // assert_approx!(i.magnitude(), 1.0);
+        // assert_approx!(j.magnitude(), 1.0);
+        // assert_approx!(k.magnitude(), 1.0);
     }
 
     #[test]
@@ -191,8 +190,8 @@ mod tests {
         let v1 = Vector::new(1.0, 2.0, 3.0);
         let v2 = Vector::new(-1.0, -2.0, -3.0);
 
-        assert_approx(v1.magnitude(), 14_f64.sqrt());
-        assert_approx(v2.magnitude(), 14_f64.sqrt());
+        assert_approx!(v1.magnitude(), 14_f64.sqrt());
+        assert_approx!(v2.magnitude(), 14_f64.sqrt());
     }
 
     #[test]
@@ -216,10 +215,10 @@ mod tests {
         let v1 = Vector::new(1.0, 2.0, 3.0);
         let v2 = Vector::new(2.0, 3.0, 4.0);
 
-        assert_approx(v1.dot(&v2), 20.0);
+        assert_approx!(v1.dot(&v2), 20.0);
         // TODO: Refactor this when I implement this macro.
         // assert_approx!(v2.dot(&v1), 20.0, "`Vector` dot product is commutative");
-        assert_approx(v2.dot(&v1), 20.0);
+        assert_approx!(v2.dot(&v1), 20.0);
     }
 
     #[test]
