@@ -1,4 +1,6 @@
+mod canvas;
+mod color;
 mod float;
 mod tuple;
 
-pub mod challenge;
+pub mod chapters;

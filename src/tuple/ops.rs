@@ -6,12 +6,12 @@ impl Add for Tuple {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        Tuple {
-            x: self.x + rhs.x,
-            y: self.y + rhs.y,
-            z: self.z + rhs.z,
-            w: self.w + rhs.w,
-        }
+        let x = self.x + rhs.x;
+        let y = self.y + rhs.y;
+        let z = self.z + rhs.z;
+        let w = self.w + rhs.w;
+
+        Self { x, y, z, w }
     }
 }
 
@@ -43,12 +43,12 @@ impl Sub for Tuple {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        Tuple {
-            x: self.x - rhs.x,
-            y: self.y - rhs.y,
-            z: self.z - rhs.z,
-            w: self.w - rhs.w,
-        }
+        let x = self.x - rhs.x;
+        let y = self.y - rhs.y;
+        let z = self.z - rhs.z;
+        let w = self.w - rhs.w;
+
+        Self { x, y, z, w }
     }
 }
 
@@ -80,12 +80,12 @@ impl Neg for Tuple {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
-        Self {
-            x: -self.x,
-            y: -self.y,
-            z: -self.z,
-            w: -self.w,
-        }
+        let x = -self.x;
+        let y = -self.y;
+        let z = -self.z;
+        let w = -self.w;
+
+        Self { x, y, z, w }
     }
 }
 
@@ -101,12 +101,12 @@ impl Mul<f64> for Tuple {
     type Output = Self;
 
     fn mul(self, rhs: f64) -> Self::Output {
-        Self {
-            x: self.x * rhs,
-            y: self.y * rhs,
-            z: self.z * rhs,
-            w: self.w * rhs,
-        }
+        let x = self.x * rhs;
+        let y = self.y * rhs;
+        let z = self.z * rhs;
+        let w = self.w * rhs;
+
+        Self { x, y, z, w }
     }
 }
 
@@ -186,7 +186,6 @@ mod tests {
         let v2 = Vector::new(4.0, 5.0, 6.0);
 
         assert_eq!(v1 + v2, Vector::new(5.0, 7.0, 9.0));
-        assert_eq!(v1 + v2, v2 + v1, "`Vector` addition is commutative");
     }
 
     #[test]

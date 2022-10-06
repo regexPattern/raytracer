@@ -1,3 +1,5 @@
+#![allow(clippy::suboptimal_flops)]
+
 mod ops;
 
 use crate::float;
@@ -38,13 +40,13 @@ impl PartialEq<Tuple> for Vector {
 }
 
 impl Point {
-    pub fn new(x: f64, y: f64, z: f64) -> Self {
+    pub const fn new(x: f64, y: f64, z: f64) -> Self {
         Self(Tuple { x, y, z, w: 1.0 })
     }
 }
 
 impl Vector {
-    pub fn new(x: f64, y: f64, z: f64) -> Self {
+    pub const fn new(x: f64, y: f64, z: f64) -> Self {
         Self(Tuple { x, y, z, w: 0.0 })
     }
 
@@ -88,7 +90,11 @@ impl Vector {
             ..
         } = rhs.0;
 
-        Self::new(y1 * z2 - z1 * y2, z1 * x2 - x1 * z2, x1 * y2 - y1 * x2)
+        let x = y1 * z2 - z1 * y2;
+        let y = z1 * x2 - x1 * z2;
+        let z = x1 * y2 - y1 * x2;
+
+        Self::new(x, y, z)
     }
 }
 

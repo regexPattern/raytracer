@@ -12,16 +12,13 @@ struct Environment {
 
 impl Projectile {
     fn has_hit_the_ground(&self) -> bool {
-        self.position.0.y <= 0.0 
+        self.position.0.y <= 0.0
     }
 }
 
-fn tick(env: &Environment, proj: &mut Projectile) { 
-    let Projectile { position, velocity } = proj;
-    let Environment { gravity, wind } = env;
-
-    proj.position = *position + *velocity;
-    proj.velocity = *velocity + *gravity + *wind;
+fn tick(env: &Environment, proj: &mut Projectile) {
+    proj.position = proj.position + proj.velocity;
+    proj.velocity = proj.velocity + env.gravity + env.wind;
 }
 
 pub fn run() {
@@ -36,8 +33,11 @@ pub fn run() {
     };
 
     while !proj.has_hit_the_ground() {
+        println!(
+            "{{ x: {:.3}, y: {:.3} }}",
+            proj.position.0.x, proj.position.0.y
+        );
         tick(&env, &mut proj);
-        println!("{{ x: {:.3}, y: {:.3} }}", proj.position.0.x, proj.position.0.y);
         std::thread::sleep(std::time::Duration::from_millis(50));
     }
 }
