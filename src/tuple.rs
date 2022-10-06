@@ -3,18 +3,18 @@ mod ops;
 use crate::float;
 
 #[derive(Copy, Clone, Debug)]
-struct Tuple {
-    x: f64,
-    y: f64,
-    z: f64,
-    w: f64,
+pub struct Tuple {
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub w: f64,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-struct Point(Tuple);
+pub struct Point(pub Tuple);
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-struct Vector(Tuple);
+pub struct Vector(pub Tuple);
 
 impl PartialEq for Tuple {
     fn eq(&self, other: &Self) -> bool {
@@ -38,26 +38,26 @@ impl PartialEq<Tuple> for Vector {
 }
 
 impl Point {
-    fn new(x: f64, y: f64, z: f64) -> Self {
+    pub fn new(x: f64, y: f64, z: f64) -> Self {
         Self(Tuple { x, y, z, w: 1.0 })
     }
 }
 
 impl Vector {
-    fn new(x: f64, y: f64, z: f64) -> Self {
+    pub fn new(x: f64, y: f64, z: f64) -> Self {
         Self(Tuple { x, y, z, w: 0.0 })
     }
 
-    fn magnitude(&self) -> f64 {
+    pub fn magnitude(&self) -> f64 {
         let Tuple { x, y, z, .. } = self.0;
         (x.powi(2) + y.powi(2) + z.powi(2)).sqrt()
     }
 
-    fn normalize(self) -> Self {
+    pub fn normalize(self) -> Self {
         self / self.magnitude()
     }
 
-    fn dot(&self, rhs: &Self) -> f64 {
+    pub fn dot(&self, rhs: &Self) -> f64 {
         let Tuple {
             x: x1,
             y: y1,
@@ -74,7 +74,7 @@ impl Vector {
         x1 * x2 + y1 * y2 + z1 * z2
     }
 
-    fn cross(&self, rhs: &Self) -> Self {
+    pub fn cross(&self, rhs: &Self) -> Self {
         let Tuple {
             x: x1,
             y: y1,
@@ -179,10 +179,6 @@ mod tests {
         assert_approx!(i.magnitude(), 1.0, "Magnitude of î is `1.0`");
         assert_approx!(j.magnitude(), 1.0, "Magnitude of ĵ is `1.0`");
         assert_approx!(k.magnitude(), 1.0, "Magnitude of k̂ is `1.0`");
-
-        // assert_approx!(i.magnitude(), 1.0);
-        // assert_approx!(j.magnitude(), 1.0);
-        // assert_approx!(k.magnitude(), 1.0);
     }
 
     #[test]
@@ -216,9 +212,7 @@ mod tests {
         let v2 = Vector::new(2.0, 3.0, 4.0);
 
         assert_approx!(v1.dot(&v2), 20.0);
-        // TODO: Refactor this when I implement this macro.
-        // assert_approx!(v2.dot(&v1), 20.0, "`Vector` dot product is commutative");
-        assert_approx!(v2.dot(&v1), 20.0);
+        assert_approx!(v2.dot(&v1), 20.0, "`Vector` dot product is commutative");
     }
 
     #[test]

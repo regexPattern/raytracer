@@ -94,7 +94,7 @@ delta: `1.00000`,
 epsilon: `0.00001`
 desc: 'one is equal to two'"
     )]
-    fn approx_macro_with_comparisson_description() {
+    fn approx_macro_with_description_message() {
         assert_approx!(1.0, 2.0, "one is equal to two");
     }
 }
