@@ -1,8 +1,6 @@
-#![allow(clippy::suboptimal_flops)]
+use crate::float;
 
 mod ops;
-
-use crate::float;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Tuple {

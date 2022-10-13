@@ -1,7 +1,5 @@
-mod canvas;
-mod color;
+pub mod canvas;
+pub mod color;
 mod float;
-mod matrix;
-mod tuple;
-
-pub mod chapters;
+pub mod matrix;
+pub mod tuple;
