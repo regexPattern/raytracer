@@ -3,7 +3,7 @@ use crate::float;
 mod ops;
 mod transformations;
 
-const IDENTITY4X4: Matrix<4, 4> = Matrix([
+pub const IDENTITY4X4: Matrix<4, 4> = Matrix([
     [1.0, 0.0, 0.0, 0.0],
     [0.0, 1.0, 0.0, 0.0],
     [0.0, 0.0, 1.0, 0.0],
@@ -154,7 +154,7 @@ impl Matrix<4, 4> {
         result
     }
 
-    fn transpose(&self) -> Self {
+    pub fn transpose(&self) -> Self {
         let mut result = Self([[0.0; 4]; 4]);
 
         for row in 0..4 {

@@ -1,29 +1,74 @@
 use std::fs::File;
-use std::io::prelude::*;
+use std::io::Write;
 
 use raytracer::canvas::Canvas;
-use raytracer::color;
-use raytracer::matrix::Matrix;
-use raytracer::tuple::Vector;
+use raytracer::color::{self, Color};
+use raytracer::intersection::Intersection;
+use raytracer::light::PointLight;
+use raytracer::material::Material;
+use raytracer::ray::Ray;
+use raytracer::sphere::Sphere;
+use raytracer::tuple::Point;
 
 fn main() {
-    let mut v = Vector::new(0.0, 1.0, 0.0);
-    let ticks = 100;
+    let s = Sphere {
+        material: Material {
+            color: Color {
+                red: 1.0,
+                green: 0.2,
+                blue: 1.0,
+            },
+            ..Material::default()
+        },
+        ..Sphere::default()
+    };
 
-    let mut canvas = Canvas::new(500, 500);
-    let radius = 3.0 * f64::from(canvas.width) / 8.0;
+    let light = PointLight {
+        position: Point::new(-10.0, 10.0, -10.0),
+        intensity: color::WHITE,
+    };
 
-    let transform = Matrix::rotation_z(-2.0 * std::f64::consts::PI / f64::from(ticks));
+    run(s, light);
+}
 
-    for _ in 0..ticks {
-        let x = v.0.x * radius + f64::from(canvas.width / 2);
-        let y = v.0.y * radius + f64::from(canvas.height / 2);
+fn run(s: Sphere, light: PointLight) {
+    let ray_origin = Point::new(0.0, 0.0, -5.0);
 
-        canvas.write_pixel(x as u32, y as u32, color::WHITE);
+    let wall_size = 7.0;
+    let wall_z = 10.0;
 
-        v = transform * v;
+    let canvas_pixels = 100;
+    let pixel_size = wall_size / f64::from(canvas_pixels);
+    let half = wall_size / 2.0;
+
+    let mut canvas = Canvas::new(canvas_pixels, canvas_pixels);
+
+    for y in 0..canvas_pixels {
+        let world_y = half - pixel_size * f64::from(y);
+
+        for x in 0..canvas_pixels {
+            let world_x = -half + pixel_size * f64::from(x);
+
+            let position = Point::new(world_x, world_y, wall_z);
+
+            let r = Ray {
+                origin: ray_origin,
+                direction: (position - ray_origin).normalize(),
+            };
+            let xs = s.intersect(&r);
+
+            if let Some(i) = Intersection::hit(xs) {
+                let point = r.position(i.t);
+                let normal = s.normal_at(point);
+                let eye = -r.direction;
+
+                let color = i.object.material.lighting(&light, point, eye, normal);
+                canvas.write_pixel(x, y, color);
+            }
+        }
     }
 
+    let ppm = canvas.to_ppm();
     let mut file = File::create("image.ppm").unwrap();
-    let _ = file.write(canvas.to_ppm().as_bytes()).unwrap();
+    let _ = file.write(ppm.as_bytes()).unwrap();
 }

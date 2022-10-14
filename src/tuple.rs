@@ -48,7 +48,7 @@ impl Vector {
         Self(Tuple { x, y, z, w: 0.0 })
     }
 
-    pub fn magnitude(&self) -> f64 {
+    pub fn magnitude(self) -> f64 {
         let Tuple { x, y, z, .. } = self.0;
         (x.powi(2) + y.powi(2) + z.powi(2)).sqrt()
     }
@@ -57,7 +57,7 @@ impl Vector {
         self / self.magnitude()
     }
 
-    pub fn dot(&self, rhs: &Self) -> f64 {
+    pub fn dot(self, rhs: Self) -> f64 {
         let Tuple {
             x: x1,
             y: y1,
@@ -75,7 +75,7 @@ impl Vector {
         x1 * x2 + y1 * y2 + z1 * z2
     }
 
-    pub fn cross(&self, rhs: &Self) -> Self {
+    pub fn cross(self, rhs: Self) -> Self {
         let Tuple {
             x: x1,
             y: y1,
@@ -95,6 +95,10 @@ impl Vector {
         let z = x1 * y2 - y1 * x2;
 
         Self::new(x, y, z)
+    }
+
+    pub fn reflect(self, normal: Self) -> Self {
+        self - normal * 2.0 * self.dot(normal)
     }
 }
 
@@ -217,8 +221,8 @@ mod tests {
         let v1 = Vector::new(1.0, 2.0, 3.0);
         let v2 = Vector::new(2.0, 3.0, 4.0);
 
-        assert_approx!(v1.dot(&v2), 20.0);
-        assert_approx!(v2.dot(&v1), 20.0, "`Vector` dot product is commutative");
+        assert_approx!(v1.dot(v2), 20.0);
+        assert_approx!(v2.dot(v1), 20.0, "`Vector` dot product is commutative");
     }
 
     #[test]
@@ -226,8 +230,8 @@ mod tests {
         let v1 = Vector::new(1.0, 2.0, 3.0);
         let v2 = Vector::new(2.0, 3.0, 4.0);
 
-        assert_eq!(v1.cross(&v2), Vector::new(-1.0, 2.0, -1.0));
-        assert_eq!(v2.cross(&v1), -v1.cross(&v2));
+        assert_eq!(v1.cross(v2), Vector::new(-1.0, 2.0, -1.0));
+        assert_eq!(v2.cross(v1), -v1.cross(v2));
     }
 
     #[test]
@@ -236,11 +240,31 @@ mod tests {
         let j = Vector::new(0.0, 1.0, 0.0);
         let k = Vector::new(0.0, 0.0, 1.0);
 
-        assert_eq!(i.cross(&j), k);
-        assert_eq!(i.cross(&k), -j);
-        assert_eq!(j.cross(&i), -k);
-        assert_eq!(j.cross(&k), i);
-        assert_eq!(k.cross(&i), j);
-        assert_eq!(k.cross(&j), -i);
+        assert_eq!(i.cross(j), k);
+        assert_eq!(i.cross(k), -j);
+        assert_eq!(j.cross(i), -k);
+        assert_eq!(j.cross(k), i);
+        assert_eq!(k.cross(i), j);
+        assert_eq!(k.cross(j), -i);
+    }
+
+    #[test]
+    fn reflecting_a_vector_approaching_at_45_degrees() {
+        let v = Vector::new(1.0, -1.0, 0.0);
+        let n = Vector::new(0.0, 1.0, 0.0);
+
+        let r = v.reflect(n);
+
+        assert_eq!(r, Vector::new(1.0, 1.0, 0.0));
+    }
+
+    #[test]
+    fn reflecting_a_vector_off_a_slanted_surface() {
+        let v = Vector::new(0.0, -1.0, 0.0);
+        let n = Vector::new(2_f64.sqrt() / 2.0, 2_f64.sqrt() / 2.0, 0.0);
+
+        let r = v.reflect(n);
+
+        assert_eq!(r, Vector::new(1.0, 0.0, 0.0));
     }
 }

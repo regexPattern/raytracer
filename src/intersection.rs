@@ -14,7 +14,7 @@ impl PartialEq for Intersection<'_> {
 }
 
 impl Intersection<'_> {
-    fn hit(mut xs: Vec<Intersection<'_>>) -> Option<Intersection> {
+    pub fn hit(mut xs: Vec<Intersection<'_>>) -> Option<Intersection> {
         xs.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
         xs.into_iter().find(|i| i.t.is_sign_positive())
     }
@@ -28,7 +28,7 @@ mod tests {
 
     #[test]
     fn an_intersection_encapsulates_t_and_object() {
-        let s = Sphere;
+        let s = Sphere::default();
 
         let i = Intersection { t: 3.5, object: &s };
 
@@ -38,7 +38,7 @@ mod tests {
 
     #[test]
     fn aggregating_intersections() {
-        let s = Sphere;
+        let s = Sphere::default();
         let i1 = Intersection { t: 1.0, object: &s };
         let i2 = Intersection { t: 2.0, object: &s };
 
@@ -51,7 +51,7 @@ mod tests {
 
     #[test]
     fn the_hit_when_all_intersections_have_positive_t() {
-        let s = Sphere;
+        let s = Sphere::default();
         let i1 = Intersection { t: 1.0, object: &s };
         let i2 = Intersection { t: 2.0, object: &s };
         // TODO: Maybe I should make a vector of references instead????
@@ -65,7 +65,7 @@ mod tests {
 
     #[test]
     fn the_hit_when_some_intersections_have_negative_t() {
-        let s = Sphere;
+        let s = Sphere::default();
         let i1 = Intersection {
             t: -1.0,
             object: &s,
@@ -80,7 +80,7 @@ mod tests {
 
     #[test]
     fn the_hit_when_all_intersections_have_negative_t() {
-        let s = Sphere;
+        let s = Sphere::default();
         let i1 = Intersection {
             t: -2.0,
             object: &s,
@@ -98,7 +98,7 @@ mod tests {
 
     #[test]
     fn the_hit_is_always_the_lowest_nonnegative_intersection() {
-        let s = Sphere;
+        let s = Sphere::default();
         let i1 = Intersection { t: 5.0, object: &s };
         let i2 = Intersection { t: 7.0, object: &s };
         let i3 = Intersection {
