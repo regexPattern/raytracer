@@ -69,7 +69,7 @@ mod tests {
         let transform = Matrix::translation(5.0, -3.0, 2.0);
         let p = Point::new(-3.0, 4.0, 5.0);
 
-        assert_eq!(&transform * p, Point::new(2.0, 1.0, 7.0));
+        assert_eq!(transform * p, Point::new(2.0, 1.0, 7.0));
     }
 
     #[test]
@@ -78,7 +78,7 @@ mod tests {
         let inv = transform.inverse();
         let p = Point::new(-3.0, 4.0, 5.0);
 
-        assert_eq!(&inv * p, Point::new(-8.0, 7.0, 3.0));
+        assert_eq!(inv * p, Point::new(-8.0, 7.0, 3.0));
     }
 
     #[test]
@@ -86,7 +86,7 @@ mod tests {
         let transform = Matrix::translation(5.0, -3.0, 2.0);
         let v = Vector::new(-3.0, 4.0, 5.0);
 
-        assert_eq!(&transform * v, v);
+        assert_eq!(transform * v, v);
     }
 
     #[test]
@@ -94,7 +94,7 @@ mod tests {
         let transform = Matrix::scaling(2.0, 3.0, 4.0);
         let p = Point::new(-4.0, 6.0, 8.0);
 
-        assert_eq!(&transform * p, Point::new(-8.0, 18.0, 32.0));
+        assert_eq!(transform * p, Point::new(-8.0, 18.0, 32.0));
     }
 
     #[test]
@@ -102,7 +102,7 @@ mod tests {
         let transform = Matrix::scaling(2.0, 3.0, 4.0);
         let p = Vector::new(-4.0, 6.0, 8.0);
 
-        assert_eq!(&transform * p, Vector::new(-8.0, 18.0, 32.0));
+        assert_eq!(transform * p, Vector::new(-8.0, 18.0, 32.0));
     }
 
     #[test]
@@ -111,7 +111,7 @@ mod tests {
         let inv = transform.inverse();
         let v = Vector::new(-4.0, 6.0, 8.0);
 
-        assert_eq!(&inv * v, Vector::new(-2.0, 2.0, 2.0));
+        assert_eq!(inv * v, Vector::new(-2.0, 2.0, 2.0));
     }
 
     #[test]
@@ -119,7 +119,7 @@ mod tests {
         let transform = Matrix::scaling(-1.0, 1.0, 1.0);
         let p = Point::new(2.0, 3.0, 4.0);
 
-        assert_eq!(&transform * p, Point::new(-2.0, 3.0, 4.0));
+        assert_eq!(transform * p, Point::new(-2.0, 3.0, 4.0));
     }
 
     #[test]
@@ -129,10 +129,10 @@ mod tests {
         let full_quarter = Matrix::rotation_x(std::f64::consts::FRAC_PI_2);
 
         assert_eq!(
-            &half_quarter * p,
+            half_quarter * p,
             Point::new(0.0, 2_f64.sqrt() / 2.0, 2_f64.sqrt() / 2.0)
         );
-        assert_eq!(&full_quarter * p, Point::new(0.0, 0.0, 1.0));
+        assert_eq!(full_quarter * p, Point::new(0.0, 0.0, 1.0));
     }
 
     #[test]
@@ -142,7 +142,7 @@ mod tests {
         let inv = half_quarter.inverse();
 
         assert_eq!(
-            &inv * p,
+            inv * p,
             Point::new(0.0, 2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0)
         );
     }
@@ -154,10 +154,10 @@ mod tests {
         let full_quarter = Matrix::rotation_y(std::f64::consts::FRAC_PI_2);
 
         assert_eq!(
-            &half_quarter * p,
+            half_quarter * p,
             Point::new(2_f64.sqrt() / 2.0, 0.0, 2_f64.sqrt() / 2.0)
         );
-        assert_eq!(&full_quarter * p, Point::new(1.0, 0.0, 0.0));
+        assert_eq!(full_quarter * p, Point::new(1.0, 0.0, 0.0));
     }
 
     #[test]
@@ -167,10 +167,10 @@ mod tests {
         let full_quarter = Matrix::rotation_z(std::f64::consts::FRAC_PI_2);
 
         assert_eq!(
-            &half_quarter * p,
+            half_quarter * p,
             Point::new(-2_f64.sqrt() / 2.0, 2_f64.sqrt() / 2.0, 0.0)
         );
-        assert_eq!(&full_quarter * p, Point::new(-1.0, 0.0, 0.0));
+        assert_eq!(full_quarter * p, Point::new(-1.0, 0.0, 0.0));
     }
 
     #[test]
@@ -178,7 +178,7 @@ mod tests {
         let transform = Matrix::shearing(1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         let p = Point::new(2.0, 3.0, 4.0);
 
-        assert_eq!(&transform * p, Point::new(5.0, 3.0, 4.0));
+        assert_eq!(transform * p, Point::new(5.0, 3.0, 4.0));
     }
 
     #[test]
@@ -186,7 +186,7 @@ mod tests {
         let transform = Matrix::shearing(0.0, 1.0, 0.0, 0.0, 0.0, 0.0);
         let p = Point::new(2.0, 3.0, 4.0);
 
-        assert_eq!(&transform * p, Point::new(6.0, 3.0, 4.0));
+        assert_eq!(transform * p, Point::new(6.0, 3.0, 4.0));
     }
 
     #[test]
@@ -194,7 +194,7 @@ mod tests {
         let transform = Matrix::shearing(0.0, 0.0, 1.0, 0.0, 0.0, 0.0);
         let p = Point::new(2.0, 3.0, 4.0);
 
-        assert_eq!(&transform * p, Point::new(2.0, 5.0, 4.0));
+        assert_eq!(transform * p, Point::new(2.0, 5.0, 4.0));
     }
 
     #[test]
@@ -202,7 +202,7 @@ mod tests {
         let transform = Matrix::shearing(0.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         let p = Point::new(2.0, 3.0, 4.0);
 
-        assert_eq!(&transform * p, Point::new(2.0, 7.0, 4.0));
+        assert_eq!(transform * p, Point::new(2.0, 7.0, 4.0));
     }
 
     #[test]
@@ -210,7 +210,7 @@ mod tests {
         let transform = Matrix::shearing(0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
         let p = Point::new(2.0, 3.0, 4.0);
 
-        assert_eq!(&transform * p, Point::new(2.0, 3.0, 6.0));
+        assert_eq!(transform * p, Point::new(2.0, 3.0, 6.0));
     }
 
     #[test]
@@ -218,7 +218,7 @@ mod tests {
         let transform = Matrix::shearing(0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
         let p = Point::new(2.0, 3.0, 4.0);
 
-        assert_eq!(&transform * p, Point::new(2.0, 3.0, 7.0));
+        assert_eq!(transform * p, Point::new(2.0, 3.0, 7.0));
     }
 
     #[test]
@@ -228,13 +228,13 @@ mod tests {
         let B = Matrix::scaling(5.0, 5.0, 5.0);
         let C = Matrix::translation(10.0, 5.0, 7.0);
 
-        let p2 = &A * p;
+        let p2 = A * p;
         assert_eq!(p2, Point::new(1.0, -1.0, 0.0));
 
-        let p3 = &B * p2;
+        let p3 = B * p2;
         assert_eq!(p3, Point::new(5.0, -5.0, 0.0));
 
-        let p4 = &C * p3;
+        let p4 = C * p3;
         assert_eq!(p4, Point::new(15.0, 0.0, 7.0));
     }
 
@@ -247,8 +247,8 @@ mod tests {
 
         // TODO: I don't really like this. Maybe it's overkill to not implement the `Copy` trait
         // for matrices???
-        let T = &C * &(&B * &A);
+        let T = C * B * A;
 
-        assert_eq!(&T * p, Point::new(15.0, 0.0, 7.0));
+        assert_eq!(T * p, Point::new(15.0, 0.0, 7.0));
     }
 }

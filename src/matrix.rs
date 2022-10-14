@@ -10,7 +10,7 @@ const IDENTITY4X4: Matrix<4, 4> = Matrix([
     [0.0, 0.0, 0.0, 1.0],
 ]);
 
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct Matrix<const M: usize, const N: usize>([[f64; N]; M]);
 
 impl<const M: usize, const N: usize> PartialEq for Matrix<M, N> {

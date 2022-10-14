@@ -18,10 +18,10 @@ impl<const M: usize, const N: usize> IndexMut<usize> for Matrix<M, N> {
     }
 }
 
-impl<const M1: usize, const N: usize, const N2: usize> Mul<&Matrix<N, N2>> for &Matrix<M1, N> {
+impl<const M1: usize, const N: usize, const N2: usize> Mul<Matrix<N, N2>> for Matrix<M1, N> {
     type Output = Matrix<M1, N2>;
 
-    fn mul(self, rhs: &Matrix<N, N2>) -> Self::Output {
+    fn mul(self, rhs: Matrix<N, N2>) -> Self::Output {
         let mut result = Matrix([[0.0; N2]; M1]);
 
         for row1 in 0..M1 {
@@ -39,11 +39,11 @@ impl<const M1: usize, const N: usize, const N2: usize> Mul<&Matrix<N, N2>> for &
     }
 }
 
-impl Mul<Tuple> for &Matrix<4, 4> {
+impl Mul<Tuple> for Matrix<4, 4> {
     type Output = Tuple;
 
     fn mul(self, rhs: Tuple) -> Self::Output {
-        let result = self * &Matrix([[rhs.x], [rhs.y], [rhs.z], [rhs.w]]);
+        let result = self * Matrix([[rhs.x], [rhs.y], [rhs.z], [rhs.w]]);
 
         let x = result[0][0];
         let y = result[1][0];
@@ -54,7 +54,7 @@ impl Mul<Tuple> for &Matrix<4, 4> {
     }
 }
 
-impl Mul<Point> for &Matrix<4, 4> {
+impl Mul<Point> for Matrix<4, 4> {
     type Output = Point;
 
     fn mul(self, rhs: Point) -> Self::Output {
@@ -62,7 +62,7 @@ impl Mul<Point> for &Matrix<4, 4> {
     }
 }
 
-impl Mul<Vector> for &Matrix<4, 4> {
+impl Mul<Vector> for Matrix<4, 4> {
     type Output = Vector;
 
     fn mul(self, rhs: Vector) -> Self::Output {
@@ -141,7 +141,7 @@ mod tests {
         ]);
 
         assert_eq!(
-            &A * &B,
+            A * B,
             Matrix([
                 [20.0, 22.0, 50.0, 48.0],
                 [44.0, 54.0, 114.0, 108.0],
@@ -167,7 +167,7 @@ mod tests {
         };
 
         assert_eq!(
-            &A * b,
+            A * b,
             Tuple {
                 x: 18.0,
                 y: 24.0,
@@ -187,7 +187,7 @@ mod tests {
         ]);
         let p = Point::new(1.0, 2.0, 3.0);
 
-        assert_eq!(&A * p, Point::new(18.0, 24.0, 33.0));
+        assert_eq!(A * p, Point::new(18.0, 24.0, 33.0));
     }
 
     #[test]
@@ -200,7 +200,7 @@ mod tests {
         ]);
         let v = Vector::new(1.0, 2.0, 3.0);
 
-        assert_eq!(&A * v, Vector::new(14.0, 22.0, 32.0));
+        assert_eq!(A * v, Vector::new(14.0, 22.0, 32.0));
     }
 
     #[test]
@@ -212,7 +212,7 @@ mod tests {
             [4.0, 8.0, 16.0, 32.0],
         ]);
 
-        assert_eq!(&A * &matrix::IDENTITY4X4, A);
+        assert_eq!(A * matrix::IDENTITY4X4, A);
     }
 
     #[test]
@@ -231,8 +231,8 @@ mod tests {
             [6.0, -2.0, 0.0, 5.0],
         ]);
 
-        let C = &A * &B;
+        let C = A * B;
 
-        assert_eq!(&C * &B.inverse(), A);
+        assert_eq!(C * B.inverse(), A);
     }
 }

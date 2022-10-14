@@ -64,6 +64,7 @@ impl Vector {
             z: z1,
             ..
         } = self.0;
+
         let Tuple {
             x: x2,
             y: y2,
@@ -81,6 +82,7 @@ impl Vector {
             z: z1,
             ..
         } = self.0;
+
         let Tuple {
             x: x2,
             y: y2,
