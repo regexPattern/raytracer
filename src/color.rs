@@ -28,7 +28,7 @@ pub struct Color {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct ClampedColor {
+pub struct Clamped {
     pub red: u8,
     pub green: u8,
     pub blue: u8,
@@ -43,12 +43,12 @@ impl PartialEq for Color {
 }
 
 impl Color {
-    pub fn clamp(&self) -> ClampedColor {
+    pub fn clamp(&self) -> Clamped {
         let red: u8 = (self.red * 255.0) as u8;
         let green: u8 = (self.green * 255.0) as u8;
         let blue: u8 = (self.blue * 255.0) as u8;
 
-        ClampedColor { red, green, blue }
+        Clamped { red, green, blue }
     }
 }
 
@@ -239,7 +239,7 @@ mod tests {
 
         assert_eq!(
             c1.clamp(),
-            ClampedColor {
+            Clamped {
                 red: 0,
                 green: 0,
                 blue: 0
@@ -247,7 +247,7 @@ mod tests {
         );
         assert_eq!(
             c2.clamp(),
-            ClampedColor {
+            Clamped {
                 red: 255,
                 green: 255,
                 blue: 255
@@ -255,7 +255,7 @@ mod tests {
         );
         assert_eq!(
             c3.clamp(),
-            ClampedColor {
+            Clamped {
                 red: 127,
                 green: 191,
                 blue: 63
@@ -273,7 +273,7 @@ mod tests {
 
         assert_eq!(
             c.clamp(),
-            ClampedColor {
+            Clamped {
                 red: 0,
                 green: 0,
                 blue: 255

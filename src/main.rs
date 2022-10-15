@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used)]
+
 use std::fs::File;
 use std::io::Write;
 
@@ -28,10 +30,10 @@ fn main() {
         intensity: color::WHITE,
     };
 
-    run(s, light);
+    run(&s, &light);
 }
 
-fn run(s: Sphere, light: PointLight) {
+fn run(s: &Sphere, light: &PointLight) {
     let ray_origin = Point::new(0.0, 0.0, -5.0);
 
     let wall_size = 7.0;
@@ -62,7 +64,7 @@ fn run(s: Sphere, light: PointLight) {
                 let normal = s.normal_at(point);
                 let eye = -r.direction;
 
-                let color = i.object.material.lighting(&light, point, eye, normal);
+                let color = i.object.material.lighting(light, point, eye, normal);
                 canvas.write_pixel(x, y, color);
             }
         }

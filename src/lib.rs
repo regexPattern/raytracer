@@ -1,3 +1,5 @@
+#![allow(clippy::must_use_candidate)]
+
 mod float;
 
 pub mod canvas;
@@ -9,3 +11,4 @@ pub mod matrix;
 pub mod ray;
 pub mod sphere;
 pub mod tuple;
+pub mod world;
