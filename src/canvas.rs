@@ -23,7 +23,7 @@ impl Canvas {
         }
     }
 
-    fn pixel_at(&self, x: u32, y: u32) -> &Color {
+    pub fn pixel_at(&self, x: u32, y: u32) -> &Color {
         let pixel = Pixel { x, y };
         self.pixels.get(&pixel).unwrap_or(&color::BLACK)
     }

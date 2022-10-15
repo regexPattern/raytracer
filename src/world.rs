@@ -2,12 +2,47 @@ use crate::color::{self, Color};
 use crate::intersection::Intersection;
 use crate::intersection::PreparedComputation;
 use crate::light::PointLight;
+use crate::material::Material;
+use crate::matrix::Matrix;
 use crate::ray::Ray;
 use crate::sphere::Sphere;
+use crate::tuple::Point;
 
-struct World {
-    objects: Vec<Sphere>,
-    light: PointLight,
+pub struct World {
+    pub objects: Vec<Sphere>,
+    // TODO: Implementing multiple light sources.
+    pub light: PointLight,
+}
+
+impl Default for World {
+    fn default() -> Self {
+        let objects = vec![
+            Sphere {
+                material: Material {
+                    color: Color {
+                        red: 0.8,
+                        green: 1.0,
+                        blue: 0.6,
+                    },
+                    diffuse: 0.7,
+                    specular: 0.2,
+                    ..Material::default()
+                },
+                ..Sphere::default()
+            },
+            Sphere {
+                transform: Matrix::scaling(0.5, 0.5, 0.5),
+                ..Sphere::default()
+            },
+        ];
+
+        let light = PointLight {
+            position: Point::new(-10.0, -10.0, -10.0),
+            intensity: color::WHITE,
+        };
+
+        Self { objects, light }
+    }
 }
 
 impl World {
@@ -24,7 +59,7 @@ impl World {
             .lighting(&self.light, comps.point, comps.eyev, comps.normalv)
     }
 
-    fn color_at(&self, ray: &Ray) -> Color {
+    pub fn color_at(&self, ray: &Ray) -> Color {
         let xs = self.intersect(ray);
         match Intersection::hit(xs) {
             Some(hit) => self.shade_hit(PreparedComputation::new(&hit, ray)),
@@ -36,9 +71,7 @@ impl World {
 #[cfg(test)]
 mod tests {
     use crate::assert_approx;
-    use crate::material::Material;
-    use crate::matrix::Matrix;
-    use crate::tuple::{Point, Vector};
+    use crate::tuple::Vector;
 
     use super::*;
 
@@ -229,7 +262,6 @@ mod tests {
             direction: Vector::new(0.0, 0.0, -1.0),
         };
 
-        let outer = &w.objects[0];
         let inner = &w.objects[1];
 
         let c = w.color_at(&r);

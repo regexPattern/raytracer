@@ -1,4 +1,5 @@
 use super::Matrix;
+use crate::tuple::{Point, Vector};
 
 impl Matrix<4, 4> {
     pub fn rotation_x(rad: f64) -> Self {
@@ -54,13 +55,28 @@ impl Matrix<4, 4> {
             [0.0, 0.0, 0.0, 1.0],
         ])
     }
+
+    pub fn view(from: Point, to: Point, up: Vector) -> Self {
+        let forward = (to - from).normalize();
+        let left = forward.cross(up.normalize());
+        let up = left.cross(forward);
+
+        let orientation = Matrix([
+            [left.0.x, left.0.y, left.0.z, 0.0],
+            [up.0.x, up.0.y, up.0.z, 0.0],
+            [-forward.0.x, -forward.0.y, -forward.0.z, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]);
+
+        orientation * Self::translation(-from.0.x, -from.0.y, -from.0.z)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     #![allow(non_snake_case)]
 
-    use crate::tuple::{Point, Vector};
+    use crate::matrix;
 
     use super::*;
 
@@ -245,10 +261,60 @@ mod tests {
         let B = Matrix::scaling(5.0, 5.0, 5.0);
         let C = Matrix::translation(10.0, 5.0, 7.0);
 
-        // TODO: I don't really like this. Maybe it's overkill to not implement the `Copy` trait
-        // for matrices???
         let T = C * B * A;
 
         assert_eq!(T * p, Point::new(15.0, 0.0, 7.0));
+    }
+
+    #[test]
+    fn the_transformation_matrix_for_the_default_orientation() {
+        let from = Point::new(0.0, 0.0, 0.0);
+        let to = Point::new(0.0, 0.0, -1.0);
+        let up = Vector::new(0.0, 1.0, 0.0);
+
+        let t = Matrix::view(from, to, up);
+
+        assert_eq!(t, matrix::IDENTITY4X4);
+    }
+
+    #[test]
+    fn a_view_transformation_mtrix_looking_in_positive_z_direction() {
+        let from = Point::new(0.0, 0.0, 0.0);
+        let to = Point::new(0.0, 0.0, 1.0);
+        let up = Vector::new(0.0, 1.0, 0.0);
+
+        let t = Matrix::view(from, to, up);
+
+        assert_eq!(t, Matrix::scaling(-1.0, 1.0, -1.0));
+    }
+
+    #[test]
+    fn the_view_transformation_moves_the_world() {
+        let from = Point::new(0.0, 0.0, 8.0);
+        let to = Point::new(0.0, 0.0, 0.0);
+        let up = Vector::new(0.0, 1.0, 0.0);
+
+        let t = Matrix::view(from, to, up);
+
+        assert_eq!(t, Matrix::translation(0.0, 0.0, -8.0));
+    }
+
+    #[test]
+    fn an_arbitrary_view_transformation() {
+        let from = Point::new(1.0, 3.0, 2.0);
+        let to = Point::new(4.0, -2.0, 8.0);
+        let up = Vector::new(1.0, 1.0, 0.0);
+
+        let t = Matrix::view(from, to, up);
+
+        assert_eq!(
+            t,
+            Matrix([
+                [-0.50709, 0.50709, 0.67612, -2.36643],
+                [0.76772, 0.60609, 0.12122, -2.82843],
+                [-0.35857, 0.59761, -0.71714, 0.00000],
+                [0.00000, 0.00000, 0.00000, 1.00000]
+            ])
+        );
     }
 }
