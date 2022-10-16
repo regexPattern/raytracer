@@ -1,3 +1,5 @@
+use std::sync::{Arc, Mutex};
+
 use crate::canvas::Canvas;
 use crate::matrix::{self, Matrix};
 use crate::ray::Ray;
@@ -53,20 +55,39 @@ impl Camera {
         Ray { origin, direction }
     }
 
-    // TODO: Rendering can be improved by making this concurrent??
-    // I'll have to get into concurrency to figure out what's the best way to parallelize this.
     pub fn render(&self, world: &World) -> Canvas {
         let mut image = Canvas::new(self.hsize, self.vsize);
+        let mutex = Arc::new(Mutex::new(&mut image));
 
-        // TODO: When trying to turn this into a multithreaded rendering loop, I have to take the
-        // cartisian product to get all the pixels in pairs.
-        for y in 0..self.vsize {
-            for x in 0..self.hsize {
-                let ray = self.ray_for_pixel(x, y);
-                let color = world.color_at(&ray);
-                image.write_pixel(x, y, color);
+        std::thread::scope(|scope| {
+            let mut handles = Vec::new();
+
+            for y in 0..self.vsize {
+                let mutex = Arc::clone(&mutex);
+
+                let handle = scope.spawn(move || {
+                    eprintln!("Rendering Line: {}", y);
+                    let mut pixels = Vec::with_capacity(self.hsize as usize);
+
+                    for x in 0..self.hsize {
+                        let ray = self.ray_for_pixel(x, y);
+                        let color = world.color_at(&ray);
+                        pixels.push(color);
+                    }
+
+                    let mut image = mutex.lock().unwrap();
+                    for (x, color) in pixels.into_iter().enumerate() {
+                        image.write_pixel(x as u32, y, color);
+                    }
+                });
+
+                handles.push(handle);
             }
-        }
+
+            for handle in handles {
+                handle.join().unwrap();
+            }
+        });
 
         image
     }
