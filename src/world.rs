@@ -8,10 +8,12 @@ use crate::ray::Ray;
 use crate::sphere::Sphere;
 use crate::tuple::Point;
 
+// TODO: Have to implement multiple lights correctly. I still don't know if the color combinations
+// are correct. It seems like they are but I don't like the results. Maybe I'll have to wait till I
+// have shadows to notice this.
 pub struct World {
     pub objects: Vec<Sphere>,
-    // TODO: Implementing multiple light sources.
-    pub light: PointLight,
+    pub lights: Vec<PointLight>,
 }
 
 impl Default for World {
@@ -36,12 +38,12 @@ impl Default for World {
             },
         ];
 
-        let light = PointLight {
+        let lights = vec![PointLight {
             position: Point::new(-10.0, -10.0, -10.0),
             intensity: color::WHITE,
-        };
+        }];
 
-        Self { objects, light }
+        Self { objects, lights }
     }
 }
 
@@ -53,10 +55,13 @@ impl World {
     }
 
     fn shade_hit(&self, comps: PreparedComputation) -> Color {
-        comps
-            .object
-            .material
-            .lighting(&self.light, comps.point, comps.eyev, comps.normalv)
+        self.lights.iter().fold(color::BLACK, |shade, light| {
+            shade
+                + comps
+                    .object
+                    .material
+                    .lighting(light, comps.point, comps.eyev, comps.normalv)
+        })
     }
 
     pub fn color_at(&self, ray: &Ray) -> Color {
@@ -96,12 +101,12 @@ mod tests {
             },
         ];
 
-        let light = PointLight {
+        let lights = vec![PointLight {
             position: Point::new(-10.0, -10.0, -10.0),
             intensity: color::WHITE,
-        };
+        }];
 
-        World { objects, light }
+        World { objects, lights }
     }
 
     #[test]
@@ -132,7 +137,7 @@ mod tests {
 
         let w = test_default_world();
 
-        assert_eq!(w.light, light);
+        assert!(w.lights.contains(&light));
         assert!(w.objects.contains(&s1));
         assert!(w.objects.contains(&s2));
     }
@@ -184,10 +189,10 @@ mod tests {
     #[test]
     fn shading_an_intersection_from_the_inside() {
         let w = World {
-            light: PointLight {
+            lights: vec![PointLight {
                 position: Point::new(0.0, 0.25, 0.0),
                 intensity: color::WHITE,
-            },
+            }],
             ..test_default_world()
         };
         let r = Ray {

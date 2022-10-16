@@ -53,9 +53,13 @@ impl Camera {
         Ray { origin, direction }
     }
 
+    // TODO: Rendering can be improved by making this concurrent??
+    // I'll have to get into concurrency to figure out what's the best way to parallelize this.
     pub fn render(&self, world: &World) -> Canvas {
         let mut image = Canvas::new(self.hsize, self.vsize);
 
+        // TODO: When trying to turn this into a multithreaded rendering loop, I have to take the
+        // cartisian product to get all the pixels in pairs.
         for y in 0..self.vsize {
             for x in 0..self.hsize {
                 let ray = self.ray_for_pixel(x, y);

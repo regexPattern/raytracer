@@ -16,11 +16,7 @@ fn main() {
     let floor = Sphere {
         transform: Matrix::scaling(10.0, 0.01, 10.0),
         material: Material {
-            color: Color {
-                red: 1.0,
-                green: 0.9,
-                blue: 0.9,
-            },
+            color: color::WHITE,
             specular: 0.0,
             ..Material::default()
         },
@@ -84,18 +80,29 @@ fn main() {
         },
     };
 
-    let objects = vec![floor, left_wall, right_wall, middle, right, left];
-    let light = PointLight {
+    let left_light = PointLight {
         position: Point::new(-10.0, 10.0, -10.0),
         intensity: color::WHITE,
     };
 
-    let world = World { objects, light };
+    let right_light = PointLight {
+        position: Point::new(10.0, 10.0, -5.0),
+        intensity: Color {
+            red: 0.0,
+            green: 0.0,
+            blue: 0.0,
+        },
+    };
+
+    let objects = vec![floor, left_wall, right_wall, middle, right, left];
+    let lights = vec![left_light, right_light];
+
+    let world = World { objects, lights };
 
     let mut camera = Camera::new(200, 100, std::f64::consts::FRAC_PI_3);
     camera.transform = Matrix::view(
-        Point::new(0.0, 5.5, -5.0),
-        Point::new(0.0, 0.0, 0.0),
+        Point::new(0.0, 3.0, -5.0),
+        Point::new(0.0, 1.0, 0.0),
         Vector::new(0.0, 1.0, 0.0),
     );
 

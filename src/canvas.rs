@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::color::{self, Color};
+use crate::color::{self, Color, RGBColor};
 
 pub struct Canvas {
     pub width: u32,
@@ -53,10 +53,10 @@ impl Canvas {
             let mut line = String::with_capacity(MAX_LINE_WIDTH);
 
             for x in 0..self.width {
-                let pixel = self.pixel_at(x, y).clamp();
-                let colors = [pixel.red, pixel.green, pixel.blue];
+                let color = RGBColor::from(*self.pixel_at(x, y));
+                let rgb_values = [color.red, color.green, color.blue];
 
-                for color in colors {
+                for color in rgb_values {
                     let color = format!("{} ", color);
                     if line.len() + color.len() > MAX_LINE_WIDTH {
                         lines.push(line.trim().to_owned());

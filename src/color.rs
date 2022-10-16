@@ -2,10 +2,10 @@ use std::ops::{Add, Mul, Sub};
 
 use crate::float;
 
-pub const RED: Color = Color {
+pub const WHITE: Color = Color {
     red: 1.0,
-    green: 0.0,
-    blue: 0.0,
+    green: 1.0,
+    blue: 1.0,
 };
 
 pub const BLACK: Color = Color {
@@ -14,9 +14,21 @@ pub const BLACK: Color = Color {
     blue: 0.0,
 };
 
-pub const WHITE: Color = Color {
+pub const RED: Color = Color {
     red: 1.0,
+    green: 0.0,
+    blue: 0.0,
+};
+
+pub const GREEN: Color = Color {
+    red: 0.0,
     green: 1.0,
+    blue: 0.0,
+};
+
+pub const BLUE: Color = Color {
+    red: 0.0,
+    green: 0.0,
     blue: 1.0,
 };
 
@@ -27,8 +39,8 @@ pub struct Color {
     pub blue: f64,
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct Clamped {
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct RGBColor {
     pub red: u8,
     pub green: u8,
     pub blue: u8,
@@ -42,13 +54,23 @@ impl PartialEq for Color {
     }
 }
 
-impl Color {
-    pub fn clamp(&self) -> Clamped {
-        let red: u8 = (self.red * 255.0) as u8;
-        let green: u8 = (self.green * 255.0) as u8;
-        let blue: u8 = (self.blue * 255.0) as u8;
+impl From<RGBColor> for Color {
+    fn from(rgb: RGBColor) -> Self {
+        let red = f64::from(rgb.red) / 255.0;
+        let green = f64::from(rgb.green) / 255.0;
+        let blue = f64::from(rgb.blue) / 255.0;
 
-        Clamped { red, green, blue }
+        Self { red, green, blue }
+    }
+}
+
+impl From<Color> for RGBColor {
+    fn from(color: Color) -> Self {
+        let red = (color.red * 255.0) as u8;
+        let green = (color.green * 255.0) as u8;
+        let blue = (color.blue * 255.0) as u8;
+
+        Self { red, green, blue }
     }
 }
 
@@ -220,7 +242,38 @@ mod tests {
     }
 
     #[test]
-    fn clamping_color() {
+    fn constructing_colors_from_rgb_values() {
+        let c1 = RGBColor {
+            red: 255,
+            green: 127,
+            blue: 0,
+        };
+        let c2 = RGBColor {
+            red: 241,
+            green: 113,
+            blue: 14,
+        };
+
+        assert_eq!(
+            Color::from(c1),
+            Color {
+                red: 1.0,
+                green: 0.49803,
+                blue: 0.0
+            }
+        );
+        assert_eq!(
+            Color::from(c2),
+            Color {
+                red: 0.94509,
+                green: 0.44313,
+                blue: 0.0549,
+            }
+        );
+    }
+
+    #[test]
+    fn getting_a_colors_rgb_values() {
         let c1 = Color {
             red: 0.0,
             green: 0.0,
@@ -238,45 +291,27 @@ mod tests {
         };
 
         assert_eq!(
-            c1.clamp(),
-            Clamped {
+            RGBColor::from(c1),
+            RGBColor {
                 red: 0,
                 green: 0,
                 blue: 0
             }
         );
         assert_eq!(
-            c2.clamp(),
-            Clamped {
+            RGBColor::from(c2),
+            RGBColor {
                 red: 255,
                 green: 255,
                 blue: 255
             }
         );
         assert_eq!(
-            c3.clamp(),
-            Clamped {
+            RGBColor::from(c3),
+            RGBColor {
                 red: 127,
                 green: 191,
                 blue: 63
-            }
-        );
-    }
-
-    #[test]
-    fn clamping_color_with_overflowed_values() {
-        let c = Color {
-            red: -1.0,
-            green: 0.0,
-            blue: 2.0,
-        };
-
-        assert_eq!(
-            c.clamp(),
-            Clamped {
-                red: 0,
-                green: 0,
-                blue: 255
             }
         );
     }

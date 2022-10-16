@@ -32,6 +32,7 @@ impl Intersection<'_> {
 }
 
 impl<'a> PreparedComputation<'a> {
+    // Make this a method for `Intersection` instead.
     pub fn new(i: &'a Intersection, ray: &Ray) -> Self {
         let Intersection { t, object } = *i;
         let point = ray.position(t);
@@ -86,8 +87,6 @@ mod tests {
         let s = Sphere::default();
         let i1 = Intersection { t: 1.0, object: &s };
         let i2 = Intersection { t: 2.0, object: &s };
-        // TODO: Maybe I should make a vector of references instead????
-        // It's probably more convenient.
         let xs = vec![i2, i1.clone()];
 
         let i = Intersection::hit(xs);
