@@ -58,35 +58,31 @@ impl Camera {
     pub fn render(&self, world: &World) -> Canvas {
         let mut image = Canvas::new(self.hsize, self.vsize);
         let mutex = Arc::new(Mutex::new(&mut image));
+        let pool = rayon::ThreadPoolBuilder::new()
+            .num_threads(8)
+            .build()
+            .unwrap();
 
-        std::thread::scope(|scope| {
-            let mut handles = Vec::new();
+        pool.install(|| {
+            rayon::scope(|scope| {
+                for y in 0..self.vsize {
+                    let mutex = Arc::clone(&mutex);
+                    scope.spawn(move |_| {
+                        let mut pixels = Vec::with_capacity(self.hsize as usize);
 
-            for y in 0..self.vsize {
-                let mutex = Arc::clone(&mutex);
+                        for x in 0..self.hsize {
+                            let ray = self.ray_for_pixel(x, y);
+                            let color = world.color_at(&ray);
+                            pixels.push(color);
+                        }
 
-                let handle = scope.spawn(move || {
-                    eprintln!("Rendering Line: {}", y);
-                    let mut pixels = Vec::with_capacity(self.hsize as usize);
-
-                    for x in 0..self.hsize {
-                        let ray = self.ray_for_pixel(x, y);
-                        let color = world.color_at(&ray);
-                        pixels.push(color);
-                    }
-
-                    let mut image = mutex.lock().unwrap();
-                    for (x, color) in pixels.into_iter().enumerate() {
-                        image.write_pixel(x as u32, y, color);
-                    }
-                });
-
-                handles.push(handle);
-            }
-
-            for handle in handles {
-                handle.join().unwrap();
-            }
+                        let mut image = mutex.lock().unwrap();
+                        for (x, color) in pixels.into_iter().enumerate() {
+                            image.write_pixel(x as u32, y, color);
+                        }
+                    });
+                }
+            });
         });
 
         image
