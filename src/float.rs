@@ -7,8 +7,6 @@ pub fn approx(lhs: f64, rhs: f64) -> bool {
 #[macro_export]
 macro_rules! assert_approx {
     ( $a:expr, $b:expr ) => {{
-        // REFACTOR: I should probably use `Option<str>` here for semantics?
-        // For now I'm good with just using an empty string.
         $crate::assert_approx!($a, $b, "")
     }};
     ( $a:expr, $b:expr, $desc:expr ) => {{

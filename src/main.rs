@@ -99,7 +99,7 @@ fn main() {
 
     let world = World { objects, lights };
 
-    let mut camera = Camera::new(1920, 1080, std::f64::consts::FRAC_PI_3);
+    let mut camera = Camera::new(3840, 2160, std::f64::consts::FRAC_PI_3);
     camera.transform = Matrix::view(
         Point::new(0.0, 3.0, -5.0),
         Point::new(0.0, 1.0, 0.0),

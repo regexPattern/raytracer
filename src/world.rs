@@ -1,6 +1,6 @@
 use crate::color::{self, Color};
 use crate::intersection::Intersection;
-use crate::intersection::PreparedComputation;
+use crate::intersection::PreparedIntersection;
 use crate::light::PointLight;
 use crate::material::Material;
 use crate::matrix::Matrix;
@@ -8,9 +8,6 @@ use crate::ray::Ray;
 use crate::sphere::Sphere;
 use crate::tuple::Point;
 
-// TODO: Have to implement multiple lights correctly. I still don't know if the color combinations
-// are correct. It seems like they are but I don't like the results. Maybe I'll have to wait till I
-// have shadows to notice this.
 pub struct World {
     pub objects: Vec<Sphere>,
     pub lights: Vec<PointLight>,
@@ -54,7 +51,7 @@ impl World {
         xs
     }
 
-    fn shade_hit(&self, comps: PreparedComputation) -> Color {
+    fn shade_hit(&self, comps: &PreparedIntersection) -> Color {
         self.lights.iter().fold(color::BLACK, |shade, light| {
             shade
                 + comps
@@ -67,7 +64,7 @@ impl World {
     pub fn color_at(&self, ray: &Ray) -> Color {
         let xs = self.intersect(ray);
         match Intersection::hit(xs) {
-            Some(hit) => self.shade_hit(PreparedComputation::new(&hit, ray)),
+            Some(hit) => self.shade_hit(&hit.prepare(ray)),
             None => color::BLACK,
         }
     }
@@ -173,8 +170,8 @@ mod tests {
             object: shape,
         };
 
-        let comps = PreparedComputation::new(&i, &r);
-        let c = w.shade_hit(comps);
+        let comps = i.prepare(&r);
+        let c = w.shade_hit(&comps);
 
         assert_eq!(
             c,
@@ -206,8 +203,8 @@ mod tests {
             object: shape,
         };
 
-        let comps = PreparedComputation::new(&i, &r);
-        let c = w.shade_hit(comps);
+        let comps = i.prepare(&r);
+        let c = w.shade_hit(&comps);
 
         assert_eq!(
             c,

@@ -61,7 +61,7 @@ impl Matrix<4, 4> {
         let left = forward.cross(up.normalize());
         let up = left.cross(forward);
 
-        let orientation = Matrix([
+        let orientation = Self([
             [left.0.x, left.0.y, left.0.z, 0.0],
             [up.0.x, up.0.y, up.0.z, 0.0],
             [-forward.0.x, -forward.0.y, -forward.0.z, 0.0],

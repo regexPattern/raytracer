@@ -9,7 +9,7 @@ pub struct Intersection<'a> {
     pub object: &'a Sphere,
 }
 
-pub struct PreparedComputation<'a> {
+pub struct PreparedIntersection<'a> {
     pub t: f64,
     pub object: &'a Sphere,
     pub point: Point,
@@ -29,12 +29,9 @@ impl Intersection<'_> {
         xs.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
         xs.into_iter().find(|i| i.t.is_sign_positive())
     }
-}
 
-impl<'a> PreparedComputation<'a> {
-    // Make this a method for `Intersection` instead.
-    pub fn new(i: &'a Intersection, ray: &Ray) -> Self {
-        let Intersection { t, object } = *i;
+    pub fn prepare(&self, ray: &Ray) -> PreparedIntersection<'_> {
+        let Intersection { t, object } = *self;
         let point = ray.position(t);
         let eyev = -ray.direction;
         let normalv = object.normal_at(point);
@@ -42,7 +39,7 @@ impl<'a> PreparedComputation<'a> {
 
         let normalv = if inside { -1.0 } else { 1.0 } * normalv;
 
-        Self {
+        PreparedIntersection {
             t,
             object,
             point,
@@ -157,7 +154,7 @@ mod tests {
             object: &shape,
         };
 
-        let comps = PreparedComputation::new(&i, &r);
+        let comps = i.prepare(&r);
 
         assert_eq!(comps.t, i.t);
         assert_eq!(comps.object, i.object);
@@ -179,7 +176,7 @@ mod tests {
             object: &shape,
         };
 
-        let comps = PreparedComputation::new(&i, &r);
+        let comps = i.prepare(&r);
 
         assert!(!comps.inside);
     }
@@ -197,7 +194,7 @@ mod tests {
             object: &shape,
         };
 
-        let comps = PreparedComputation::new(&i, &r);
+        let comps = i.prepare(&r);
 
         assert!(comps.inside);
     }
