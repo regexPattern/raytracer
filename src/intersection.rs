@@ -1,38 +1,40 @@
 use crate::float;
 use crate::ray::Ray;
-use crate::sphere::Sphere;
+use crate::shape::Shapes;
 use crate::tuple::{Point, Vector};
 
-#[derive(Clone, Debug)]
-pub struct Intersection<'a> {
+#[derive(Copy, Clone, Debug)]
+pub struct Intersection {
+    pub object: Shapes,
     pub t: f64,
-    pub object: &'a Sphere,
 }
 
-pub struct PreparedIntersection<'a> {
-    pub t: f64,
-    pub object: &'a Sphere,
-    pub point: Point,
+#[derive(Copy, Clone)]
+pub struct PreparedIntersection {
+    // TODO: Compose with `Intersection`.
     pub eyev: Vector,
-    pub normalv: Vector,
     pub inside: bool,
+    pub normalv: Vector,
+    pub object: Shapes,
+    pub point: Point,
+    pub t: f64,
 }
 
-impl PartialEq for Intersection<'_> {
+impl PartialEq for Intersection {
     fn eq(&self, other: &Self) -> bool {
         float::approx(self.t, other.t) && self.object == other.object
     }
 }
 
-impl Intersection<'_> {
-    pub fn hit(mut xs: Vec<Intersection<'_>>) -> Option<Intersection> {
+impl Intersection {
+    pub fn hit(mut xs: Vec<Intersection>) -> Option<Intersection> {
         xs.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
         xs.into_iter().find(|i| i.t.is_sign_positive())
     }
 
-    pub fn prepare(&self, ray: &Ray) -> PreparedIntersection<'_> {
-        let Intersection { t, object } = *self;
-        let point = ray.position(t);
+    pub fn prepare(&self, ray: &Ray) -> PreparedIntersection {
+        let Intersection { t, object } = self;
+        let point = ray.position(*t);
         let eyev = -ray.direction;
         let normalv = object.normal_at(point);
         let inside = normalv.dot(eyev) < 0.0;
@@ -40,12 +42,12 @@ impl Intersection<'_> {
         let normalv = if inside { -1.0 } else { 1.0 } * normalv;
 
         PreparedIntersection {
-            t,
-            object,
-            point,
             eyev,
-            normalv,
             inside,
+            normalv,
+            object: *object,
+            point,
+            t: *t,
         }
     }
 }
@@ -53,24 +55,25 @@ impl Intersection<'_> {
 #[cfg(test)]
 mod tests {
     use crate::assert_approx;
+    use crate::shape::Sphere;
 
     use super::*;
 
     #[test]
     fn an_intersection_encapsulates_t_and_object() {
-        let s = Sphere::default();
+        let s = Shapes::Sphere(Sphere::default());
 
-        let i = Intersection { t: 3.5, object: &s };
+        let i = Intersection { t: 3.5, object: s };
 
         assert_approx!(i.t, 3.5);
-        assert_eq!(i.object, &s);
+        assert_eq!(i.object, s);
     }
 
     #[test]
     fn aggregating_intersections() {
-        let s = Sphere::default();
-        let i1 = Intersection { t: 1.0, object: &s };
-        let i2 = Intersection { t: 2.0, object: &s };
+        let s = Shapes::Sphere(Sphere::default());
+        let i1 = Intersection { t: 1.0, object: s };
+        let i2 = Intersection { t: 2.0, object: s };
 
         let xs = vec![i1, i2];
 
@@ -81,10 +84,10 @@ mod tests {
 
     #[test]
     fn the_hit_when_all_intersections_have_positive_t() {
-        let s = Sphere::default();
-        let i1 = Intersection { t: 1.0, object: &s };
-        let i2 = Intersection { t: 2.0, object: &s };
-        let xs = vec![i2, i1.clone()];
+        let s = Shapes::Sphere(Sphere::default());
+        let i1 = Intersection { t: 1.0, object: s };
+        let i2 = Intersection { t: 2.0, object: s };
+        let xs = vec![i2, i1];
 
         let i = Intersection::hit(xs);
 
@@ -93,13 +96,13 @@ mod tests {
 
     #[test]
     fn the_hit_when_some_intersections_have_negative_t() {
-        let s = Sphere::default();
+        let s = Shapes::Sphere(Sphere::default());
         let i1 = Intersection {
             t: -1.0,
-            object: &s,
+            object: s,
         };
-        let i2 = Intersection { t: 1.0, object: &s };
-        let xs = vec![i2.clone(), i1];
+        let i2 = Intersection { t: 1.0, object: s };
+        let xs = vec![i2, i1];
 
         let i = Intersection::hit(xs);
 
@@ -108,14 +111,14 @@ mod tests {
 
     #[test]
     fn the_hit_when_all_intersections_have_negative_t() {
-        let s = Sphere::default();
+        let s = Shapes::Sphere(Sphere::default());
         let i1 = Intersection {
             t: -2.0,
-            object: &s,
+            object: s,
         };
         let i2 = Intersection {
             t: -1.0,
-            object: &s,
+            object: s,
         };
         let xs = vec![i2, i1];
 
@@ -126,15 +129,15 @@ mod tests {
 
     #[test]
     fn the_hit_is_always_the_lowest_nonnegative_intersection() {
-        let s = Sphere::default();
-        let i1 = Intersection { t: 5.0, object: &s };
-        let i2 = Intersection { t: 7.0, object: &s };
+        let s = Shapes::Sphere(Sphere::default());
+        let i1 = Intersection { t: 5.0, object: s };
+        let i2 = Intersection { t: 7.0, object: s };
         let i3 = Intersection {
             t: -3.0,
-            object: &s,
+            object: s,
         };
-        let i4 = Intersection { t: 2.0, object: &s };
-        let xs = vec![i1, i2, i3, i4.clone()];
+        let i4 = Intersection { t: 2.0, object: s };
+        let xs = vec![i1, i2, i3, i4];
 
         let i = Intersection::hit(xs);
 
@@ -148,10 +151,10 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let shape = Sphere::default();
+        let shape = Shapes::Sphere(Sphere::default());
         let i = Intersection {
             t: 4.0,
-            object: &shape,
+            object: shape,
         };
 
         let comps = i.prepare(&r);
@@ -170,10 +173,10 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let shape = Sphere::default();
+        let shape = Shapes::Sphere(Sphere::default());
         let i = Intersection {
             t: 4.0,
-            object: &shape,
+            object: shape,
         };
 
         let comps = i.prepare(&r);
@@ -188,10 +191,10 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let shape = Sphere::default();
+        let shape = Shapes::Sphere(Sphere::default());
         let i = Intersection {
             t: 1.0,
-            object: &shape,
+            object: shape,
         };
 
         let comps = i.prepare(&r);

@@ -3,23 +3,23 @@ use crate::float;
 use crate::light::PointLight;
 use crate::tuple::{Point, Vector};
 
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct Material {
-    pub color: Color,
     pub ambient: f64,
+    pub color: Color,
     pub diffuse: f64,
-    pub specular: f64,
     pub shininess: f64,
+    pub specular: f64,
 }
 
 impl Default for Material {
     fn default() -> Self {
         Self {
-            color: color::WHITE,
             ambient: 0.1,
+            color: color::WHITE,
             diffuse: 0.9,
-            specular: 0.9,
             shininess: 200.0,
+            specular: 0.9,
         }
     }
 }

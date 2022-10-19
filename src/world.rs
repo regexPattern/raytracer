@@ -5,18 +5,19 @@ use crate::light::PointLight;
 use crate::material::Material;
 use crate::matrix::Matrix;
 use crate::ray::Ray;
-use crate::sphere::Sphere;
+use crate::shape::sphere::Sphere;
+use crate::shape::{Shape, Shapes};
 use crate::tuple::Point;
 
 pub struct World {
-    pub objects: Vec<Sphere>,
     pub lights: Vec<PointLight>,
+    pub objects: Vec<Shapes>,
 }
 
 impl Default for World {
     fn default() -> Self {
         let objects = vec![
-            Sphere {
+            Shapes::Sphere(Sphere(Shape {
                 material: Material {
                     color: Color {
                         red: 0.8,
@@ -25,14 +26,14 @@ impl Default for World {
                     },
                     diffuse: 0.7,
                     specular: 0.2,
-                    ..Material::default()
+                    ..Default::default()
                 },
-                ..Sphere::default()
-            },
-            Sphere {
+                ..Default::default()
+            })),
+            Shapes::Sphere(Sphere(Shape {
                 transform: Matrix::scaling(0.5, 0.5, 0.5),
-                ..Sphere::default()
-            },
+                ..Default::default()
+            })),
         ];
 
         let lights = vec![PointLight {
@@ -54,10 +55,12 @@ impl World {
     fn shade_hit(&self, comps: &PreparedIntersection) -> Color {
         self.lights.iter().fold(color::BLACK, |shade, light| {
             shade
-                + comps
-                    .object
-                    .material
-                    .lighting(light, comps.point, comps.eyev, comps.normalv)
+                + comps.object.shape().material.lighting(
+                    light,
+                    comps.point,
+                    comps.eyev,
+                    comps.normalv,
+                )
         })
     }
 
@@ -79,7 +82,7 @@ mod tests {
 
     fn test_default_world() -> World {
         let objects = vec![
-            Sphere {
+            Shapes::Sphere(Sphere(Shape {
                 material: Material {
                     color: Color {
                         red: 0.8,
@@ -88,14 +91,14 @@ mod tests {
                     },
                     diffuse: 0.7,
                     specular: 0.2,
-                    ..Material::default()
+                    ..Default::default()
                 },
-                ..Sphere::default()
-            },
-            Sphere {
+                ..Default::default()
+            })),
+            Shapes::Sphere(Sphere(Shape {
                 transform: Matrix::scaling(0.5, 0.5, 0.5),
-                ..Sphere::default()
-            },
+                ..Default::default()
+            })),
         ];
 
         let lights = vec![PointLight {
@@ -113,7 +116,7 @@ mod tests {
             intensity: color::WHITE,
         };
 
-        let s1 = Sphere {
+        let s1 = Shapes::Sphere(Sphere(Shape {
             material: Material {
                 color: Color {
                     red: 0.8,
@@ -122,15 +125,15 @@ mod tests {
                 },
                 diffuse: 0.7,
                 specular: 0.2,
-                ..Material::default()
+                ..Default::default()
             },
-            ..Sphere::default()
-        };
+            ..Default::default()
+        }));
 
-        let s2 = Sphere {
+        let s2 = Shapes::Sphere(Sphere(Shape {
             transform: Matrix::scaling(0.5, 0.5, 0.5),
-            ..Sphere::default()
-        };
+            ..Default::default()
+        }));
 
         let w = test_default_world();
 
@@ -164,7 +167,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let shape = &w.objects[0];
+        let shape = w.objects[0];
         let i = Intersection {
             t: 4.0,
             object: shape,
@@ -197,7 +200,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let shape = &w.objects[1];
+        let shape = w.objects[1];
         let i = Intersection {
             t: 0.5,
             object: shape,
@@ -254,10 +257,14 @@ mod tests {
         let mut w = test_default_world();
 
         let outer = &mut w.objects[0];
-        outer.material.ambient = 1.0;
+        if let Shapes::Sphere(s) = outer {
+            s.0.material.ambient = 1.0;
+        }
 
         let inner = &mut w.objects[1];
-        inner.material.ambient = 1.0;
+        if let Shapes::Sphere(s) = inner {
+            s.0.material.ambient = 1.0;
+        }
 
         let r = Ray {
             origin: Point::new(0.0, 0.0, 0.75),
@@ -268,6 +275,6 @@ mod tests {
 
         let c = w.color_at(&r);
 
-        assert_eq!(c, inner.material.color);
+        assert_eq!(c, inner.shape().material.color);
     }
 }

@@ -7,13 +7,13 @@ use crate::tuple::Point;
 use crate::world::World;
 
 pub struct Camera {
-    hsize: u32,
-    vsize: u32,
-    field_of_view: f64,
     pub transform: Matrix<4, 4>,
-    pixel_size: f64,
-    half_width: f64,
+    field_of_view: f64,
     half_height: f64,
+    half_width: f64,
+    hsize: u32,
+    pixel_size: f64,
+    vsize: u32,
 }
 
 impl Camera {
