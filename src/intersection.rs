@@ -18,6 +18,7 @@ pub struct PreparedIntersection {
     pub object: Shapes,
     pub point: Point,
     pub t: f64,
+    pub over_point: Point,
 }
 
 impl PartialEq for Intersection {
@@ -32,22 +33,25 @@ impl Intersection {
         xs.into_iter().find(|i| i.t.is_sign_positive())
     }
 
-    pub fn prepare(&self, ray: &Ray) -> PreparedIntersection {
+    pub fn prepare(self, ray: &Ray) -> PreparedIntersection {
         let Intersection { t, object } = self;
-        let point = ray.position(*t);
+        let point = ray.position(t);
         let eyev = -ray.direction;
         let normalv = object.normal_at(point);
         let inside = normalv.dot(eyev) < 0.0;
 
         let normalv = if inside { -1.0 } else { 1.0 } * normalv;
 
+        let over_point = point + normalv * crate::float::EPSILON;
+
         PreparedIntersection {
             eyev,
             inside,
             normalv,
-            object: *object,
+            object,
             point,
-            t: *t,
+            t,
+            over_point,
         }
     }
 }
@@ -55,7 +59,8 @@ impl Intersection {
 #[cfg(test)]
 mod tests {
     use crate::assert_approx;
-    use crate::shape::Sphere;
+    use crate::matrix::Matrix;
+    use crate::shape::{Figure, Sphere};
 
     use super::*;
 
@@ -188,5 +193,28 @@ mod tests {
         let comps = i.prepare(&r);
 
         assert!(comps.inside);
+    }
+
+    #[test]
+    fn the_hit_should_offset_the_point() {
+        let r = Ray {
+            origin: Point::new(0.0, 0.0, -5.0),
+            direction: Vector::new(0.0, 0.0, 1.0),
+        };
+
+        let shape = Shapes::Sphere(Sphere(Figure {
+            transform: Matrix::translation(0.0, 0.0, 1.0),
+            ..Default::default()
+        }));
+
+        let i = Intersection {
+            t: 5.0,
+            object: shape,
+        };
+
+        let comps = i.prepare(&r);
+
+        assert!(comps.over_point.0.z < -crate::float::EPSILON / 2.0);
+        assert!(comps.point.0.z > -crate::float::EPSILON);
     }
 }

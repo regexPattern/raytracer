@@ -41,6 +41,7 @@ impl Material {
         point: Point,
         eyev: Vector,
         normalv: Vector,
+        in_shadow: bool,
     ) -> Color {
         let effective_color = self.color * light.intensity;
 
@@ -53,7 +54,7 @@ impl Material {
 
         let light_dot_normal = lightv.dot(normalv);
 
-        if light_dot_normal.is_sign_positive() {
+        if !in_shadow && light_dot_normal.is_sign_positive() {
             diffuse = effective_color * self.diffuse * light_dot_normal;
 
             let reflectv = (-lightv).reflect(normalv);
@@ -99,7 +100,7 @@ mod tests {
             intensity: color::WHITE,
         };
 
-        let result = m.lighting(&light, position, eyev, normalv);
+        let result = m.lighting(&light, position, eyev, normalv, false);
 
         assert_eq!(
             result,
@@ -122,7 +123,7 @@ mod tests {
             intensity: color::WHITE,
         };
 
-        let result = m.lighting(&light, position, eyev, normalv);
+        let result = m.lighting(&light, position, eyev, normalv, false);
 
         assert_eq!(
             result,
@@ -145,7 +146,7 @@ mod tests {
             intensity: color::WHITE,
         };
 
-        let result = m.lighting(&light, position, eyev, normalv);
+        let result = m.lighting(&light, position, eyev, normalv, false);
 
         assert_eq!(
             result,
@@ -168,7 +169,7 @@ mod tests {
             intensity: color::WHITE,
         };
 
-        let result = m.lighting(&light, position, eyev, normalv);
+        let result = m.lighting(&light, position, eyev, normalv, false);
 
         assert_eq!(
             result,
@@ -191,7 +192,31 @@ mod tests {
             intensity: color::WHITE,
         };
 
-        let result = m.lighting(&light, position, eyev, normalv);
+        let result = m.lighting(&light, position, eyev, normalv, false);
+
+        assert_eq!(
+            result,
+            Color {
+                red: 0.1,
+                green: 0.1,
+                blue: 0.1
+            }
+        );
+    }
+
+    #[test]
+    fn lighting_with_the_surface_in_shadow() {
+        let (m, position) = test_defaults();
+
+        let eyev = Vector::new(0.0, 0.0, -1.0);
+        let normalv = Vector::new(0.0, 0.0, -1.0);
+        let light = PointLight {
+            position: Point::new(0.0, 0.0, -10.0),
+            intensity: color::WHITE,
+        };
+        let in_shadow = true;
+
+        let result = m.lighting(&light, position, eyev, normalv, in_shadow);
 
         assert_eq!(
             result,
