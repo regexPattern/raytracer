@@ -8,12 +8,11 @@ use crate::world::World;
 
 pub struct Camera {
     pub transform: Matrix<4, 4>,
-    field_of_view: f64,
+    hsize: u32,
+    vsize: u32,
+    pixel_size: f64,
     half_height: f64,
     half_width: f64,
-    hsize: u32,
-    pixel_size: f64,
-    vsize: u32,
 }
 
 impl Camera {
@@ -31,10 +30,9 @@ impl Camera {
         let transform = matrix::IDENTITY4X4;
 
         Self {
+            transform,
             hsize,
             vsize,
-            field_of_view,
-            transform,
             pixel_size,
             half_width,
             half_height,
@@ -109,7 +107,6 @@ mod tests {
 
         assert_eq!(c.hsize, 160);
         assert_eq!(c.vsize, 120);
-        assert_eq!(c.field_of_view, std::f64::consts::FRAC_PI_2);
         assert_eq!(c.transform, matrix::IDENTITY4X4);
     }
 

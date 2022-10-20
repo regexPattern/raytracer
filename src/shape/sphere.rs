@@ -4,14 +4,14 @@ use crate::matrix;
 use crate::ray::Ray;
 use crate::tuple::{Point, Vector};
 
-use super::{Shape, Shapes};
+use super::{Figure, Shapes};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Sphere(pub Shape);
+pub struct Sphere(pub Figure);
 
 impl Default for Sphere {
     fn default() -> Self {
-        Self(Shape {
+        Self(Figure {
             material: Material::default(),
             transform: matrix::IDENTITY4X4,
         })
@@ -20,7 +20,7 @@ impl Default for Sphere {
 
 impl Sphere {
     // https://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
-    pub fn intersect(&self, ray: &Ray) -> Vec<Intersection> {
+    pub fn local_intersect(self, ray: &Ray) -> Vec<Intersection> {
         let sphere_to_ray = ray.origin - Point::new(0.0, 0.0, 0.0);
 
         let a = ray.direction.dot(ray.direction);
@@ -37,18 +37,18 @@ impl Sphere {
         let t2 = (-b + discriminant.sqrt()) / (2.0 * a);
 
         let i1 = Intersection {
-            object: Shapes::Sphere(*self),
+            object: Shapes::Sphere(self),
             t: t1,
         };
         let i2 = Intersection {
-            object: Shapes::Sphere(*self),
+            object: Shapes::Sphere(self),
             t: t2,
         };
 
         vec![i1, i2]
     }
 
-    pub fn normal_at(&self, object_point: Point) -> Vector {
+    pub fn local_normal_at(&self, object_point: Point) -> Vector {
         object_point - Point::new(0.0, 0.0, 0.0)
     }
 }
@@ -70,7 +70,7 @@ mod tests {
 
         let s = Sphere::default();
 
-        let xs = s.intersect(&r);
+        let xs = s.local_intersect(&r);
 
         assert_eq!(xs.len(), 2);
         assert_approx!(xs[0].t, 4.0);
@@ -102,7 +102,7 @@ mod tests {
 
         let s = Sphere::default();
 
-        let xs = s.intersect(&r);
+        let xs = s.local_intersect(&r);
 
         assert_eq!(xs.len(), 2);
         assert_approx!(xs[0].t, 5.0);
@@ -118,7 +118,7 @@ mod tests {
 
         let s = Sphere::default();
 
-        let xs = s.intersect(&r);
+        let xs = s.local_intersect(&r);
 
         assert_eq!(xs.len(), 0);
     }
@@ -132,7 +132,7 @@ mod tests {
 
         let s = Sphere::default();
 
-        let xs = s.intersect(&r);
+        let xs = s.local_intersect(&r);
 
         assert_eq!(xs.len(), 2);
         assert_approx!(xs[0].t, -1.0);
@@ -162,7 +162,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let s = Shapes::Sphere(Sphere(Shape {
+        let s = Shapes::Sphere(Sphere(Figure {
             transform: Matrix::scaling(2.0, 2.0, 2.0),
             ..Default::default()
         }));
@@ -181,7 +181,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let s = Shapes::Sphere(Sphere(Shape {
+        let s = Shapes::Sphere(Sphere(Figure {
             transform: Matrix::translation(5.0, 0.0, 0.0),
             ..Default::default()
         }));
@@ -249,7 +249,7 @@ mod tests {
 
     #[test]
     fn computing_the_normal_on_a_translated_sphere() {
-        let s = Shapes::Sphere(Sphere(Shape {
+        let s = Shapes::Sphere(Sphere(Figure {
             transform: Matrix::translation(0.0, 1.0, 0.0),
             ..Default::default()
         }));
@@ -261,7 +261,7 @@ mod tests {
 
     #[test]
     fn computing_the_normal_on_a_transformed_sphere() {
-        let s = Shapes::Sphere(Sphere(Shape {
+        let s = Shapes::Sphere(Sphere(Figure {
             transform: Matrix::scaling(1.0, 0.5, 1.0)
                 * Matrix::rotation_z(std::f64::consts::PI / 5.0),
             ..Default::default()

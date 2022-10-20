@@ -97,10 +97,7 @@ mod tests {
     #[test]
     fn the_hit_when_some_intersections_have_negative_t() {
         let s = Shapes::Sphere(Sphere::default());
-        let i1 = Intersection {
-            t: -1.0,
-            object: s,
-        };
+        let i1 = Intersection { t: -1.0, object: s };
         let i2 = Intersection { t: 1.0, object: s };
         let xs = vec![i2, i1];
 
@@ -112,14 +109,8 @@ mod tests {
     #[test]
     fn the_hit_when_all_intersections_have_negative_t() {
         let s = Shapes::Sphere(Sphere::default());
-        let i1 = Intersection {
-            t: -2.0,
-            object: s,
-        };
-        let i2 = Intersection {
-            t: -1.0,
-            object: s,
-        };
+        let i1 = Intersection { t: -2.0, object: s };
+        let i2 = Intersection { t: -1.0, object: s };
         let xs = vec![i2, i1];
 
         let i = Intersection::hit(xs);
@@ -132,10 +123,7 @@ mod tests {
         let s = Shapes::Sphere(Sphere::default());
         let i1 = Intersection { t: 5.0, object: s };
         let i2 = Intersection { t: 7.0, object: s };
-        let i3 = Intersection {
-            t: -3.0,
-            object: s,
-        };
+        let i3 = Intersection { t: -3.0, object: s };
         let i4 = Intersection { t: 2.0, object: s };
         let xs = vec![i1, i2, i3, i4];
 

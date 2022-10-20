@@ -1,5 +1,7 @@
+pub mod plane;
 pub mod sphere;
 
+pub use plane::Plane;
 pub use sphere::Sphere;
 
 use crate::intersection::Intersection;
@@ -9,12 +11,12 @@ use crate::ray::Ray;
 use crate::tuple::{Point, Vector};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Shape {
-    pub material: Material,
+pub struct Figure {
     pub transform: Matrix<4, 4>,
+    pub material: Material,
 }
 
-impl Default for Shape {
+impl Default for Figure {
     fn default() -> Self {
         Self {
             material: Material::default(),
@@ -25,21 +27,25 @@ impl Default for Shape {
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Shapes {
+    // TODO: Realmente necesito un wrapper de Plane y Sphere???
     Sphere(Sphere),
+    Plane(Plane),
 }
 
 impl Shapes {
     pub fn intersect(&self, ray: &Ray) -> Vec<Intersection> {
         let local_ray = self.local_ray(ray);
         match self {
-            Shapes::Sphere(s) => s.intersect(&local_ray),
+            Shapes::Sphere(s) => s.local_intersect(&local_ray),
+            Shapes::Plane(p) => p.local_intersect(&local_ray),
         }
     }
 
     pub fn normal_at(&self, world_point: Point) -> Vector {
         let local_point = self.local_point(world_point);
         let local_normal = match self {
-            Shapes::Sphere(s) => s.normal_at(local_point),
+            Shapes::Sphere(s) => s.local_normal_at(local_point),
+            Shapes::Plane(p) => p.local_normal_at(local_point),
         };
 
         self.world_normal(local_normal)
@@ -59,15 +65,17 @@ impl Shapes {
         world_normal.normalize()
     }
 
-    pub fn shape(&self) -> &Shape {
+    pub fn shape(&self) -> &Figure {
         match self {
             Shapes::Sphere(s) => &s.0,
+            Shapes::Plane(p) => &p.0,
         }
     }
 
     fn transform(&self) -> Matrix<4, 4> {
         match self {
             Shapes::Sphere(s) => s.0.transform,
+            Shapes::Plane(p) => p.0.transform,
         }
     }
 }
@@ -77,7 +85,7 @@ mod tests {
     use super::*;
 
     fn test_shape(transform: Matrix<4, 4>) -> Shapes {
-        Shapes::Sphere(Sphere(Shape {
+        Shapes::Sphere(Sphere(Figure {
             transform,
             ..Default::default()
         }))
@@ -91,14 +99,14 @@ mod tests {
 
     #[test]
     fn the_default_transformation() {
-        let s = Shape::default();
+        let s = Figure::default();
 
         assert_eq!(s.transform, matrix::IDENTITY4X4);
     }
 
     #[test]
     fn assigning_a_transformation() {
-        let mut s = Shape::default();
+        let mut s = Figure::default();
         let t = Matrix::translation(2.0, 3.0, 4.0);
 
         s.transform = t;
@@ -108,14 +116,14 @@ mod tests {
 
     #[test]
     fn the_default_material() {
-        let s = Shape::default();
+        let s = Figure::default();
 
         assert_eq!(s.material, Material::default());
     }
 
     #[test]
     fn assigning_a_material() {
-        let mut s = Shape::default();
+        let mut s = Figure::default();
         let mut m = Material::default();
         m.ambient = 1.0;
 

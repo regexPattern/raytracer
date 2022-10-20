@@ -6,7 +6,7 @@ use crate::material::Material;
 use crate::matrix::Matrix;
 use crate::ray::Ray;
 use crate::shape::sphere::Sphere;
-use crate::shape::{Shape, Shapes};
+use crate::shape::{Figure, Shapes};
 use crate::tuple::Point;
 
 pub struct World {
@@ -17,7 +17,7 @@ pub struct World {
 impl Default for World {
     fn default() -> Self {
         let objects = vec![
-            Shapes::Sphere(Sphere(Shape {
+            Shapes::Sphere(Sphere(Figure {
                 material: Material {
                     color: Color {
                         red: 0.8,
@@ -30,7 +30,7 @@ impl Default for World {
                 },
                 ..Default::default()
             })),
-            Shapes::Sphere(Sphere(Shape {
+            Shapes::Sphere(Sphere(Figure {
                 transform: Matrix::scaling(0.5, 0.5, 0.5),
                 ..Default::default()
             })),
@@ -82,7 +82,7 @@ mod tests {
 
     fn test_default_world() -> World {
         let objects = vec![
-            Shapes::Sphere(Sphere(Shape {
+            Shapes::Sphere(Sphere(Figure {
                 material: Material {
                     color: Color {
                         red: 0.8,
@@ -95,7 +95,7 @@ mod tests {
                 },
                 ..Default::default()
             })),
-            Shapes::Sphere(Sphere(Shape {
+            Shapes::Sphere(Sphere(Figure {
                 transform: Matrix::scaling(0.5, 0.5, 0.5),
                 ..Default::default()
             })),
@@ -116,7 +116,7 @@ mod tests {
             intensity: color::WHITE,
         };
 
-        let s1 = Shapes::Sphere(Sphere(Shape {
+        let s1 = Shapes::Sphere(Sphere(Figure {
             material: Material {
                 color: Color {
                     red: 0.8,
@@ -130,7 +130,7 @@ mod tests {
             ..Default::default()
         }));
 
-        let s2 = Shapes::Sphere(Sphere(Shape {
+        let s2 = Shapes::Sphere(Sphere(Figure {
             transform: Matrix::scaling(0.5, 0.5, 0.5),
             ..Default::default()
         }));
