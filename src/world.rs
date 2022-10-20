@@ -52,8 +52,8 @@ impl World {
     }
 
     fn shade_hit(&self, comps: MetaData) -> Color {
-        let shadowed = self.is_shadowed(comps.over_point);
         self.lights.iter().fold(color::BLACK, |shade, light| {
+            let shadowed = self.is_shadowed(light, comps.over_point);
             shade
                 + comps.i.object.shape().material.lighting(
                     *light,
@@ -73,25 +73,23 @@ impl World {
         }
     }
 
-    fn is_shadowed(&self, point: Point) -> bool {
-        self.lights.iter().any(|light| {
-            let direction = light.position - point;
-            let distance = direction.magnitude();
-            let direction = direction.normalize();
+    fn is_shadowed(&self, light: &PointLight, point: Point) -> bool {
+        let v = light.position - point;
+        let distance = v.magnitude();
+        let direction = v.normalize();
 
-            let ray = Ray {
-                origin: point,
-                direction,
-            };
+        let ray = Ray {
+            origin: point,
+            direction,
+        };
 
-            let xs = self.intersect(ray);
+        let xs = self.intersect(ray);
 
-            if let Some(hit) = Intersection::hit(xs) {
-                return hit.t < distance;
-            }
+        if let Some(hit) = Intersection::hit(xs) {
+            return hit.t < distance;
+        }
 
-            false
-        })
+        false
     }
 }
 
@@ -283,7 +281,7 @@ mod tests {
         let world = World::default();
         let point = Point::new(0.0, 10.0, 0.0);
 
-        assert!(!world.is_shadowed(point));
+        assert!(!world.is_shadowed(&world.lights[0], point));
     }
 
     #[test]
@@ -291,7 +289,7 @@ mod tests {
         let world = World::default();
         let point = Point::new(10.0, -10.0, 10.0);
 
-        assert!(world.is_shadowed(point));
+        assert!(world.is_shadowed(&world.lights[0], point));
     }
 
     #[test]
@@ -299,7 +297,7 @@ mod tests {
         let world = World::default();
         let point = Point::new(-20.0, 20.0, -20.0);
 
-        assert!(!world.is_shadowed(point));
+        assert!(!world.is_shadowed(&world.lights[0], point));
     }
 
     #[test]
@@ -307,7 +305,7 @@ mod tests {
         let world = World::default();
         let point = Point::new(-2.0, 2.0, -2.0);
 
-        assert!(!world.is_shadowed(point));
+        assert!(!world.is_shadowed(&world.lights[0], point));
     }
 
     #[test]

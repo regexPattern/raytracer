@@ -82,21 +82,21 @@ fn main() {
 
     let left_light = PointLight {
         position: Point::new(-10.0, 10.0, -10.0),
-        // rgb(150, 100, 100)
+        // rgb(170, 120, 120)
         intensity: Color::from(RGBColor {
-            red: 150,
-            green: 100,
-            blue: 100,
+            red: 170,
+            green: 120,
+            blue: 120,
         }),
     };
 
     let right_light = PointLight {
-        // rgb(100, 100, 150)
+        // rgb(120, 120, 170)
         position: Point::new(10.0, 10.0, -5.0),
         intensity: Color::from(RGBColor {
-            red: 100,
-            green: 100,
-            blue: 150,
+            red: 120,
+            green: 120,
+            blue: 170,
         }),
     };
 
@@ -109,7 +109,7 @@ fn main() {
     // let mut camera = Camera::new(1920, 1080, std::f64::consts::FRAC_PI_3);
     // let mut camera = Camera::new(3840, 2160, std::f64::consts::FRAC_PI_3);
     camera.transform = Matrix::view(
-        Point::new(5.0, 3.0, -10.0),
+        Point::new(3.0, 3.0, -10.0),
         Point::new(0.0, 1.0, 0.0),
         Vector::new(0.0, 1.0, 0.0),
     );
