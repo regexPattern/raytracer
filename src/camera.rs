@@ -6,6 +6,7 @@ use crate::ray::Ray;
 use crate::tuple::Point;
 use crate::world::World;
 
+#[derive(Debug)]
 pub struct Camera {
     pub transform: Matrix<4, 4>,
     hsize: u32,
@@ -67,7 +68,7 @@ impl Camera {
 
                     for x in 0..self.hsize {
                         let ray = self.ray_for_pixel(x, y);
-                        let color = world.color_at(&ray);
+                        let color = world.color_at(ray);
                         pixels.push(color);
                     }
 
@@ -103,58 +104,58 @@ mod tests {
         let vsize = 120;
         let field_of_view = std::f64::consts::FRAC_PI_2;
 
-        let c = Camera::new(hsize, vsize, field_of_view);
+        let camera = Camera::new(hsize, vsize, field_of_view);
 
-        assert_eq!(c.hsize, 160);
-        assert_eq!(c.vsize, 120);
-        assert_eq!(c.transform, matrix::IDENTITY4X4);
+        assert_eq!(camera.hsize, 160);
+        assert_eq!(camera.vsize, 120);
+        assert_eq!(camera.transform, matrix::IDENTITY4X4);
     }
 
     #[test]
     fn the_pixel_size_for_a_horizontal_canvas() {
-        let c = Camera::new(200, 125, std::f64::consts::FRAC_PI_2);
+        let camera = Camera::new(200, 125, std::f64::consts::FRAC_PI_2);
 
-        assert_approx!(c.pixel_size, 0.01);
+        assert_approx!(camera.pixel_size, 0.01);
     }
 
     #[test]
     fn the_pixel_size_for_a_vertical_canvas() {
-        let c = Camera::new(125, 200, std::f64::consts::FRAC_PI_2);
+        let camera = Camera::new(125, 200, std::f64::consts::FRAC_PI_2);
 
-        assert_approx!(c.pixel_size, 0.01);
+        assert_approx!(camera.pixel_size, 0.01);
     }
 
     #[test]
     fn constructing_a_ray_through_the_center_of_the_canvas() {
-        let c = Camera::new(201, 101, std::f64::consts::FRAC_PI_2);
+        let camera = Camera::new(201, 101, std::f64::consts::FRAC_PI_2);
 
-        let r = c.ray_for_pixel(100, 50);
+        let ray = camera.ray_for_pixel(100, 50);
 
-        assert_eq!(r.origin, Point::new(0.0, 0.0, 0.0));
-        assert_eq!(r.direction, Vector::new(0.0, 0.0, -1.0));
+        assert_eq!(ray.origin, Point::new(0.0, 0.0, 0.0));
+        assert_eq!(ray.direction, Vector::new(0.0, 0.0, -1.0));
     }
 
     #[test]
     fn constructing_a_ray_through_a_corner_of_the_canvas() {
-        let c = Camera::new(201, 101, std::f64::consts::FRAC_PI_2);
+        let camera = Camera::new(201, 101, std::f64::consts::FRAC_PI_2);
 
-        let r = c.ray_for_pixel(0, 0);
+        let ray = camera.ray_for_pixel(0, 0);
 
-        assert_eq!(r.origin, Point::new(0.0, 0.0, 0.0));
-        assert_eq!(r.direction, Vector::new(0.66519, 0.33259, -0.66851));
+        assert_eq!(ray.origin, Point::new(0.0, 0.0, 0.0));
+        assert_eq!(ray.direction, Vector::new(0.66519, 0.33259, -0.66851));
     }
 
     #[test]
     fn constructing_a_ray_when_the_camera_is_transformed() {
-        let mut c = Camera::new(201, 101, std::f64::consts::FRAC_PI_2);
-        c.transform =
+        let mut camera = Camera::new(201, 101, std::f64::consts::FRAC_PI_2);
+        camera.transform =
             Matrix::rotation_y(std::f64::consts::FRAC_PI_4) * Matrix::translation(0.0, -2.0, 5.0);
 
-        let r = c.ray_for_pixel(100, 50);
+        let ray = camera.ray_for_pixel(100, 50);
 
-        assert_eq!(r.origin, Point::new(0.0, 2.0, -5.0));
+        assert_eq!(ray.origin, Point::new(0.0, 2.0, -5.0));
         assert_eq!(
-            r.direction,
+            ray.direction,
             Vector::new(2_f64.sqrt() / 2.0, 0.0, -2_f64.sqrt() / 2.0)
         );
     }
@@ -162,13 +163,15 @@ mod tests {
     #[test]
     fn rendering_a_world_with_a_camera() {
         let world = World::default();
-        let mut c = Camera::new(11, 11, std::f64::consts::FRAC_PI_2);
+
+        let mut camera = Camera::new(11, 11, std::f64::consts::FRAC_PI_2);
+
         let from = Point::new(0.0, 0.0, -5.0);
         let to = Point::new(0.0, 0.0, 0.0);
         let up = Vector::new(0.0, 1.0, 0.0);
-        c.transform = Matrix::view(from, to, up);
+        camera.transform = Matrix::view(from, to, up);
 
-        let image = c.render(&world);
+        let image = camera.render(&world);
 
         assert_eq!(
             *image.pixel_at(5, 5),

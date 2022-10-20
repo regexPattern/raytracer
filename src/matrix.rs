@@ -28,7 +28,7 @@ impl<const M: usize, const N: usize> PartialEq for Matrix<M, N> {
 }
 
 impl Matrix<2, 2> {
-    fn determinant(&self) -> f64 {
+    fn determinant(self) -> f64 {
         let a = self[0][0];
         let b = self[0][1];
         let c = self[1][0];
@@ -39,7 +39,7 @@ impl Matrix<2, 2> {
 }
 
 impl Matrix<3, 3> {
-    fn cofactor(&self, row: usize, col: usize) -> f64 {
+    fn cofactor(self, row: usize, col: usize) -> f64 {
         let minor = self.minor(row, col);
         if (row + col) % 2 == 0 {
             minor
@@ -48,7 +48,7 @@ impl Matrix<3, 3> {
         }
     }
 
-    fn determinant(&self) -> f64 {
+    fn determinant(self) -> f64 {
         const FIXED_ROW: usize = 0;
 
         let mut result = 0.0;
@@ -60,11 +60,11 @@ impl Matrix<3, 3> {
         result
     }
 
-    fn minor(&self, row: usize, col: usize) -> f64 {
+    fn minor(self, row: usize, col: usize) -> f64 {
         self.submatrix(row, col).determinant()
     }
 
-    fn submatrix(&self, row: usize, col: usize) -> Matrix<2, 2> {
+    fn submatrix(self, row: usize, col: usize) -> Matrix<2, 2> {
         let mut result = Matrix([[0.0; 2]; 2]);
         let mut result_rows = 0;
 
@@ -91,7 +91,7 @@ impl Matrix<3, 3> {
 }
 
 impl Matrix<4, 4> {
-    fn cofactor(&self, row: usize, col: usize) -> f64 {
+    fn cofactor(self, row: usize, col: usize) -> f64 {
         let minor = self.minor(row, col);
         if (row + col) % 2 == 0 {
             minor
@@ -100,7 +100,7 @@ impl Matrix<4, 4> {
         }
     }
 
-    fn determinant(&self) -> f64 {
+    fn determinant(self) -> f64 {
         const FIXED_ROW: usize = 0;
 
         let mut result = 0.0;
@@ -112,7 +112,7 @@ impl Matrix<4, 4> {
         result
     }
 
-    pub fn inverse(&self) -> Self {
+    pub fn inverse(self) -> Self {
         let mut result = Self([[0.0; 4]; 4]);
         let determinant = self.determinant();
 
@@ -125,11 +125,11 @@ impl Matrix<4, 4> {
         result.transpose()
     }
 
-    fn minor(&self, row: usize, col: usize) -> f64 {
+    fn minor(self, row: usize, col: usize) -> f64 {
         self.submatrix(row, col).determinant()
     }
 
-    fn submatrix(&self, row: usize, col: usize) -> Matrix<3, 3> {
+    fn submatrix(self, row: usize, col: usize) -> Matrix<3, 3> {
         let mut result = Matrix([[0.0; 3]; 3]);
         let mut result_rows = 0;
 
@@ -154,7 +154,7 @@ impl Matrix<4, 4> {
         result
     }
 
-    pub fn transpose(&self) -> Self {
+    pub fn transpose(self) -> Self {
         let mut result = Self([[0.0; 4]; 4]);
 
         for row in 0..4 {
@@ -183,6 +183,7 @@ mod tests {
             [9.0, 8.0, 7.0, 6.0],
             [5.0, 4.0, 3.0, 2.0],
         ]);
+
         let B = Matrix([
             [1.0, 2.0, 3.0, 4.0],
             [5.0, 6.0, 7.0, 8.0],
@@ -201,6 +202,7 @@ mod tests {
             [9.0, 8.0, 7.0, 6.0],
             [5.0, 4.0, 3.0, 2.0],
         ]);
+
         let B = Matrix([
             [2.0, 3.0, 4.0, 5.0],
             [6.0, 7.0, 8.0, 9.0],
@@ -342,6 +344,7 @@ mod tests {
             [7.0, 7.0, -6.0, -7.0],
             [1.0, -3.0, 7.0, 4.0],
         ]);
+
         let B = A.inverse();
 
         assert_approx!(A.determinant(), 532.0);

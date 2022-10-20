@@ -4,41 +4,41 @@ use std::fs::File;
 use std::io::Write;
 
 use raytracer::camera::Camera;
-use raytracer::color::{self, Color};
+use raytracer::color::{self, Color, RGBColor};
 use raytracer::light::PointLight;
 use raytracer::material::Material;
 use raytracer::matrix::Matrix;
-use raytracer::shape::{Figure, Shapes, Sphere};
+use raytracer::shape::{Shape, Shapes};
 use raytracer::tuple::{Point, Vector};
 use raytracer::world::World;
 
 fn main() {
-    let floor = Shapes::Sphere(Sphere(Figure {
+    let floor = Shapes::Sphere(Shape {
         transform: Matrix::scaling(10.0, 0.01, 10.0),
         material: Material {
             color: color::WHITE,
             specular: 0.0,
             ..Default::default()
         },
-    }));
+    });
 
-    let left_wall = Shapes::Sphere(Sphere(Figure {
+    let left_wall = Shapes::Sphere(Shape {
         transform: Matrix::translation(0.0, 0.0, 5.0)
             * Matrix::rotation_y(-std::f64::consts::FRAC_PI_4)
             * Matrix::rotation_x(std::f64::consts::FRAC_PI_2)
             * Matrix::scaling(10.0, 0.01, 10.0),
         material: floor.shape().material,
-    }));
+    });
 
-    let right_wall = Shapes::Sphere(Sphere(Figure {
+    let right_wall = Shapes::Sphere(Shape {
         transform: Matrix::translation(0.0, 0.0, 5.0)
             * Matrix::rotation_y(std::f64::consts::FRAC_PI_4)
             * Matrix::rotation_x(std::f64::consts::FRAC_PI_2)
             * Matrix::scaling(10.0, 0.01, 10.0),
         material: floor.shape().material,
-    }));
+    });
 
-    let middle = Shapes::Sphere(Sphere(Figure {
+    let middle = Shapes::Sphere(Shape {
         transform: Matrix::translation(-0.5, 1.0, 0.5),
         material: Material {
             color: Color {
@@ -50,9 +50,9 @@ fn main() {
             specular: 0.3,
             ..Default::default()
         },
-    }));
+    });
 
-    let right = Shapes::Sphere(Sphere(Figure {
+    let right = Shapes::Sphere(Shape {
         transform: Matrix::translation(1.5, 0.5, -0.5) * Matrix::scaling(0.5, 0.5, 0.5),
         material: Material {
             color: Color {
@@ -64,9 +64,9 @@ fn main() {
             specular: 0.3,
             ..Default::default()
         },
-    }));
+    });
 
-    let left = Shapes::Sphere(Sphere(Figure {
+    let left = Shapes::Sphere(Shape {
         transform: Matrix::translation(-1.5, 0.33, -0.75) * Matrix::scaling(0.33, 0.33, 0.33),
         material: Material {
             color: Color {
@@ -76,22 +76,28 @@ fn main() {
             },
             diffuse: 0.7,
             specular: 0.3,
-            ..Material::default()
+            ..Default::default()
         },
-    }));
+    });
 
     let left_light = PointLight {
         position: Point::new(-10.0, 10.0, -10.0),
-        intensity: color::WHITE,
+        // rgb(150, 100, 100)
+        intensity: Color::from(RGBColor {
+            red: 150,
+            green: 100,
+            blue: 100,
+        }),
     };
 
     let right_light = PointLight {
+        // rgb(100, 100, 150)
         position: Point::new(10.0, 10.0, -5.0),
-        intensity: Color {
-            red: 0.0,
-            green: 0.0,
-            blue: 0.0,
-        },
+        intensity: Color::from(RGBColor {
+            red: 100,
+            green: 100,
+            blue: 150,
+        }),
     };
 
     let objects = vec![floor, left_wall, right_wall, middle, right, left];
@@ -103,7 +109,7 @@ fn main() {
     // let mut camera = Camera::new(1920, 1080, std::f64::consts::FRAC_PI_3);
     // let mut camera = Camera::new(3840, 2160, std::f64::consts::FRAC_PI_3);
     camera.transform = Matrix::view(
-        Point::new(5.0, 3.0, -5.0),
+        Point::new(5.0, 3.0, -10.0),
         Point::new(0.0, 1.0, 0.0),
         Vector::new(0.0, 1.0, 0.0),
     );

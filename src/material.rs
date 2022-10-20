@@ -37,7 +37,7 @@ impl PartialEq for Material {
 impl Material {
     pub fn lighting(
         &self,
-        light: &PointLight,
+        light: PointLight,
         point: Point,
         eyev: Vector,
         normalv: Vector,
@@ -80,18 +80,18 @@ mod tests {
 
     #[test]
     fn the_default_material() {
-        let m = Material::default();
+        let material = Material::default();
 
-        assert_eq!(m.color, color::WHITE);
-        assert_eq!(m.ambient, 0.1);
-        assert_eq!(m.diffuse, 0.9);
-        assert_eq!(m.specular, 0.9);
-        assert_eq!(m.shininess, 200.0);
+        assert_eq!(material.color, color::WHITE);
+        assert_eq!(material.ambient, 0.1);
+        assert_eq!(material.diffuse, 0.9);
+        assert_eq!(material.specular, 0.9);
+        assert_eq!(material.shininess, 200.0);
     }
 
     #[test]
     fn lighting_with_the_eye_between_the_light_and_the_surface() {
-        let (m, position) = test_defaults();
+        let (material, position) = test_defaults();
 
         let eyev = Vector::new(0.0, 0.0, -1.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
@@ -100,7 +100,7 @@ mod tests {
             intensity: color::WHITE,
         };
 
-        let result = m.lighting(&light, position, eyev, normalv, false);
+        let result = material.lighting(light, position, eyev, normalv, false);
 
         assert_eq!(
             result,
@@ -114,7 +114,7 @@ mod tests {
 
     #[test]
     fn lighting_with_the_eye_between_light_and_surface_eye_offset_45_degrees() {
-        let (m, position) = test_defaults();
+        let (material, position) = test_defaults();
 
         let eyev = Vector::new(0.0, 2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
@@ -123,7 +123,7 @@ mod tests {
             intensity: color::WHITE,
         };
 
-        let result = m.lighting(&light, position, eyev, normalv, false);
+        let result = material.lighting(light, position, eyev, normalv, false);
 
         assert_eq!(
             result,
@@ -137,7 +137,7 @@ mod tests {
 
     #[test]
     fn lighting_with_the_eye_opposite_surface_light_offset_45_degrees() {
-        let (m, position) = test_defaults();
+        let (material, position) = test_defaults();
 
         let eyev = Vector::new(0.0, 0.0, -1.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
@@ -146,7 +146,7 @@ mod tests {
             intensity: color::WHITE,
         };
 
-        let result = m.lighting(&light, position, eyev, normalv, false);
+        let result = material.lighting(light, position, eyev, normalv, false);
 
         assert_eq!(
             result,
@@ -160,7 +160,7 @@ mod tests {
 
     #[test]
     fn lighting_with_eye_in_the_path_of_the_reflection_vector() {
-        let (m, position) = test_defaults();
+        let (material, position) = test_defaults();
 
         let eyev = Vector::new(0.0, -2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
@@ -169,7 +169,7 @@ mod tests {
             intensity: color::WHITE,
         };
 
-        let result = m.lighting(&light, position, eyev, normalv, false);
+        let result = material.lighting(light, position, eyev, normalv, false);
 
         assert_eq!(
             result,
@@ -183,7 +183,7 @@ mod tests {
 
     #[test]
     fn lighting_with_the_light_behind_the_surface() {
-        let (m, position) = test_defaults();
+        let (material, position) = test_defaults();
 
         let eyev = Vector::new(0.0, 0.0, -1.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
@@ -192,7 +192,7 @@ mod tests {
             intensity: color::WHITE,
         };
 
-        let result = m.lighting(&light, position, eyev, normalv, false);
+        let result = material.lighting(light, position, eyev, normalv, false);
 
         assert_eq!(
             result,
@@ -216,7 +216,7 @@ mod tests {
         };
         let in_shadow = true;
 
-        let result = m.lighting(&light, position, eyev, normalv, in_shadow);
+        let result = m.lighting(light, position, eyev, normalv, in_shadow);
 
         assert_eq!(
             result,

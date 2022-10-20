@@ -156,6 +156,7 @@ mod tests {
             green: 0.6,
             blue: 0.75,
         };
+
         let c2 = Color {
             red: 0.7,
             green: 0.1,
@@ -179,6 +180,7 @@ mod tests {
             green: 0.6,
             blue: 0.75,
         };
+
         let c2 = Color {
             red: 0.7,
             green: 0.1,
@@ -225,6 +227,7 @@ mod tests {
             green: 0.2,
             blue: 0.4,
         };
+
         let c2 = Color {
             red: 0.9,
             green: 1.0,
@@ -248,6 +251,7 @@ mod tests {
             green: 127,
             blue: 0,
         };
+
         let c2 = RGBColor {
             red: 241,
             green: 113,
@@ -279,11 +283,13 @@ mod tests {
             green: 0.0,
             blue: 0.0,
         };
+
         let c2 = Color {
             red: 1.0,
             green: 1.0,
             blue: 1.0,
         };
+
         let c3 = Color {
             red: 0.5,
             green: 0.75,

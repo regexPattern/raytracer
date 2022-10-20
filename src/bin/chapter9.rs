@@ -6,12 +6,12 @@ use raytracer::color::{self, Color};
 use raytracer::light::PointLight;
 use raytracer::material::Material;
 use raytracer::matrix::Matrix;
-use raytracer::shape::{Figure, Plane, Shapes, Sphere};
+use raytracer::shape::{Shape, Shapes};
 use raytracer::tuple::{Point, Vector};
 use raytracer::world::World;
 
 fn main() {
-    let middle = Shapes::Sphere(Sphere(Figure {
+    let middle = Shapes::Sphere(Shape {
         transform: Matrix::translation(-0.5, 1.0, 0.5),
         material: Material {
             color: Color {
@@ -23,9 +23,9 @@ fn main() {
             specular: 0.3,
             ..Default::default()
         },
-    }));
+    });
 
-    let right = Shapes::Sphere(Sphere(Figure {
+    let right = Shapes::Sphere(Shape {
         transform: Matrix::translation(1.5, 0.5, -0.5) * Matrix::scaling(0.5, 0.5, 0.5),
         material: Material {
             color: Color {
@@ -37,9 +37,9 @@ fn main() {
             specular: 0.3,
             ..Default::default()
         },
-    }));
+    });
 
-    let left = Shapes::Sphere(Sphere(Figure {
+    let left = Shapes::Sphere(Shape {
         transform: Matrix::translation(-1.5, 0.33, -0.75) * Matrix::scaling(0.33, 0.33, 0.33),
         material: Material {
             color: Color {
@@ -49,11 +49,11 @@ fn main() {
             },
             diffuse: 0.7,
             specular: 0.3,
-            ..Material::default()
+            ..Default::default()
         },
-    }));
+    });
 
-    let plane = Shapes::Plane(Plane::default());
+    let plane = Shapes::Plane(Shape::default());
 
     let objects = vec![middle, right, left, plane];
     let lights = vec![PointLight {
