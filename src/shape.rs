@@ -166,7 +166,10 @@ mod tests {
             Matrix::scaling(1.0, 0.5, 1.0) * Matrix::rotation_z(std::f64::consts::PI / 5.0),
         );
 
-        let n = test_shape_normal_at(shape, Point::new(0.0, 2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0));
+        let n = test_shape_normal_at(
+            shape,
+            Point::new(0.0, 2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0),
+        );
 
         assert_eq!(n, Vector::new(0.0, 0.97014, -0.24254));
     }

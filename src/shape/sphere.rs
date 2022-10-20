@@ -168,11 +168,10 @@ mod tests {
     fn the_normal_on_a_sphere_at_a_nonaxial_point() {
         let s = Shape::default();
 
-        let n = super::normal_at(s, Point::new(
-            3_f64.sqrt() / 3.0,
-            3_f64.sqrt() / 3.0,
-            3_f64.sqrt() / 3.0,
-        ));
+        let n = super::normal_at(
+            s,
+            Point::new(3_f64.sqrt() / 3.0, 3_f64.sqrt() / 3.0, 3_f64.sqrt() / 3.0),
+        );
 
         assert_eq!(
             n,
@@ -184,11 +183,10 @@ mod tests {
     fn the_normal_is_a_normalized_vector() {
         let s = Shape::default();
 
-        let n = super::normal_at(s, Point::new(
-            3_f64.sqrt() / 3.0,
-            3_f64.sqrt() / 3.0,
-            3_f64.sqrt() / 3.0,
-        ));
+        let n = super::normal_at(
+            s,
+            Point::new(3_f64.sqrt() / 3.0, 3_f64.sqrt() / 3.0, 3_f64.sqrt() / 3.0),
+        );
 
         assert_eq!(n, n.normalize());
     }
