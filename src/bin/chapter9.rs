@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::prelude::*;
 
 use raytracer::camera::Camera;
-use raytracer::color::{self, Color};
+use raytracer::color::{Color, RGBColor};
 use raytracer::light::PointLight;
 use raytracer::material::Material;
 use raytracer::matrix::Matrix;
@@ -53,19 +53,52 @@ fn main() {
         },
     });
 
-    let plane = Shapes::Plane(Shape::default());
+    let floor = Shapes::Plane(Shape::default());
 
-    let objects = vec![middle, right, left, plane];
-    let lights = vec![PointLight {
+    let left_wall = Shapes::Plane(Shape {
+        transform: Matrix::translation(0.0, 0.0, 5.0)
+            * Matrix::rotation_y(-std::f64::consts::FRAC_PI_4)
+            * Matrix::rotation_x(std::f64::consts::FRAC_PI_2),
+        ..Default::default()
+    });
+
+    let right_wall = Shapes::Plane(Shape {
+        transform: Matrix::translation(0.0, 0.0, 5.0)
+            * Matrix::rotation_y(std::f64::consts::FRAC_PI_4)
+            * Matrix::rotation_x(std::f64::consts::FRAC_PI_2),
+        ..Default::default()
+    });
+
+    let left_light = PointLight {
         position: Point::new(-10.0, 10.0, -10.0),
-        intensity: color::WHITE,
-    }];
+        // rgb(170, 120, 120)
+        intensity: Color::from(RGBColor {
+            red: 170,
+            green: 120,
+            blue: 120,
+        }),
+    };
+
+    let right_light = PointLight {
+        position: Point::new(10.0, 10.0, -10.0),
+        // rgb(120, 120, 170)
+        intensity: Color::from(RGBColor {
+            red: 120,
+            green: 120,
+            blue: 170,
+        }),
+    };
+
+    let objects = vec![middle, right, left, floor, left_wall, right_wall];
+    let lights = vec![left_light, right_light];
 
     let world = World { objects, lights };
 
     let mut camera = Camera::new(1280, 720, std::f64::consts::FRAC_PI_3);
+    // let mut camera = Camera::new(1920, 1080, std::f64::consts::FRAC_PI_3);
+    // let mut camera = Camera::new(3840, 2160, std::f64::consts::FRAC_PI_3);
     camera.transform = Matrix::view(
-        Point::new(5.0, 3.0, -5.0),
+        Point::new(5.0, 3.0, -10.0),
         Point::new(0.0, 1.0, 0.0),
         Vector::new(0.0, 1.0, 0.0),
     );
