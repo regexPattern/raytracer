@@ -1,14 +1,23 @@
+#![allow(clippy::unwrap_used)]
+#![allow(dead_code)]
+
 use std::fs::File;
 use std::io::prelude::*;
 
 use raytracer::camera::Camera;
-use raytracer::color::{Color, RGBColor};
+use raytracer::color::{Color, RGB};
 use raytracer::light::PointLight;
 use raytracer::material::Material;
 use raytracer::matrix::Matrix;
 use raytracer::shape::{Shape, Shapes};
 use raytracer::tuple::{Point, Vector};
 use raytracer::world::World;
+
+const RES_HD: (u32, u32) = (1280, 720);
+const RES_FULL_HD: (u32, u32) = (1920, 1080);
+const RES_4K: (u32, u32) = (3840, 2160);
+
+const RESOLUTION: (u32, u32) = RES_FULL_HD;
 
 fn main() {
     let middle = Shapes::Sphere(Shape {
@@ -69,34 +78,32 @@ fn main() {
         ..Default::default()
     });
 
-    let left_light = PointLight {
-        position: Point::new(-10.0, 10.0, -10.0),
-        // rgb(170, 120, 120)
-        intensity: Color::from(RGBColor {
-            red: 170,
-            green: 120,
-            blue: 120,
-        }),
-    };
-
-    let right_light = PointLight {
+    let blue_light = PointLight {
         position: Point::new(10.0, 10.0, -10.0),
-        // rgb(120, 120, 170)
-        intensity: Color::from(RGBColor {
-            red: 120,
-            green: 120,
-            blue: 170,
+        // rgb(130, 130, 180)
+        intensity: Color::from(RGB {
+            red: 130,
+            green: 130,
+            blue: 180,
         }),
     };
 
-    let objects = vec![middle, right, left, floor, left_wall, right_wall];
-    let lights = vec![left_light, right_light];
+    let red_light = PointLight {
+        position: Point::new(-10.0, 10.0, -10.0),
+        // rgb(180, 130, 130)
+        intensity: Color::from(RGB {
+            red: 180,
+            green: 130,
+            blue: 130,
+        }),
+    };
+
+    let objects = vec![middle, right, left, floor, right_wall, left_wall];
+    let lights = vec![blue_light, red_light];
 
     let world = World { objects, lights };
 
-    let mut camera = Camera::new(1280, 720, std::f64::consts::FRAC_PI_3);
-    // let mut camera = Camera::new(1920, 1080, std::f64::consts::FRAC_PI_3);
-    // let mut camera = Camera::new(3840, 2160, std::f64::consts::FRAC_PI_3);
+    let mut camera = Camera::new(RESOLUTION.0, RESOLUTION.1, std::f64::consts::FRAC_PI_3);
     camera.transform = Matrix::view(
         Point::new(5.0, 3.0, -10.0),
         Point::new(0.0, 1.0, 0.0),

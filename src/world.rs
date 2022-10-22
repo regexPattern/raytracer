@@ -9,8 +9,8 @@ use crate::shape::{Shape, Shapes};
 use crate::tuple::Point;
 
 pub struct World {
-    pub lights: Vec<PointLight>,
     pub objects: Vec<Shapes>,
+    pub lights: Vec<PointLight>,
 }
 
 impl Default for World {
@@ -51,11 +51,12 @@ impl World {
         xs
     }
 
-    fn shade_hit(&self, comps: MetaData) -> Color {
+    fn shade_hit(&self, comps: &MetaData) -> Color {
         self.lights.iter().fold(color::BLACK, |shade, light| {
             let shadowed = self.is_shadowed(light, comps.over_point);
             shade
                 + comps.i.object.shape().material.lighting(
+                    comps.i.object,
                     *light,
                     comps.over_point,
                     comps.eyev,
@@ -68,7 +69,7 @@ impl World {
     pub fn color_at(&self, ray: Ray) -> Color {
         let xs = self.intersect(ray);
         match Intersection::hit(xs) {
-            Some(hit) => self.shade_hit(hit.comps(ray)),
+            Some(hit) => self.shade_hit(&hit.comps(ray)),
             None => color::BLACK,
         }
     }
@@ -168,7 +169,7 @@ mod tests {
         };
 
         let comps = i.comps(ray);
-        let c = world.shade_hit(comps);
+        let c = world.shade_hit(&comps);
 
         assert_eq!(
             c,
@@ -203,7 +204,7 @@ mod tests {
         };
 
         let comps = i.comps(ray);
-        let c = world.shade_hit(comps);
+        let c = world.shade_hit(&comps);
 
         assert_eq!(
             c,
@@ -336,7 +337,7 @@ mod tests {
 
         let comps = i.comps(ray);
 
-        let color = world.shade_hit(comps);
+        let color = world.shade_hit(&comps);
 
         assert_eq!(
             color,

@@ -22,7 +22,7 @@ pub fn intersect(shape: Shape, ray: Ray) -> Vec<Intersection> {
     vec![i]
 }
 
-pub fn normal_at(_: Shape, _: Point) -> Vector {
+pub const fn normal_at(_: Shape, _: Point) -> Vector {
     Vector::new(0.0, 1.0, 0.0)
 }
 

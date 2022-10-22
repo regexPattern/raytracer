@@ -27,7 +27,7 @@ impl PartialEq for Intersection {
 
 impl Intersection {
     pub fn comps(self, ray: Ray) -> MetaData {
-        let Intersection { t, object } = self;
+        let Self { t, object } = self;
         let point = ray.position(t);
         let eyev = -ray.direction;
         let normalv = object.normal_at(point);
@@ -47,7 +47,7 @@ impl Intersection {
         }
     }
 
-    pub fn hit(mut xs: Vec<Intersection>) -> Option<Intersection> {
+    pub fn hit(mut xs: Vec<Self>) -> Option<Self> {
         xs.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
         xs.into_iter().find(|i| i.t.is_sign_positive())
     }

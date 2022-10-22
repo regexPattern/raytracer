@@ -1,3 +1,6 @@
+#![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::cast_sign_loss)]
+
 use std::ops::{Add, Mul, Sub};
 
 use crate::float;
@@ -40,7 +43,7 @@ pub struct Color {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct RGBColor {
+pub struct RGB {
     pub red: u8,
     pub green: u8,
     pub blue: u8,
@@ -54,8 +57,8 @@ impl PartialEq for Color {
     }
 }
 
-impl From<RGBColor> for Color {
-    fn from(rgb: RGBColor) -> Self {
+impl From<RGB> for Color {
+    fn from(rgb: RGB) -> Self {
         let red = f64::from(rgb.red) / 255.0;
         let green = f64::from(rgb.green) / 255.0;
         let blue = f64::from(rgb.blue) / 255.0;
@@ -64,7 +67,7 @@ impl From<RGBColor> for Color {
     }
 }
 
-impl From<Color> for RGBColor {
+impl From<Color> for RGB {
     fn from(color: Color) -> Self {
         let red = (color.red * 255.0) as u8;
         let green = (color.green * 255.0) as u8;
@@ -246,13 +249,13 @@ mod tests {
 
     #[test]
     fn constructing_colors_from_rgb_values() {
-        let c1 = RGBColor {
+        let c1 = RGB {
             red: 255,
             green: 127,
             blue: 0,
         };
 
-        let c2 = RGBColor {
+        let c2 = RGB {
             red: 241,
             green: 113,
             blue: 14,
@@ -297,24 +300,24 @@ mod tests {
         };
 
         assert_eq!(
-            RGBColor::from(c1),
-            RGBColor {
+            RGB::from(c1),
+            RGB {
                 red: 0,
                 green: 0,
                 blue: 0
             }
         );
         assert_eq!(
-            RGBColor::from(c2),
-            RGBColor {
+            RGB::from(c2),
+            RGB {
                 red: 255,
                 green: 255,
                 blue: 255
             }
         );
         assert_eq!(
-            RGBColor::from(c3),
-            RGBColor {
+            RGB::from(c3),
+            RGB {
                 red: 127,
                 green: 191,
                 blue: 63

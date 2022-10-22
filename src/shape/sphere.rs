@@ -32,8 +32,8 @@ pub fn intersect(shape: Shape, ray: Ray) -> Vec<Intersection> {
     vec![i1, i2]
 }
 
-pub fn normal_at(_: Shape, object_point: Point) -> Vector {
-    object_point - Point::new(0.0, 0.0, 0.0)
+pub fn normal_at(_: Shape, local_point: Point) -> Vector {
+    local_point - Point::new(0.0, 0.0, 0.0)
 }
 
 #[cfg(test)]

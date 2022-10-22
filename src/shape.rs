@@ -32,30 +32,30 @@ impl Shapes {
     pub fn intersect(self, ray: Ray) -> Vec<Intersection> {
         let local_ray = self.local_ray(ray);
         match self {
-            Shapes::Sphere(s) => sphere::intersect(s, local_ray),
-            Shapes::Plane(p) => plane::intersect(p, local_ray),
+            Self::Sphere(s) => sphere::intersect(s, local_ray),
+            Self::Plane(p) => plane::intersect(p, local_ray),
         }
     }
 
     pub fn normal_at(self, world_point: Point) -> Vector {
         let local_point = self.local_point(world_point);
         let local_normal = match self {
-            Shapes::Sphere(s) => sphere::normal_at(s, local_point),
-            Shapes::Plane(p) => plane::normal_at(p, local_point),
+            Self::Sphere(s) => sphere::normal_at(s, local_point),
+            Self::Plane(p) => plane::normal_at(p, local_point),
         };
 
         self.world_normal(local_normal)
     }
 
-    fn local_ray(&self, ray: Ray) -> Ray {
+    fn local_ray(self, ray: Ray) -> Ray {
         ray.transform(self.shape().transform.inverse())
     }
 
-    fn local_point(&self, world_point: Point) -> Point {
+    fn local_point(self, world_point: Point) -> Point {
         self.shape().transform.inverse() * world_point
     }
 
-    fn world_normal(&self, local_normal: Vector) -> Vector {
+    fn world_normal(self, local_normal: Vector) -> Vector {
         let mut world_normal = self.shape().transform.inverse().transpose() * local_normal;
         world_normal.0.w = 0.0;
         world_normal.normalize()
@@ -63,8 +63,8 @@ impl Shapes {
 
     pub fn shape(self) -> Shape {
         match self {
-            Shapes::Sphere(s) => s,
-            Shapes::Plane(p) => p,
+            Self::Sphere(s) => s,
+            Self::Plane(p) => p,
         }
     }
 }

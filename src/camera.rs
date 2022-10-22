@@ -1,3 +1,5 @@
+#![allow(clippy::cast_possible_truncation)]
+
 use std::sync::{Arc, Mutex};
 
 use crate::canvas::Canvas;
@@ -35,8 +37,8 @@ impl Camera {
             hsize,
             vsize,
             pixel_size,
-            half_width,
             half_height,
+            half_width,
         }
     }
 
