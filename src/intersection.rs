@@ -1,11 +1,11 @@
 use crate::float;
 use crate::ray::Ray;
-use crate::shape::Shapes;
+use crate::shape::Shape;
 use crate::tuple::{Point, Vector};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Intersection {
-    pub object: Shapes,
+    pub object: Shape,
     pub t: f64,
 }
 
@@ -57,13 +57,13 @@ impl Intersection {
 mod tests {
     use crate::assert_approx;
     use crate::matrix::Matrix;
-    use crate::shape::Shape;
+    use crate::shape::ShapeProps;
 
     use super::*;
 
     #[test]
     fn an_intersection_encapsulates_t_and_object() {
-        let shape = Shapes::Sphere(Shape::default());
+        let shape = Shape::Sphere(ShapeProps::default());
 
         let i = Intersection {
             t: 3.5,
@@ -76,7 +76,7 @@ mod tests {
 
     #[test]
     fn aggregating_intersections() {
-        let shape = Shapes::Sphere(Shape::default());
+        let shape = Shape::Sphere(ShapeProps::default());
 
         let i1 = Intersection {
             t: 1.0,
@@ -96,7 +96,7 @@ mod tests {
 
     #[test]
     fn the_hit_when_all_intersections_have_positive_t() {
-        let shape = Shapes::Sphere(Shape::default());
+        let shape = Shape::Sphere(ShapeProps::default());
 
         let i1 = Intersection {
             t: 1.0,
@@ -116,7 +116,7 @@ mod tests {
 
     #[test]
     fn the_hit_when_some_intersections_have_negative_t() {
-        let shape = Shapes::Sphere(Shape::default());
+        let shape = Shape::Sphere(ShapeProps::default());
 
         let i1 = Intersection {
             t: -1.0,
@@ -136,7 +136,7 @@ mod tests {
 
     #[test]
     fn the_hit_when_all_intersections_have_negative_t() {
-        let shape = Shapes::Sphere(Shape::default());
+        let shape = Shape::Sphere(ShapeProps::default());
 
         let i1 = Intersection {
             t: -2.0,
@@ -156,7 +156,7 @@ mod tests {
 
     #[test]
     fn the_hit_is_always_the_lowest_nonnegative_intersection() {
-        let shape = Shapes::Sphere(Shape::default());
+        let shape = Shape::Sphere(ShapeProps::default());
 
         let i1 = Intersection {
             t: 5.0,
@@ -189,7 +189,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let shape = Shapes::Sphere(Shape::default());
+        let shape = Shape::Sphere(ShapeProps::default());
 
         let i = Intersection {
             t: 4.0,
@@ -212,7 +212,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let shape = Shapes::Sphere(Shape::default());
+        let shape = Shape::Sphere(ShapeProps::default());
 
         let i = Intersection {
             t: 4.0,
@@ -231,7 +231,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let shape = Shapes::Sphere(Shape::default());
+        let shape = Shape::Sphere(ShapeProps::default());
 
         let i = Intersection {
             t: 1.0,
@@ -250,7 +250,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let shape = Shapes::Sphere(Shape {
+        let shape = Shape::Sphere(ShapeProps {
             transform: Matrix::translation(0.0, 0.0, 1.0),
             ..Default::default()
         });

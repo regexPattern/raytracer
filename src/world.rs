@@ -2,34 +2,34 @@ use crate::color::{self, Color};
 use crate::intersection::Intersection;
 use crate::intersection::MetaData;
 use crate::light::PointLight;
-use crate::material::Material;
+use crate::material::{Material, Texture};
 use crate::matrix::Matrix;
 use crate::ray::Ray;
-use crate::shape::{Shape, Shapes};
+use crate::shape::{Shape, ShapeProps};
 use crate::tuple::Point;
 
 pub struct World {
-    pub objects: Vec<Shapes>,
+    pub objects: Vec<Shape>,
     pub lights: Vec<PointLight>,
 }
 
 impl Default for World {
     fn default() -> Self {
         let objects = vec![
-            Shapes::Sphere(Shape {
+            Shape::Sphere(ShapeProps {
                 material: Material {
-                    color: Color {
+                    texture: Texture::Color(Color {
                         red: 0.8,
                         green: 1.0,
                         blue: 0.6,
-                    },
+                    }),
                     diffuse: 0.7,
                     specular: 0.2,
                     ..Default::default()
                 },
                 ..Default::default()
             }),
-            Shapes::Sphere(Shape {
+            Shape::Sphere(ShapeProps {
                 transform: Matrix::scaling(0.5, 0.5, 0.5),
                 ..Default::default()
             }),
@@ -108,13 +108,13 @@ mod tests {
             intensity: color::WHITE,
         };
 
-        let s1 = Shapes::Sphere(Shape {
+        let s1 = Shape::Sphere(ShapeProps {
             material: Material {
-                color: Color {
+                texture: Texture::Color(Color {
                     red: 0.8,
                     green: 1.0,
                     blue: 0.6,
-                },
+                }),
                 diffuse: 0.7,
                 specular: 0.2,
                 ..Default::default()
@@ -122,7 +122,7 @@ mod tests {
             ..Default::default()
         });
 
-        let s2 = Shapes::Sphere(Shape {
+        let s2 = Shape::Sphere(ShapeProps {
             transform: Matrix::scaling(0.5, 0.5, 0.5),
             ..Default::default()
         });
@@ -256,12 +256,12 @@ mod tests {
         let mut world = World::default();
 
         let outer = &mut world.objects[0];
-        if let Shapes::Sphere(shape) = outer {
+        if let Shape::Sphere(shape) = outer {
             shape.material.ambient = 1.0;
         }
 
         let inner = &mut world.objects[1];
-        if let Shapes::Sphere(shape) = inner {
+        if let Shape::Sphere(shape) = inner {
             shape.material.ambient = 1.0;
         }
 
@@ -274,7 +274,7 @@ mod tests {
 
         let color = world.color_at(ray);
 
-        assert_eq!(color, inner.shape().material.color);
+        assert_eq!(Texture::Color(color), inner.shape().material.texture);
     }
 
     #[test]
@@ -311,9 +311,9 @@ mod tests {
 
     #[test]
     fn shade_hit_is_given_an_intersection_in_shadow() {
-        let s1 = Shapes::Sphere(Shape::default());
+        let s1 = Shape::Sphere(ShapeProps::default());
 
-        let s2 = Shapes::Sphere(Shape {
+        let s2 = Shape::Sphere(ShapeProps {
             transform: Matrix::translation(0.0, 0.0, 10.0),
             ..Default::default()
         });

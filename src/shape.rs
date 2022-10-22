@@ -8,18 +8,18 @@ use crate::ray::Ray;
 use crate::tuple::{Point, Vector};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum Shapes {
-    Sphere(Shape),
-    Plane(Shape),
+pub enum Shape {
+    Sphere(ShapeProps),
+    Plane(ShapeProps),
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Shape {
+pub struct ShapeProps {
     pub transform: Matrix<4, 4>,
     pub material: Material,
 }
 
-impl Default for Shape {
+impl Default for ShapeProps {
     fn default() -> Self {
         Self {
             material: Material::default(),
@@ -28,40 +28,40 @@ impl Default for Shape {
     }
 }
 
-impl Shapes {
+impl Shape {
     pub fn intersect(self, ray: Ray) -> Vec<Intersection> {
-        let local_ray = self.local_ray(ray);
+        let object_ray = self.object_ray(ray);
         match self {
-            Self::Sphere(s) => sphere::intersect(s, local_ray),
-            Self::Plane(p) => plane::intersect(p, local_ray),
+            Self::Sphere(s) => sphere::intersect(s, object_ray),
+            Self::Plane(p) => plane::intersect(p, object_ray),
         }
     }
 
     pub fn normal_at(self, world_point: Point) -> Vector {
-        let local_point = self.local_point(world_point);
-        let local_normal = match self {
-            Self::Sphere(s) => sphere::normal_at(s, local_point),
-            Self::Plane(p) => plane::normal_at(p, local_point),
+        let object_point = self.object_point(world_point);
+        let object_normal = match self {
+            Self::Sphere(s) => sphere::normal_at(s, object_point),
+            Self::Plane(p) => plane::normal_at(p, object_point),
         };
 
-        self.world_normal(local_normal)
+        self.world_normal(object_normal)
     }
 
-    fn local_ray(self, ray: Ray) -> Ray {
+    fn object_ray(self, ray: Ray) -> Ray {
         ray.transform(self.shape().transform.inverse())
     }
 
-    fn local_point(self, world_point: Point) -> Point {
+    fn object_point(self, world_point: Point) -> Point {
         self.shape().transform.inverse() * world_point
     }
 
-    fn world_normal(self, local_normal: Vector) -> Vector {
-        let mut world_normal = self.shape().transform.inverse().transpose() * local_normal;
+    fn world_normal(self, object_normal: Vector) -> Vector {
+        let mut world_normal = self.shape().transform.inverse().transpose() * object_normal;
         world_normal.0.w = 0.0;
         world_normal.normalize()
     }
 
-    pub fn shape(self) -> Shape {
+    pub fn shape(self) -> ShapeProps {
         match self {
             Self::Sphere(s) => s,
             Self::Plane(p) => p,
@@ -73,29 +73,29 @@ impl Shapes {
 mod tests {
     use super::*;
 
-    fn test_shape(transform: Matrix<4, 4>) -> Shapes {
-        Shapes::Sphere(Shape {
+    fn test_shape(transform: Matrix<4, 4>) -> Shape {
+        Shape::Sphere(ShapeProps {
             transform,
             ..Default::default()
         })
     }
 
-    fn test_shape_normal_at(shape: Shapes, point: Point) -> Vector {
-        let local_point = shape.local_point(point);
-        let local_normal = Vector::new(local_point.0.x, local_point.0.y, local_point.0.z);
-        shape.world_normal(local_normal)
+    fn test_shape_normal_at(shape: Shape, point: Point) -> Vector {
+        let object_point = shape.object_point(point);
+        let object_normal = Vector::new(object_point.0.x, object_point.0.y, object_point.0.z);
+        shape.world_normal(object_normal)
     }
 
     #[test]
     fn the_default_transformation() {
-        let shape = Shape::default();
+        let shape = ShapeProps::default();
 
         assert_eq!(shape.transform, matrix::IDENTITY4X4);
     }
 
     #[test]
     fn assigning_a_transformation() {
-        let mut shape = Shape::default();
+        let mut shape = ShapeProps::default();
         let transform = Matrix::translation(2.0, 3.0, 4.0);
 
         shape.transform = transform;
@@ -105,14 +105,14 @@ mod tests {
 
     #[test]
     fn the_default_material() {
-        let shape = Shape::default();
+        let shape = ShapeProps::default();
 
         assert_eq!(shape.material, Material::default());
     }
 
     #[test]
     fn assigning_a_material() {
-        let mut shape = Shape::default();
+        let mut shape = ShapeProps::default();
         let mut material = Material::default();
         material.ambient = 1.0;
 
@@ -130,7 +130,7 @@ mod tests {
 
         let shape = test_shape(Matrix::scaling(2.0, 2.0, 2.0));
 
-        let saved_ray = shape.local_ray(ray);
+        let saved_ray = shape.object_ray(ray);
 
         assert_eq!(saved_ray.origin, Point::new(0.0, 0.0, -2.5));
         assert_eq!(saved_ray.direction, Vector::new(0.0, 0.0, 0.5));
@@ -145,7 +145,7 @@ mod tests {
 
         let shape = test_shape(Matrix::translation(5.0, 0.0, 0.0));
 
-        let saved_ray = shape.local_ray(ray);
+        let saved_ray = shape.object_ray(ray);
 
         assert_eq!(saved_ray.origin, Point::new(-5.0, 0.0, -5.0));
         assert_eq!(saved_ray.direction, Vector::new(0.0, 0.0, 1.0));

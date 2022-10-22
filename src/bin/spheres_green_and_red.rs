@@ -7,9 +7,9 @@ use std::io::prelude::*;
 use raytracer::camera::Camera;
 use raytracer::color::Color;
 use raytracer::light::PointLight;
-use raytracer::material::Material;
+use raytracer::material::{Material, Texture};
 use raytracer::matrix::Matrix;
-use raytracer::shape::{Shape, Shapes};
+use raytracer::shape::{Shape, ShapeProps};
 use raytracer::tuple::{Point, Vector};
 use raytracer::world::World;
 
@@ -20,14 +20,14 @@ const RES_4K: (u32, u32) = (3840, 2160);
 const RESOLUTION: (u32, u32) = RES_4K;
 
 fn main() {
-    let middle = Shapes::Sphere(Shape {
+    let middle = Shape::Sphere(ShapeProps {
         transform: Matrix::translation(-0.5, 1.0, 0.5),
         material: Material {
-            color: Color {
+            texture: Texture::Color(Color {
                 red: 0.1,
                 green: 1.0,
                 blue: 0.5,
-            },
+            }),
             diffuse: 0.7,
             specular: 0.3,
             shininess: 2.0,
@@ -35,35 +35,35 @@ fn main() {
         },
     });
 
-    let right = Shapes::Sphere(Shape {
+    let right = Shape::Sphere(ShapeProps {
         transform: Matrix::translation(1.5, 0.5, -0.5) * Matrix::scaling(0.5, 0.5, 0.5),
         material: Material {
-            color: Color {
+            texture: Texture::Color(Color {
                 red: 0.5,
                 green: 1.0,
                 blue: 0.1,
-            },
+            }),
             diffuse: 0.7,
             specular: 0.3,
             ..Default::default()
         },
     });
 
-    let left = Shapes::Sphere(Shape {
+    let left = Shape::Sphere(ShapeProps {
         transform: Matrix::translation(-1.5, 0.33, -0.75) * Matrix::scaling(0.33, 0.33, 0.33),
         material: Material {
-            color: Color {
+            texture: Texture::Color(Color {
                 red: 1.0,
                 green: 0.8,
                 blue: 0.1,
-            },
+            }),
             diffuse: 0.7,
             specular: 0.3,
             ..Default::default()
         },
     });
 
-    let floor = Shapes::Plane(Shape::default());
+    let floor = Shape::Plane(ShapeProps::default());
 
     /* let left_wall = Shapes::Plane(Shape {
         transform: Matrix::translation(0.0, 0.0, 5.0)

@@ -2,9 +2,9 @@ use crate::intersection::Intersection;
 use crate::ray::Ray;
 use crate::tuple::{Point, Vector};
 
-use super::{Shape, Shapes};
+use super::{ShapeProps, Shape};
 
-pub fn intersect(shape: Shape, ray: Ray) -> Vec<Intersection> {
+pub fn intersect(shape: ShapeProps, ray: Ray) -> Vec<Intersection> {
     let sphere_to_ray = ray.origin - Point::new(0.0, 0.0, 0.0);
 
     let a = ray.direction.dot(ray.direction);
@@ -21,19 +21,19 @@ pub fn intersect(shape: Shape, ray: Ray) -> Vec<Intersection> {
     let t2 = (-b + discriminant.sqrt()) / (2.0 * a);
 
     let i1 = Intersection {
-        object: Shapes::Sphere(shape),
+        object: Shape::Sphere(shape),
         t: t1,
     };
     let i2 = Intersection {
-        object: Shapes::Sphere(shape),
+        object: Shape::Sphere(shape),
         t: t2,
     };
 
     vec![i1, i2]
 }
 
-pub fn normal_at(_: Shape, local_point: Point) -> Vector {
-    local_point - Point::new(0.0, 0.0, 0.0)
+pub fn normal_at(_: ShapeProps, object_point: Point) -> Vector {
+    object_point - Point::new(0.0, 0.0, 0.0)
 }
 
 #[cfg(test)]
@@ -50,7 +50,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let s = Shape::default();
+        let s = ShapeProps::default();
 
         let xs = super::intersect(s, r);
 
@@ -66,13 +66,13 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let s = Shape::default();
+        let s = ShapeProps::default();
 
         let xs = super::intersect(s, r);
 
         assert_eq!(xs.len(), 2);
-        assert_eq!(xs[0].object, Shapes::Sphere(s));
-        assert_eq!(xs[1].object, Shapes::Sphere(s));
+        assert_eq!(xs[0].object, Shape::Sphere(s));
+        assert_eq!(xs[1].object, Shape::Sphere(s));
     }
 
     #[test]
@@ -82,7 +82,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let s = Shape::default();
+        let s = ShapeProps::default();
 
         let xs = super::intersect(s, r);
 
@@ -98,7 +98,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let s = Shape::default();
+        let s = ShapeProps::default();
 
         let xs = super::intersect(s, r);
 
@@ -112,7 +112,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let s = Shape::default();
+        let s = ShapeProps::default();
 
         let xs = super::intersect(s, r);
 
@@ -128,7 +128,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let s = Shape::default();
+        let s = ShapeProps::default();
 
         let xs = super::intersect(s, r);
 
@@ -139,7 +139,7 @@ mod tests {
 
     #[test]
     fn the_normal_on_a_sphere_at_a_point_on_the_x_axis() {
-        let s = Shape::default();
+        let s = ShapeProps::default();
 
         let n = super::normal_at(s, Point::new(1.0, 0.0, 0.0));
 
@@ -148,7 +148,7 @@ mod tests {
 
     #[test]
     fn the_normal_on_a_sphere_at_a_point_on_the_y_axis() {
-        let s = Shape::default();
+        let s = ShapeProps::default();
 
         let n = super::normal_at(s, Point::new(0.0, 1.0, 0.0));
 
@@ -157,7 +157,7 @@ mod tests {
 
     #[test]
     fn the_normal_on_a_sphere_at_a_point_on_the_z_axis() {
-        let s = Shape::default();
+        let s = ShapeProps::default();
 
         let n = super::normal_at(s, Point::new(0.0, 0.0, 1.0));
 
@@ -166,7 +166,7 @@ mod tests {
 
     #[test]
     fn the_normal_on_a_sphere_at_a_nonaxial_point() {
-        let s = Shape::default();
+        let s = ShapeProps::default();
 
         let n = super::normal_at(
             s,
@@ -181,7 +181,7 @@ mod tests {
 
     #[test]
     fn the_normal_is_a_normalized_vector() {
-        let s = Shape::default();
+        let s = ShapeProps::default();
 
         let n = super::normal_at(
             s,

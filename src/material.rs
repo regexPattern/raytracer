@@ -1,36 +1,40 @@
 use crate::color::{self, Color};
 use crate::float;
 use crate::light::PointLight;
-use crate::pattern::Stripe;
-use crate::shape::Shapes;
+use crate::pattern::Striped;
+use crate::shape::Shape;
 use crate::tuple::{Point, Vector};
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum Texture {
+    Color(Color),
+    Pattern(Striped),
+}
 
 #[derive(Copy, Clone, Debug)]
 pub struct Material {
+    pub texture: Texture,
     pub ambient: f64,
-    pub color: Color,
     pub diffuse: f64,
     pub shininess: f64,
     pub specular: f64,
-    pub pattern: Option<Stripe>,
 }
 
 impl Default for Material {
     fn default() -> Self {
         Self {
+            texture: Texture::Color(color::WHITE),
             ambient: 0.1,
-            color: color::WHITE,
             diffuse: 0.9,
             shininess: 200.0,
             specular: 0.9,
-            pattern: None,
         }
     }
 }
 
 impl PartialEq for Material {
     fn eq(&self, other: &Self) -> bool {
-        self.color == other.color
+        self.texture == other.texture
             && float::approx(self.ambient, other.ambient)
             && float::approx(self.diffuse, other.diffuse)
             && float::approx(self.specular, other.specular)
@@ -41,17 +45,16 @@ impl PartialEq for Material {
 impl Material {
     pub fn lighting(
         &self,
-        object: Shapes,
+        object: Shape,
         light: PointLight,
         world_point: Point,
         eyev: Vector,
         normalv: Vector,
         in_shadow: bool,
     ) -> Color {
-        let color = if let Some(pattern) = self.pattern {
-            pattern.stripe_at_object(object, world_point)
-        } else {
-            self.color
+        let color = match self.texture {
+            Texture::Pattern(p) => p.stripe_at_object(object, world_point),
+            Texture::Color(c) => c,
         };
 
         let effective_color = color * light.intensity;
@@ -84,16 +87,16 @@ impl Material {
 #[cfg(test)]
 mod tests {
     use crate::matrix;
-    use crate::pattern::Stripe;
-    use crate::shape::Shape;
+    use crate::pattern::Striped;
+    use crate::shape::ShapeProps;
 
     use super::*;
 
-    fn test_defaults() -> (Material, Point, Shapes) {
+    fn test_defaults() -> (Material, Point, Shape) {
         (
             Material::default(),
             Point::new(0.0, 0.0, 0.0),
-            Shapes::Sphere(Shape::default()),
+            Shape::Sphere(ShapeProps::default()),
         )
     }
 
@@ -101,7 +104,7 @@ mod tests {
     fn the_default_material() {
         let material = Material::default();
 
-        assert_eq!(material.color, color::WHITE);
+        assert_eq!(material.texture, Texture::Color(color::WHITE));
         assert_eq!(material.ambient, 0.1);
         assert_eq!(material.diffuse, 0.9);
         assert_eq!(material.specular, 0.9);
@@ -252,7 +255,7 @@ mod tests {
         let (_, _, object) = test_defaults();
 
         let material = Material {
-            pattern: Some(Stripe {
+            texture: Texture::Pattern(Striped {
                 a: color::WHITE,
                 b: color::BLACK,
                 transform: matrix::IDENTITY4X4,

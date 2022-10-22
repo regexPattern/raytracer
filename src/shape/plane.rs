@@ -3,9 +3,9 @@ use crate::intersection::Intersection;
 use crate::ray::Ray;
 use crate::tuple::{Point, Vector};
 
-use super::{Shape, Shapes};
+use super::{ShapeProps, Shape};
 
-pub fn intersect(shape: Shape, ray: Ray) -> Vec<Intersection> {
+pub fn intersect(shape: ShapeProps, ray: Ray) -> Vec<Intersection> {
     let xs = Vec::new();
 
     if float::approx(ray.direction.0.y, 0.0) {
@@ -15,27 +15,27 @@ pub fn intersect(shape: Shape, ray: Ray) -> Vec<Intersection> {
     let t = -ray.origin.0.y / ray.direction.0.y;
 
     let i = Intersection {
-        object: Shapes::Plane(shape),
+        object: Shape::Plane(shape),
         t,
     };
 
     vec![i]
 }
 
-pub const fn normal_at(_: Shape, _: Point) -> Vector {
+pub const fn normal_at(_: ShapeProps, _: Point) -> Vector {
     Vector::new(0.0, 1.0, 0.0)
 }
 
 #[cfg(test)]
 mod tests {
     use crate::assert_approx;
-    use crate::shape::Shapes;
+    use crate::shape::Shape;
 
     use super::*;
 
     #[test]
     fn the_normal_of_a_plane_is_constant_everywhere() {
-        let p = Shape::default();
+        let p = ShapeProps::default();
 
         let n1 = super::normal_at(p, Point::new(0.0, 0.0, 0.0));
         let n2 = super::normal_at(p, Point::new(10.0, 0.0, -10.0));
@@ -48,7 +48,7 @@ mod tests {
 
     #[test]
     fn intersect_with_a_ray_parallel_to_the_plane() {
-        let p = Shape::default();
+        let p = ShapeProps::default();
 
         let r = Ray {
             origin: Point::new(0.0, 10.0, 0.0),
@@ -62,7 +62,7 @@ mod tests {
 
     #[test]
     fn intersect_with_coplanar_ray() {
-        let p = Shape::default();
+        let p = ShapeProps::default();
 
         let r = Ray {
             origin: Point::new(0.0, 0.0, 0.0),
@@ -76,7 +76,7 @@ mod tests {
 
     #[test]
     fn a_ray_intersecting_a_plane_from_above() {
-        let p = Shape::default();
+        let p = ShapeProps::default();
 
         let r = Ray {
             origin: Point::new(0.0, 1.0, 0.0),
@@ -87,12 +87,12 @@ mod tests {
 
         assert_eq!(xs.len(), 1);
         assert_approx!(xs[0].t, 1.0);
-        assert_eq!(xs[0].object, Shapes::Plane(p));
+        assert_eq!(xs[0].object, Shape::Plane(p));
     }
 
     #[test]
     fn a_ray_intersecting_a_plane_from_below() {
-        let p = Shape::default();
+        let p = ShapeProps::default();
 
         let r = Ray {
             origin: Point::new(0.0, -1.0, 0.0),
@@ -103,6 +103,6 @@ mod tests {
 
         assert_eq!(xs.len(), 1);
         assert_approx!(xs[0].t, 1.0);
-        assert_eq!(xs[0].object, Shapes::Plane(p));
+        assert_eq!(xs[0].object, Shape::Plane(p));
     }
 }
