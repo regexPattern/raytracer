@@ -7,19 +7,22 @@ use crate::matrix::{self, Matrix};
 use crate::ray::Ray;
 use crate::tuple::{Point, Vector};
 
+pub use plane::Plane;
+pub use sphere::Sphere;
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Shape {
-    Sphere(ShapeProps),
-    Plane(ShapeProps),
+    Sphere(Sphere),
+    Plane(Plane),
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct ShapeProps {
+pub struct Figure {
     pub transform: Matrix<4, 4>,
     pub material: Material,
 }
 
-impl Default for ShapeProps {
+impl Default for Figure {
     fn default() -> Self {
         Self {
             material: Material::default(),
@@ -29,25 +32,25 @@ impl Default for ShapeProps {
 }
 
 impl Shape {
-    pub fn intersect(self, ray: Ray) -> Vec<Intersection> {
+    pub fn intersect(self, ray: &Ray) -> Vec<Intersection> {
         let object_ray = self.object_ray(ray);
         match self {
-            Self::Sphere(s) => sphere::intersect(s, object_ray),
-            Self::Plane(p) => plane::intersect(p, object_ray),
+            Self::Sphere(s) => s.intersect(&object_ray),
+            Self::Plane(p) => p.intersect(&object_ray),
         }
     }
 
     pub fn normal_at(self, world_point: Point) -> Vector {
         let object_point = self.object_point(world_point);
         let object_normal = match self {
-            Self::Sphere(s) => sphere::normal_at(s, object_point),
-            Self::Plane(p) => plane::normal_at(p, object_point),
+            Self::Sphere(s) => s.normal_at(object_point),
+            Self::Plane(p) => p.normal_at(object_point),
         };
 
         self.world_normal(object_normal)
     }
 
-    fn object_ray(self, ray: Ray) -> Ray {
+    fn object_ray(self, ray: &Ray) -> Ray {
         ray.transform(self.shape().transform.inverse())
     }
 
@@ -61,10 +64,10 @@ impl Shape {
         world_normal.normalize()
     }
 
-    pub fn shape(self) -> ShapeProps {
+    pub fn shape(self) -> Figure {
         match self {
-            Self::Sphere(s) => s,
-            Self::Plane(p) => p,
+            Self::Sphere(s) => s.0,
+            Self::Plane(p) => p.0,
         }
     }
 }
@@ -74,28 +77,28 @@ mod tests {
     use super::*;
 
     fn test_shape(transform: Matrix<4, 4>) -> Shape {
-        Shape::Sphere(ShapeProps {
+        Shape::Sphere(Sphere(Figure {
             transform,
             ..Default::default()
-        })
+        }))
     }
 
-    fn test_shape_normal_at(shape: Shape, point: Point) -> Vector {
-        let object_point = shape.object_point(point);
+    fn test_shape_normal_at(shape: Shape, world_point: Point) -> Vector {
+        let object_point = shape.object_point(world_point);
         let object_normal = Vector::new(object_point.0.x, object_point.0.y, object_point.0.z);
         shape.world_normal(object_normal)
     }
 
     #[test]
     fn the_default_transformation() {
-        let shape = ShapeProps::default();
+        let shape = Figure::default();
 
         assert_eq!(shape.transform, matrix::IDENTITY4X4);
     }
 
     #[test]
     fn assigning_a_transformation() {
-        let mut shape = ShapeProps::default();
+        let mut shape = Figure::default();
         let transform = Matrix::translation(2.0, 3.0, 4.0);
 
         shape.transform = transform;
@@ -105,14 +108,14 @@ mod tests {
 
     #[test]
     fn the_default_material() {
-        let shape = ShapeProps::default();
+        let shape = Figure::default();
 
         assert_eq!(shape.material, Material::default());
     }
 
     #[test]
     fn assigning_a_material() {
-        let mut shape = ShapeProps::default();
+        let mut shape = Figure::default();
         let mut material = Material::default();
         material.ambient = 1.0;
 
@@ -130,7 +133,7 @@ mod tests {
 
         let shape = test_shape(Matrix::scaling(2.0, 2.0, 2.0));
 
-        let saved_ray = shape.object_ray(ray);
+        let saved_ray = shape.object_ray(&ray);
 
         assert_eq!(saved_ray.origin, Point::new(0.0, 0.0, -2.5));
         assert_eq!(saved_ray.direction, Vector::new(0.0, 0.0, 0.5));
@@ -145,7 +148,7 @@ mod tests {
 
         let shape = test_shape(Matrix::translation(5.0, 0.0, 0.0));
 
-        let saved_ray = shape.object_ray(ray);
+        let saved_ray = shape.object_ray(&ray);
 
         assert_eq!(saved_ray.origin, Point::new(-5.0, 0.0, -5.0));
         assert_eq!(saved_ray.direction, Vector::new(0.0, 0.0, 1.0));

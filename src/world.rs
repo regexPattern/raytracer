@@ -5,7 +5,7 @@ use crate::light::PointLight;
 use crate::material::{Material, Texture};
 use crate::matrix::Matrix;
 use crate::ray::Ray;
-use crate::shape::{Shape, ShapeProps};
+use crate::shape::{Figure, Shape, Sphere};
 use crate::tuple::Point;
 
 pub struct World {
@@ -16,7 +16,7 @@ pub struct World {
 impl Default for World {
     fn default() -> Self {
         let objects = vec![
-            Shape::Sphere(ShapeProps {
+            Shape::Sphere(Sphere(Figure {
                 material: Material {
                     texture: Texture::Color(Color {
                         red: 0.8,
@@ -28,11 +28,11 @@ impl Default for World {
                     ..Default::default()
                 },
                 ..Default::default()
-            }),
-            Shape::Sphere(ShapeProps {
+            })),
+            Shape::Sphere(Sphere(Figure {
                 transform: Matrix::scaling(0.5, 0.5, 0.5),
                 ..Default::default()
-            }),
+            })),
         ];
 
         let lights = vec![PointLight {
@@ -45,8 +45,12 @@ impl Default for World {
 }
 
 impl World {
-    fn intersect(&self, ray: Ray) -> Vec<Intersection> {
-        let mut xs: Vec<_> = self.objects.iter().flat_map(|o| o.intersect(ray)).collect();
+    fn intersect(&self, world_ray: &Ray) -> Vec<Intersection> {
+        let mut xs: Vec<_> = self
+            .objects
+            .iter()
+            .flat_map(|o| o.intersect(world_ray))
+            .collect();
         xs.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
         xs
     }
@@ -66,25 +70,25 @@ impl World {
         })
     }
 
-    pub fn color_at(&self, ray: Ray) -> Color {
-        let xs = self.intersect(ray);
+    pub fn color_at(&self, world_ray: &Ray) -> Color {
+        let xs = self.intersect(world_ray);
         match Intersection::hit(xs) {
-            Some(hit) => self.shade_hit(&hit.comps(ray)),
+            Some(hit) => self.shade_hit(&hit.comps(world_ray)),
             None => color::BLACK,
         }
     }
 
-    fn is_shadowed(&self, light: &PointLight, point: Point) -> bool {
-        let v = light.position - point;
+    fn is_shadowed(&self, light: &PointLight, world_point: Point) -> bool {
+        let v = light.position - world_point;
         let distance = v.magnitude();
         let direction = v.normalize();
 
         let ray = Ray {
-            origin: point,
+            origin: world_point,
             direction,
         };
 
-        let xs = self.intersect(ray);
+        let xs = self.intersect(&ray);
 
         if let Some(hit) = Intersection::hit(xs) {
             return hit.t < distance;
@@ -108,7 +112,7 @@ mod tests {
             intensity: color::WHITE,
         };
 
-        let s1 = Shape::Sphere(ShapeProps {
+        let s1 = Shape::Sphere(Sphere(Figure {
             material: Material {
                 texture: Texture::Color(Color {
                     red: 0.8,
@@ -120,12 +124,12 @@ mod tests {
                 ..Default::default()
             },
             ..Default::default()
-        });
+        }));
 
-        let s2 = Shape::Sphere(ShapeProps {
+        let s2 = Shape::Sphere(Sphere(Figure {
             transform: Matrix::scaling(0.5, 0.5, 0.5),
             ..Default::default()
-        });
+        }));
 
         let world = World::default();
 
@@ -143,7 +147,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let xs = world.intersect(ray);
+        let xs = world.intersect(&ray);
 
         assert_eq!(xs.len(), 4);
         assert_approx!(xs[0].t, 4.0);
@@ -168,7 +172,7 @@ mod tests {
             object: shape,
         };
 
-        let comps = i.comps(ray);
+        let comps = i.comps(&ray);
         let c = world.shade_hit(&comps);
 
         assert_eq!(
@@ -203,7 +207,7 @@ mod tests {
             object: shape,
         };
 
-        let comps = i.comps(ray);
+        let comps = i.comps(&ray);
         let c = world.shade_hit(&comps);
 
         assert_eq!(
@@ -225,7 +229,7 @@ mod tests {
             direction: Vector::new(0.0, 1.0, 0.0),
         };
 
-        let color = world.color_at(ray);
+        let color = world.color_at(&ray);
 
         assert_eq!(color, color::BLACK);
     }
@@ -239,7 +243,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let color = world.color_at(ray);
+        let color = world.color_at(&ray);
 
         assert_eq!(
             color,
@@ -257,12 +261,12 @@ mod tests {
 
         let outer = &mut world.objects[0];
         if let Shape::Sphere(shape) = outer {
-            shape.material.ambient = 1.0;
+            shape.0.material.ambient = 1.0;
         }
 
         let inner = &mut world.objects[1];
         if let Shape::Sphere(shape) = inner {
-            shape.material.ambient = 1.0;
+            shape.0.material.ambient = 1.0;
         }
 
         let ray = Ray {
@@ -272,7 +276,7 @@ mod tests {
 
         let inner = &world.objects[1];
 
-        let color = world.color_at(ray);
+        let color = world.color_at(&ray);
 
         assert_eq!(Texture::Color(color), inner.shape().material.texture);
     }
@@ -311,12 +315,12 @@ mod tests {
 
     #[test]
     fn shade_hit_is_given_an_intersection_in_shadow() {
-        let s1 = Shape::Sphere(ShapeProps::default());
+        let s1 = Shape::Sphere(Sphere(Figure::default()));
 
-        let s2 = Shape::Sphere(ShapeProps {
+        let s2 = Shape::Sphere(Sphere(Figure {
             transform: Matrix::translation(0.0, 0.0, 10.0),
             ..Default::default()
-        });
+        }));
 
         let light = PointLight {
             position: Point::new(0.0, 0.0, -10.0),
@@ -335,7 +339,7 @@ mod tests {
 
         let i = Intersection { t: 4.0, object: s2 };
 
-        let comps = i.comps(ray);
+        let comps = i.comps(&ray);
 
         let color = world.shade_hit(&comps);
 

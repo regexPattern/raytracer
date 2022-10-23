@@ -9,7 +9,7 @@ use raytracer::color::Color;
 use raytracer::light::PointLight;
 use raytracer::material::{Material, Texture};
 use raytracer::matrix::Matrix;
-use raytracer::shape::{Shape, ShapeProps};
+use raytracer::shape::{Figure, Plane, Shape, Sphere};
 use raytracer::tuple::{Point, Vector};
 use raytracer::world::World;
 
@@ -17,10 +17,10 @@ const RES_HD: (u32, u32) = (1280, 720);
 const RES_FULL_HD: (u32, u32) = (1920, 1080);
 const RES_4K: (u32, u32) = (3840, 2160);
 
-const RESOLUTION: (u32, u32) = RES_4K;
+const RESOLUTION: (u32, u32) = RES_HD;
 
 fn main() {
-    let middle = Shape::Sphere(ShapeProps {
+    let middle = Shape::Sphere(Sphere(Figure {
         transform: Matrix::translation(-0.5, 1.0, 0.5),
         material: Material {
             texture: Texture::Color(Color {
@@ -33,9 +33,9 @@ fn main() {
             shininess: 2.0,
             ..Default::default()
         },
-    });
+    }));
 
-    let right = Shape::Sphere(ShapeProps {
+    let right = Shape::Sphere(Sphere(Figure {
         transform: Matrix::translation(1.5, 0.5, -0.5) * Matrix::scaling(0.5, 0.5, 0.5),
         material: Material {
             texture: Texture::Color(Color {
@@ -43,13 +43,11 @@ fn main() {
                 green: 1.0,
                 blue: 0.1,
             }),
-            diffuse: 0.7,
-            specular: 0.3,
-            ..Default::default()
+            ..middle.shape().material
         },
-    });
+    }));
 
-    let left = Shape::Sphere(ShapeProps {
+    let left = Shape::Sphere(Sphere(Figure {
         transform: Matrix::translation(-1.5, 0.33, -0.75) * Matrix::scaling(0.33, 0.33, 0.33),
         material: Material {
             texture: Texture::Color(Color {
@@ -61,9 +59,9 @@ fn main() {
             specular: 0.3,
             ..Default::default()
         },
-    });
+    }));
 
-    let floor = Shape::Plane(ShapeProps::default());
+    let floor = Shape::Plane(Plane::default());
 
     /* let left_wall = Shapes::Plane(Shape {
         transform: Matrix::translation(0.0, 0.0, 5.0)

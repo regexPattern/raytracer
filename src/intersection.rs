@@ -9,7 +9,7 @@ pub struct Intersection {
     pub t: f64,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Debug)]
 pub struct MetaData {
     pub i: Intersection,
     pub eyev: Vector,
@@ -26,7 +26,7 @@ impl PartialEq for Intersection {
 }
 
 impl Intersection {
-    pub fn comps(self, ray: Ray) -> MetaData {
+    pub fn comps(self, ray: &Ray) -> MetaData {
         let Self { t, object } = self;
         let point = ray.position(t);
         let eyev = -ray.direction;
@@ -57,13 +57,13 @@ impl Intersection {
 mod tests {
     use crate::assert_approx;
     use crate::matrix::Matrix;
-    use crate::shape::ShapeProps;
+    use crate::shape::{Figure, Sphere};
 
     use super::*;
 
     #[test]
     fn an_intersection_encapsulates_t_and_object() {
-        let shape = Shape::Sphere(ShapeProps::default());
+        let shape = Shape::Sphere(Sphere(Figure::default()));
 
         let i = Intersection {
             t: 3.5,
@@ -76,7 +76,7 @@ mod tests {
 
     #[test]
     fn aggregating_intersections() {
-        let shape = Shape::Sphere(ShapeProps::default());
+        let shape = Shape::Sphere(Sphere(Figure::default()));
 
         let i1 = Intersection {
             t: 1.0,
@@ -96,7 +96,7 @@ mod tests {
 
     #[test]
     fn the_hit_when_all_intersections_have_positive_t() {
-        let shape = Shape::Sphere(ShapeProps::default());
+        let shape = Shape::Sphere(Sphere(Figure::default()));
 
         let i1 = Intersection {
             t: 1.0,
@@ -116,7 +116,7 @@ mod tests {
 
     #[test]
     fn the_hit_when_some_intersections_have_negative_t() {
-        let shape = Shape::Sphere(ShapeProps::default());
+        let shape = Shape::Sphere(Sphere(Figure::default()));
 
         let i1 = Intersection {
             t: -1.0,
@@ -136,7 +136,7 @@ mod tests {
 
     #[test]
     fn the_hit_when_all_intersections_have_negative_t() {
-        let shape = Shape::Sphere(ShapeProps::default());
+        let shape = Shape::Sphere(Sphere(Figure::default()));
 
         let i1 = Intersection {
             t: -2.0,
@@ -156,7 +156,7 @@ mod tests {
 
     #[test]
     fn the_hit_is_always_the_lowest_nonnegative_intersection() {
-        let shape = Shape::Sphere(ShapeProps::default());
+        let shape = Shape::Sphere(Sphere(Figure::default()));
 
         let i1 = Intersection {
             t: 5.0,
@@ -189,14 +189,14 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let shape = Shape::Sphere(ShapeProps::default());
+        let shape = Shape::Sphere(Sphere(Figure::default()));
 
         let i = Intersection {
             t: 4.0,
             object: shape,
         };
 
-        let comps = i.comps(ray);
+        let comps = i.comps(&ray);
 
         assert_eq!(comps.i.t, i.t);
         assert_eq!(comps.i.object, i.object);
@@ -212,14 +212,14 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let shape = Shape::Sphere(ShapeProps::default());
+        let shape = Shape::Sphere(Sphere(Figure::default()));
 
         let i = Intersection {
             t: 4.0,
             object: shape,
         };
 
-        let comps = i.comps(ray);
+        let comps = i.comps(&ray);
 
         assert!(!comps.inside);
     }
@@ -231,14 +231,14 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let shape = Shape::Sphere(ShapeProps::default());
+        let shape = Shape::Sphere(Sphere(Figure::default()));
 
         let i = Intersection {
             t: 1.0,
             object: shape,
         };
 
-        let comps = i.comps(ray);
+        let comps = i.comps(&ray);
 
         assert!(comps.inside);
     }
@@ -250,17 +250,17 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let shape = Shape::Sphere(ShapeProps {
+        let shape = Shape::Sphere(Sphere(Figure {
             transform: Matrix::translation(0.0, 0.0, 1.0),
             ..Default::default()
-        });
+        }));
 
         let i = Intersection {
             t: 5.0,
             object: shape,
         };
 
-        let comps = i.comps(ray);
+        let comps = i.comps(&ray);
 
         assert!(comps.over_point.0.z < -crate::float::EPSILON / 2.0);
         assert!(comps.point.0.z > -crate::float::EPSILON);

@@ -1,18 +1,18 @@
 use crate::matrix::Matrix;
 use crate::tuple::{Point, Vector};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Debug)]
 pub struct Ray {
     pub origin: Point,
     pub direction: Vector,
 }
 
 impl Ray {
-    pub fn position(self, t: f64) -> Point {
+    pub fn position(&self, t: f64) -> Point {
         self.origin + self.direction * t
     }
 
-    pub fn transform(self, transform: Matrix<4, 4>) -> Self {
+    pub fn transform(&self, transform: Matrix<4, 4>) -> Self {
         let origin = transform * self.origin;
         let direction = transform * self.direction;
 

@@ -36,7 +36,7 @@ impl Striped {
 mod tests {
     use crate::color;
     use crate::material::{Material, Texture};
-    use crate::shape::ShapeProps;
+    use crate::shape::{Figure, Sphere};
 
     use super::*;
 
@@ -80,13 +80,13 @@ mod tests {
 
     #[test]
     fn stripes_with_an_object_transformation() {
-        let object = Shape::Sphere(ShapeProps {
+        let object = Shape::Sphere(Sphere(Figure {
             transform: Matrix::scaling(2.0, 2.0, 2.0),
             material: Material {
                 texture: Texture::Pattern(Striped::new(color::WHITE, color::BLACK)),
                 ..Default::default()
             },
-        });
+        }));
 
         // TODO: More elegant way to manage this?
         if let Texture::Pattern(pattern) = object.shape().material.texture {
@@ -99,7 +99,7 @@ mod tests {
 
     #[test]
     fn stripes_with_a_pattern_transformation() {
-        let object = Shape::Sphere(ShapeProps {
+        let object = Shape::Sphere(Sphere(Figure {
             material: Material {
                 texture: Texture::Pattern(Striped {
                     a: color::WHITE,
@@ -109,7 +109,7 @@ mod tests {
                 ..Default::default()
             },
             ..Default::default()
-        });
+        }));
 
         if let Texture::Pattern(pattern) = object.shape().material.texture {
             let c = pattern.stripe_at_object(object, Point::new(1.5, 0.0, 0.0));
@@ -121,7 +121,7 @@ mod tests {
 
     #[test]
     fn stripes_with_both_an_object_and_a_pattern_transformation() {
-        let object = Shape::Sphere(ShapeProps {
+        let object = Shape::Sphere(Sphere(Figure {
             transform: Matrix::scaling(2.0, 2.0, 2.0),
             material: Material {
                 texture: Texture::Pattern(Striped {
@@ -131,7 +131,7 @@ mod tests {
                 }),
                 ..Default::default()
             },
-        });
+        }));
 
         if let Texture::Pattern(pattern) = object.shape().material.texture {
             let c = pattern.stripe_at_object(object, Point::new(2.5, 0.0, 0.0));
