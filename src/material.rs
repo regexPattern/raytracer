@@ -88,7 +88,7 @@ impl Material {
 mod tests {
     use crate::matrix;
     use crate::pattern::Striped;
-    use crate::shape::{Figure, Sphere};
+    use crate::shape::Sphere;
 
     use super::*;
 
@@ -96,7 +96,7 @@ mod tests {
         (
             Material::default(),
             Point::new(0.0, 0.0, 0.0),
-            Shape::Sphere(Sphere(Figure::default())),
+            Shape::Sphere(Sphere::default()),
         )
     }
 

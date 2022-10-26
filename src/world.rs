@@ -315,7 +315,7 @@ mod tests {
 
     #[test]
     fn shade_hit_is_given_an_intersection_in_shadow() {
-        let s1 = Shape::Sphere(Sphere(Figure::default()));
+        let s1 = Shape::Sphere(Sphere::default());
 
         let s2 = Shape::Sphere(Sphere(Figure {
             transform: Matrix::translation(0.0, 0.0, 10.0),
