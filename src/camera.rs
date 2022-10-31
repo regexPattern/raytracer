@@ -6,7 +6,7 @@ use crate::canvas::Canvas;
 use crate::matrix::{self, Matrix};
 use crate::ray::Ray;
 use crate::tuple::Point;
-use crate::world::World;
+use crate::world::{World, self};
 
 #[derive(Debug)]
 pub struct Camera {
@@ -71,7 +71,7 @@ impl Camera {
 
                     for x in 0..self.hsize {
                         let ray = self.ray_for_pixel(x, y);
-                        let color = world.color_at(&ray);
+                        let color = world.color_at(&ray, world::REFLECTION_LIMIT);
                         pixels.push(color);
                     }
 

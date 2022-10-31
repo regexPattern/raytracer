@@ -10,13 +10,14 @@ pub struct Intersection {
 }
 
 #[derive(Debug)]
-pub struct MetaData {
+pub struct Computation {
     pub i: Intersection,
     pub eyev: Vector,
     pub inside: bool,
     pub normalv: Vector,
     pub point: Point,
     pub over_point: Point,
+    pub reflectv: Vector,
 }
 
 impl PartialEq for Intersection {
@@ -26,7 +27,7 @@ impl PartialEq for Intersection {
 }
 
 impl Intersection {
-    pub fn comps(self, ray: &Ray) -> MetaData {
+    pub fn comps(self, ray: &Ray) -> Computation {
         let Self { t, object } = self;
         let point = ray.position(t);
         let eyev = -ray.direction;
@@ -36,14 +37,16 @@ impl Intersection {
         let normalv = if inside { -1.0 } else { 1.0 } * normalv;
 
         let over_point = point + normalv * crate::float::EPSILON;
+        let reflectv = ray.direction.reflect(normalv);
 
-        MetaData {
+        Computation {
             i: self,
             eyev,
             inside,
             normalv,
             point,
             over_point,
+            reflectv,
         }
     }
 
@@ -57,7 +60,7 @@ impl Intersection {
 mod tests {
     use crate::assert_approx;
     use crate::matrix::Matrix;
-    use crate::shape::{Figure, Sphere};
+    use crate::shape::{Figure, Plane, Sphere};
 
     use super::*;
 
@@ -264,5 +267,27 @@ mod tests {
 
         assert!(comps.over_point.0.z < -crate::float::EPSILON / 2.0);
         assert!(comps.point.0.z > -crate::float::EPSILON);
+    }
+
+    #[test]
+    fn precomputing_the_reflection_vector() {
+        let shape = Shape::Plane(Plane::default());
+
+        let ray = Ray {
+            origin: Point::new(0.0, 1.0, -1.0),
+            direction: Vector::new(0.0, -2_f64.sqrt() / 2.0, 2_f64.sqrt() / 2.0),
+        };
+
+        let i = Intersection {
+            t: 2_f64.sqrt(),
+            object: shape,
+        };
+
+        let comps = i.comps(&ray);
+
+        assert_eq!(
+            comps.reflectv,
+            Vector::new(0.0, 2_f64.sqrt() / 2.0, 2_f64.sqrt() / 2.0)
+        );
     }
 }

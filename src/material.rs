@@ -18,6 +18,7 @@ pub struct Material {
     pub diffuse: f64,
     pub shininess: f64,
     pub specular: f64,
+    pub reflective: f64,
 }
 
 impl Default for Material {
@@ -28,6 +29,7 @@ impl Default for Material {
             diffuse: 0.9,
             shininess: 200.0,
             specular: 0.9,
+            reflective: 0.0,
         }
     }
 }
@@ -86,9 +88,9 @@ impl Material {
 
 #[cfg(test)]
 mod tests {
-    use crate::matrix;
-    use crate::pattern::{Stripe, Design};
+    use crate::pattern::{Design, Stripe};
     use crate::shape::Sphere;
+    use crate::{assert_approx, matrix};
 
     use super::*;
 
@@ -292,5 +294,12 @@ mod tests {
 
         assert_eq!(c1, color::WHITE);
         assert_eq!(c2, color::BLACK);
+    }
+
+    #[test]
+    fn reflectivity_for_the_default_material() {
+        let material = Material::default();
+
+        assert_approx!(material.reflective, 0.0);
     }
 }
