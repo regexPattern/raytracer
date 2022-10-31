@@ -50,6 +50,7 @@ impl Shape {
         self.world_normal(object_normal)
     }
 
+    // TODO: Aqui mejor paso referencias.
     fn object_ray(self, ray: &Ray) -> Ray {
         ray.transform(self.shape().transform.inverse())
     }

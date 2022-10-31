@@ -53,8 +53,8 @@ impl Material {
         in_shadow: bool,
     ) -> Color {
         let color = match self.texture {
-            Texture::Pattern(p) => p.stripe_at_object(object, world_point),
             Texture::Color(c) => c,
+            Texture::Pattern(p) => p.stripe_at_object(object, world_point),
         };
 
         let effective_color = color * light.intensity;
