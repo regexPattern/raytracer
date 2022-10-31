@@ -1,14 +1,14 @@
 use crate::color::{self, Color};
 use crate::float;
 use crate::light::PointLight;
-use crate::pattern::Striped;
+use crate::pattern::Pattern;
 use crate::shape::Shape;
 use crate::tuple::{Point, Vector};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Texture {
     Color(Color),
-    Pattern(Striped),
+    Pattern(Pattern),
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -54,7 +54,7 @@ impl Material {
     ) -> Color {
         let color = match self.texture {
             Texture::Color(c) => c,
-            Texture::Pattern(p) => p.stripe_at_object(object, world_point),
+            Texture::Pattern(p) => p.pattern_at(object, world_point),
         };
 
         let effective_color = color * light.intensity;
@@ -87,7 +87,7 @@ impl Material {
 #[cfg(test)]
 mod tests {
     use crate::matrix;
-    use crate::pattern::Striped;
+    use crate::pattern::{Stripe, Design};
     use crate::shape::Sphere;
 
     use super::*;
@@ -255,11 +255,11 @@ mod tests {
         let (_, _, object) = test_defaults();
 
         let material = Material {
-            texture: Texture::Pattern(Striped {
+            texture: Texture::Pattern(Pattern::Stripe(Stripe(Design {
                 a: color::WHITE,
                 b: color::BLACK,
                 transform: matrix::IDENTITY4X4,
-            }),
+            }))),
             ambient: 1.0,
             diffuse: 0.0,
             specular: 0.0,

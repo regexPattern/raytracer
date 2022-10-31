@@ -1,17 +1,52 @@
-mod striped;
+mod checker;
+mod gradient;
+mod ring;
+mod stripe;
 
 use crate::color::Color;
-use crate::float;
 use crate::matrix::{self, Matrix};
 use crate::shape::Shape;
 use crate::tuple::Point;
 
+pub use checker::Checker;
+pub use gradient::Gradient;
+pub use ring::Ring;
+pub use stripe::Stripe;
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct Design {
+    pub a: Color,
+    pub b: Color,
+    pub transform: Matrix<4, 4>,
+}
+
+impl Design {
+    pub fn new(a: Color, b: Color) -> Self {
+        let transform = matrix::IDENTITY4X4;
+
+        Self { a, b, transform }
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Pattern {
-    Striped(Striped),
+    Checker(Checker),
+    Gradient(Gradient),
+    Ring(Ring),
+    Stripe(Stripe),
 }
 
 impl Pattern {
+    pub fn pattern_at(&self, object: Shape, world_point: Point) -> Color {
+        let pattern_point = self.pattern_point(object, world_point);
+        match self {
+            Pattern::Checker(c) => c.pattern_at(pattern_point),
+            Pattern::Gradient(g) => g.pattern_at(pattern_point),
+            Pattern::Ring(r) => r.pattern_at(pattern_point),
+            Pattern::Stripe(s) => s.pattern_at(pattern_point),
+        }
+    }
+
     fn pattern_point(&self, object: Shape, world_point: Point) -> Point {
         let object_point = object.shape().transform.inverse() * world_point;
         self.transform().inverse() * object_point
@@ -19,50 +54,11 @@ impl Pattern {
 
     fn transform(&self) -> Matrix<4, 4> {
         match self {
-            Pattern::Striped(s) => s.transform,
+            Pattern::Checker(c) => c.0.transform,
+            Pattern::Gradient(g) => g.0.transform,
+            Pattern::Ring(r) => r.0.transform,
+            Pattern::Stripe(s) => s.0.transform,
         }
-    }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Design {
-    pub transform: Matrix<4, 4>,
-}
-
-impl Default for Design {
-    fn default() -> Self {
-        Self {
-            transform: matrix::IDENTITY4X4,
-        }
-    }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Striped {
-    pub a: Color,
-    pub b: Color,
-    pub transform: Matrix<4, 4>,
-}
-
-impl Striped {
-    pub fn new(a: Color, b: Color) -> Self {
-        let transform = matrix::IDENTITY4X4;
-
-        Self { a, b, transform }
-    }
-
-    pub fn stripe_at(&self, point: Point) -> Color {
-        if float::approx(point.0.x.floor() % 2.0, 0.0) {
-            return self.a;
-        }
-
-        self.b
-    }
-
-    pub fn stripe_at_object(&self, object: Shape, world_point: Point) -> Color {
-        let object_point = object.shape().transform.inverse() * world_point;
-        let pattern_point = self.transform.inverse() * object_point;
-        self.stripe_at(pattern_point)
     }
 }
 
@@ -74,11 +70,11 @@ mod tests {
     use super::*;
 
     fn test_pattern(transform: Matrix<4, 4>) -> Pattern {
-        Pattern::Striped(Striped {
+        Pattern::Stripe(Stripe(Design {
             a: color::WHITE,
             b: color::BLACK,
             transform,
-        })
+        }))
     }
 
     fn test_pattern_pattern_at(pattern: Pattern, object: Shape, world_point: Point) -> Color {
@@ -92,19 +88,9 @@ mod tests {
 
     #[test]
     fn the_default_pattern_transformation() {
-        let pattern = Design::default();
+        let pattern = Design::new(color::WHITE, color::BLACK);
 
         assert_eq!(pattern.transform, matrix::IDENTITY4X4);
-    }
-
-    #[test]
-    fn assigning_a_transformation() {
-        let mut pattern = Design::default();
-        let transform = Matrix::translation(1.0, 2.0, 3.0);
-
-        pattern.transform = transform;
-
-        assert_eq!(pattern.transform, transform);
     }
 
     #[test]
@@ -165,43 +151,5 @@ mod tests {
                 blue: 0.25,
             }
         );
-    }
-
-    #[test] // MOVE TO OWN FILE
-    fn creating_a_stripe_pattern() {
-        let pattern = Striped::new(color::WHITE, color::BLACK);
-
-        assert_eq!(pattern.a, color::WHITE);
-        assert_eq!(pattern.b, color::BLACK);
-    }
-
-    #[test] // MOVE TO OWN FILE
-    fn a_stripe_pattern_is_constant_in_y() {
-        let pattern = Striped::new(color::WHITE, color::BLACK);
-
-        assert_eq!(pattern.stripe_at(Point::new(0.0, 0.0, 0.0)), color::WHITE);
-        assert_eq!(pattern.stripe_at(Point::new(0.0, 1.0, 0.0)), color::WHITE);
-        assert_eq!(pattern.stripe_at(Point::new(0.0, 2.0, 0.0)), color::WHITE);
-    }
-
-    #[test] // MOVE TO OWN FILE
-    fn a_stripe_pattern_is_constant_in_z() {
-        let pattern = Striped::new(color::WHITE, color::BLACK);
-
-        assert_eq!(pattern.stripe_at(Point::new(0.0, 0.0, 0.0)), color::WHITE);
-        assert_eq!(pattern.stripe_at(Point::new(0.0, 0.0, 1.0)), color::WHITE);
-        assert_eq!(pattern.stripe_at(Point::new(0.0, 0.0, 2.0)), color::WHITE);
-    }
-
-    #[test] // MOVE TO OWN FILE
-    fn a_stripe_pattern_alternates_in_x() {
-        let pattern = Striped::new(color::WHITE, color::BLACK);
-
-        assert_eq!(pattern.stripe_at(Point::new(0.0, 0.0, 0.0)), color::WHITE);
-        assert_eq!(pattern.stripe_at(Point::new(0.9, 0.0, 0.0)), color::WHITE);
-        assert_eq!(pattern.stripe_at(Point::new(1.0, 0.0, 0.0)), color::BLACK);
-        assert_eq!(pattern.stripe_at(Point::new(-0.1, 0.0, 0.0)), color::BLACK);
-        assert_eq!(pattern.stripe_at(Point::new(-1.0, 0.0, 0.0)), color::BLACK);
-        assert_eq!(pattern.stripe_at(Point::new(-1.1, 0.0, 0.0)), color::WHITE);
     }
 }
