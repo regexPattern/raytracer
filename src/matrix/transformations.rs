@@ -71,9 +71,11 @@ impl Matrix<4, 4> {
             [0.0, 0.0, 0.0, 1.0],
         ]);
 
-        if float::approx(orientation.determinant(), 0.0) {
-            panic!("View matrix must be inversible: {:?}", orientation);
-        }
+        assert!(
+            !float::approx(orientation.determinant(), 0.0),
+            "View matrix must be inversible: {:?}",
+            orientation
+        );
 
         orientation * Self::translation(-from.0.x, -from.0.y, -from.0.z)
     }

@@ -1,11 +1,11 @@
 use crate::float;
 use crate::ray::Ray;
-use crate::shape::Shape;
+use crate::shape::Shapes;
 use crate::tuple::{Point, Vector};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Intersection {
-    pub object: Shape,
+    pub object: Shapes,
     pub t: f64,
 }
 
@@ -15,8 +15,8 @@ pub struct Computation {
     pub eyev: Vector,
     pub inside: bool,
     pub normalv: Vector,
-    pub point: Point,
     pub over_point: Point,
+    pub point: Point,
     pub reflectv: Vector,
 }
 
@@ -44,14 +44,15 @@ impl Intersection {
             eyev,
             inside,
             normalv,
-            point,
             over_point,
+            point,
             reflectv,
         }
     }
 
     pub fn hit(mut xs: Vec<Self>) -> Option<Self> {
         xs.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
+
         xs.into_iter().find(|i| i.t.is_sign_positive())
     }
 }
@@ -60,34 +61,35 @@ impl Intersection {
 mod tests {
     use crate::assert_approx;
     use crate::matrix::Matrix;
-    use crate::shape::{Figure, Plane, Sphere};
+    use crate::shape::{Plane, Shape, Sphere};
 
     use super::*;
 
     #[test]
     fn an_intersection_encapsulates_t_and_object() {
-        let shape = Shape::Sphere(Sphere::default());
+        let shape = Shapes::from(Sphere::default());
 
         let i = Intersection {
-            t: 3.5,
             object: shape,
+            t: 3.5,
         };
 
-        assert_approx!(i.t, 3.5);
         assert_eq!(i.object, shape);
+        assert_approx!(i.t, 3.5);
     }
 
     #[test]
     fn aggregating_intersections() {
-        let shape = Shape::Sphere(Sphere::default());
+        let shape = Shapes::from(Sphere::default());
 
         let i1 = Intersection {
+            object: shape,
             t: 1.0,
-            object: shape,
         };
+
         let i2 = Intersection {
-            t: 2.0,
             object: shape,
+            t: 2.0,
         };
 
         let xs = vec![i1, i2];
@@ -99,15 +101,16 @@ mod tests {
 
     #[test]
     fn the_hit_when_all_intersections_have_positive_t() {
-        let shape = Shape::Sphere(Sphere::default());
+        let shape = Shapes::from(Sphere::default());
 
         let i1 = Intersection {
+            object: shape,
             t: 1.0,
-            object: shape,
         };
+
         let i2 = Intersection {
-            t: 2.0,
             object: shape,
+            t: 2.0,
         };
 
         let xs = vec![i2, i1];
@@ -119,15 +122,16 @@ mod tests {
 
     #[test]
     fn the_hit_when_some_intersections_have_negative_t() {
-        let shape = Shape::Sphere(Sphere::default());
+        let shape = Shapes::from(Sphere::default());
 
         let i1 = Intersection {
+            object: shape,
             t: -1.0,
-            object: shape,
         };
+
         let i2 = Intersection {
-            t: 1.0,
             object: shape,
+            t: 1.0,
         };
 
         let xs = vec![i2, i1];
@@ -139,15 +143,15 @@ mod tests {
 
     #[test]
     fn the_hit_when_all_intersections_have_negative_t() {
-        let shape = Shape::Sphere(Sphere::default());
+        let shape = Shapes::from(Sphere::default());
 
         let i1 = Intersection {
-            t: -2.0,
             object: shape,
+            t: -2.0,
         };
         let i2 = Intersection {
-            t: -1.0,
             object: shape,
+            t: -1.0,
         };
 
         let xs = vec![i2, i1];
@@ -159,23 +163,26 @@ mod tests {
 
     #[test]
     fn the_hit_is_always_the_lowest_nonnegative_intersection() {
-        let shape = Shape::Sphere(Sphere::default());
+        let shape = Shapes::from(Sphere::default());
 
         let i1 = Intersection {
+            object: shape,
             t: 5.0,
-            object: shape,
         };
+
         let i2 = Intersection {
+            object: shape,
             t: 7.0,
-            object: shape,
         };
+
         let i3 = Intersection {
+            object: shape,
             t: -3.0,
-            object: shape,
         };
+
         let i4 = Intersection {
-            t: 2.0,
             object: shape,
+            t: 2.0,
         };
 
         let xs = vec![i1, i2, i3, i4];
@@ -187,16 +194,16 @@ mod tests {
 
     #[test]
     fn precomputing_the_state_of_an_intersection() {
+        let shape = Shapes::from(Sphere::default());
+
         let ray = Ray {
             origin: Point::new(0.0, 0.0, -5.0),
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let shape = Shape::Sphere(Sphere::default());
-
         let i = Intersection {
-            t: 4.0,
             object: shape,
+            t: 4.0,
         };
 
         let comps = i.comps(&ray);
@@ -210,16 +217,16 @@ mod tests {
 
     #[test]
     fn the_hit_when_an_intersection_occurs_on_the_outside() {
+        let shape = Shapes::from(Sphere::default());
+
         let ray = Ray {
             origin: Point::new(0.0, 0.0, -5.0),
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let shape = Shape::Sphere(Sphere::default());
-
         let i = Intersection {
-            t: 4.0,
             object: shape,
+            t: 4.0,
         };
 
         let comps = i.comps(&ray);
@@ -229,16 +236,16 @@ mod tests {
 
     #[test]
     fn the_hit_when_an_intersection_occurs_on_the_inside() {
+        let shape = Shapes::from(Sphere::default());
+
         let ray = Ray {
             origin: Point::new(0.0, 0.0, 0.0),
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let shape = Shape::Sphere(Sphere::default());
-
         let i = Intersection {
-            t: 1.0,
             object: shape,
+            t: 1.0,
         };
 
         let comps = i.comps(&ray);
@@ -248,19 +255,19 @@ mod tests {
 
     #[test]
     fn the_hit_should_offset_the_point() {
+        let shape = Shapes::from(Sphere(Shape {
+            transform: Matrix::translation(0.0, 0.0, 1.0),
+            ..Default::default()
+        }));
+
         let ray = Ray {
             origin: Point::new(0.0, 0.0, -5.0),
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let shape = Shape::Sphere(Sphere(Figure {
-            transform: Matrix::translation(0.0, 0.0, 1.0),
-            ..Default::default()
-        }));
-
         let i = Intersection {
-            t: 5.0,
             object: shape,
+            t: 5.0,
         };
 
         let comps = i.comps(&ray);
@@ -271,7 +278,7 @@ mod tests {
 
     #[test]
     fn precomputing_the_reflection_vector() {
-        let shape = Shape::Plane(Plane::default());
+        let shape = Shapes::Plane(Plane::default());
 
         let ray = Ray {
             origin: Point::new(0.0, 1.0, -1.0),
@@ -279,8 +286,8 @@ mod tests {
         };
 
         let i = Intersection {
-            t: 2_f64.sqrt(),
             object: shape,
+            t: 2_f64.sqrt(),
         };
 
         let comps = i.comps(&ray);

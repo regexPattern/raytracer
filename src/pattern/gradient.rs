@@ -1,10 +1,10 @@
 use crate::color::Color;
 use crate::tuple::Point;
 
-use super::Design;
+use super::Scheme;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Gradient(pub Design);
+pub struct Gradient(pub Scheme);
 
 impl Gradient {
     pub fn pattern_at(&self, pattern_point: Point) -> Color {
@@ -23,7 +23,7 @@ mod tests {
 
     #[test]
     fn a_gradient_linearly_interpolates_between_colors() {
-        let pattern = Gradient(Design::new(color::WHITE, color::BLACK));
+        let pattern = Gradient(Scheme::new(color::WHITE, color::BLACK));
 
         assert_eq!(pattern.pattern_at(Point::new(0.0, 0.0, 0.0)), color::WHITE);
         assert_eq!(

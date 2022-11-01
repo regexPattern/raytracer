@@ -1,35 +1,31 @@
+mod convert;
+
 use crate::color::{self, Color};
 use crate::float;
-use crate::light::PointLight;
-use crate::pattern::Pattern;
-use crate::shape::Shape;
+use crate::light::Light;
+use crate::pattern::Patterns;
+use crate::shape::Shapes;
 use crate::tuple::{Point, Vector};
-
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum Texture {
-    Color(Color),
-    Pattern(Pattern),
-}
 
 #[derive(Copy, Clone, Debug)]
 pub struct Material {
-    pub texture: Texture,
     pub ambient: f64,
     pub diffuse: f64,
+    pub reflective: f64,
     pub shininess: f64,
     pub specular: f64,
-    pub reflective: f64,
+    pub texture: Texture,
 }
 
 impl Default for Material {
     fn default() -> Self {
         Self {
-            texture: Texture::Color(color::WHITE),
             ambient: 0.1,
             diffuse: 0.9,
+            reflective: 0.0,
             shininess: 200.0,
             specular: 0.9,
-            reflective: 0.0,
+            texture: color::WHITE.into(),
         }
     }
 }
@@ -47,8 +43,8 @@ impl PartialEq for Material {
 impl Material {
     pub fn lighting(
         &self,
-        object: Shape,
-        light: PointLight,
+        object: &Shapes,
+        light: Light,
         world_point: Point,
         eyev: Vector,
         normalv: Vector,
@@ -86,19 +82,25 @@ impl Material {
     }
 }
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum Texture {
+    Color(Color),
+    Pattern(Patterns),
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::pattern::{Design, Stripe};
+    use crate::pattern::{Scheme, Stripe};
     use crate::shape::Sphere;
     use crate::{assert_approx, matrix};
 
     use super::*;
 
-    fn test_defaults() -> (Material, Point, Shape) {
+    fn test_defaults() -> (Material, Point, Shapes) {
         (
             Material::default(),
             Point::new(0.0, 0.0, 0.0),
-            Shape::Sphere(Sphere::default()),
+            Shapes::from(Sphere::default()),
         )
     }
 
@@ -106,7 +108,7 @@ mod tests {
     fn the_default_material() {
         let material = Material::default();
 
-        assert_eq!(material.texture, Texture::Color(color::WHITE));
+        assert_eq!(material.texture, Texture::from(color::WHITE));
         assert_eq!(material.ambient, 0.1);
         assert_eq!(material.diffuse, 0.9);
         assert_eq!(material.specular, 0.9);
@@ -119,12 +121,12 @@ mod tests {
 
         let eyev = Vector::new(0.0, 0.0, -1.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
-        let light = PointLight {
+        let light = Light {
             position: Point::new(0.0, 0.0, -10.0),
             intensity: color::WHITE,
         };
 
-        let result = material.lighting(object, light, position, eyev, normalv, false);
+        let result = material.lighting(&object, light, position, eyev, normalv, false);
 
         assert_eq!(
             result,
@@ -142,12 +144,12 @@ mod tests {
 
         let eyev = Vector::new(0.0, 2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
-        let light = PointLight {
+        let light = Light {
             position: Point::new(0.0, 0.0, -10.0),
             intensity: color::WHITE,
         };
 
-        let result = material.lighting(object, light, position, eyev, normalv, false);
+        let result = material.lighting(&object, light, position, eyev, normalv, false);
 
         assert_eq!(
             result,
@@ -165,12 +167,12 @@ mod tests {
 
         let eyev = Vector::new(0.0, 0.0, -1.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
-        let light = PointLight {
+        let light = Light {
             position: Point::new(0.0, 10.0, -10.0),
             intensity: color::WHITE,
         };
 
-        let result = material.lighting(object, light, position, eyev, normalv, false);
+        let result = material.lighting(&object, light, position, eyev, normalv, false);
 
         assert_eq!(
             result,
@@ -188,12 +190,12 @@ mod tests {
 
         let eyev = Vector::new(0.0, -2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
-        let light = PointLight {
+        let light = Light {
             position: Point::new(0.0, 10.0, -10.0),
             intensity: color::WHITE,
         };
 
-        let result = material.lighting(object, light, position, eyev, normalv, false);
+        let result = material.lighting(&object, light, position, eyev, normalv, false);
 
         assert_eq!(
             result,
@@ -211,12 +213,12 @@ mod tests {
 
         let eyev = Vector::new(0.0, 0.0, -1.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
-        let light = PointLight {
+        let light = Light {
             position: Point::new(0.0, 0.0, 10.0),
             intensity: color::WHITE,
         };
 
-        let result = material.lighting(object, light, position, eyev, normalv, false);
+        let result = material.lighting(&object, light, position, eyev, normalv, false);
 
         assert_eq!(
             result,
@@ -234,13 +236,13 @@ mod tests {
 
         let eyev = Vector::new(0.0, 0.0, -1.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
-        let light = PointLight {
+        let light = Light {
             position: Point::new(0.0, 0.0, -10.0),
             intensity: color::WHITE,
         };
         let in_shadow = true;
 
-        let result = material.lighting(object, light, position, eyev, normalv, in_shadow);
+        let result = material.lighting(&object, light, position, eyev, normalv, in_shadow);
 
         assert_eq!(
             result,
@@ -257,11 +259,11 @@ mod tests {
         let (_, _, object) = test_defaults();
 
         let material = Material {
-            texture: Texture::Pattern(Pattern::Stripe(Stripe(Design {
+            texture: Texture::from(Stripe(Scheme {
                 a: color::WHITE,
                 b: color::BLACK,
                 transform: matrix::IDENTITY4X4,
-            }))),
+            })),
             ambient: 1.0,
             diffuse: 0.0,
             specular: 0.0,
@@ -270,13 +272,13 @@ mod tests {
 
         let eyev = Vector::new(0.0, 0.0, -1.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
-        let light = PointLight {
+        let light = Light {
             position: Point::new(0.0, 0.0, -10.0),
             intensity: color::WHITE,
         };
 
         let c1 = material.lighting(
-            object,
+            &object,
             light,
             Point::new(0.9, 0.0, 0.0),
             eyev,
@@ -284,7 +286,7 @@ mod tests {
             false,
         );
         let c2 = material.lighting(
-            object,
+            &object,
             light,
             Point::new(1.1, 0.0, 0.0),
             eyev,

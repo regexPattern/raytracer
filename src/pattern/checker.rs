@@ -2,10 +2,10 @@ use crate::color::Color;
 use crate::float;
 use crate::tuple::Point;
 
-use super::Design;
+use super::Scheme;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Checker(pub Design);
+pub struct Checker(pub Scheme);
 
 impl Checker {
     pub fn pattern_at(&self, pattern_point: Point) -> Color {
@@ -27,7 +27,7 @@ mod tests {
 
     #[test]
     fn checkers_should_repeat_in_x() {
-        let pattern = Checker(Design::new(color::WHITE, color::BLACK));
+        let pattern = Checker(Scheme::new(color::WHITE, color::BLACK));
 
         assert_eq!(pattern.pattern_at(Point::new(0.0, 0.0, 0.0)), color::WHITE);
         assert_eq!(pattern.pattern_at(Point::new(0.99, 0.0, 0.0)), color::WHITE);
@@ -36,7 +36,7 @@ mod tests {
 
     #[test]
     fn checkers_should_repeat_in_y() {
-        let pattern = Checker(Design::new(color::WHITE, color::BLACK));
+        let pattern = Checker(Scheme::new(color::WHITE, color::BLACK));
 
         assert_eq!(pattern.pattern_at(Point::new(0.0, 0.0, 0.0)), color::WHITE);
         assert_eq!(pattern.pattern_at(Point::new(0.0, 0.99, 0.0)), color::WHITE);
@@ -45,7 +45,7 @@ mod tests {
 
     #[test]
     fn checkers_should_repeat_in_z() {
-        let pattern = Checker(Design::new(color::WHITE, color::BLACK));
+        let pattern = Checker(Scheme::new(color::WHITE, color::BLACK));
 
         assert_eq!(pattern.pattern_at(Point::new(0.0, 0.0, 0.0)), color::WHITE);
         assert_eq!(pattern.pattern_at(Point::new(0.0, 0.0, 0.99)), color::WHITE);

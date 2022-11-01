@@ -2,10 +2,10 @@ use crate::intersection::Intersection;
 use crate::ray::Ray;
 use crate::tuple::{Point, Vector};
 
-use super::{Figure, Shape};
+use super::{Shape, Shapes};
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
-pub struct Sphere(pub Figure);
+pub struct Sphere(pub Shape);
 
 impl Sphere {
     pub fn intersect(&self, object_ray: &Ray) -> Vec<Intersection> {
@@ -25,11 +25,11 @@ impl Sphere {
         let t2 = (-b + discriminant.sqrt()) / (2.0 * a);
 
         let i1 = Intersection {
-            object: Shape::Sphere(*self),
+            object: Shapes::from(*self),
             t: t1,
         };
         let i2 = Intersection {
-            object: Shape::Sphere(*self),
+            object: Shapes::from(*self),
             t: t2,
         };
 
@@ -76,8 +76,8 @@ mod tests {
         let xs = sphere.intersect(&ray);
 
         assert_eq!(xs.len(), 2);
-        assert_eq!(xs[0].object, Shape::Sphere(sphere));
-        assert_eq!(xs[1].object, Shape::Sphere(sphere));
+        assert_eq!(xs[0].object, Shapes::from(sphere));
+        assert_eq!(xs[1].object, Shapes::from(sphere));
     }
 
     #[test]

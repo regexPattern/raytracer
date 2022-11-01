@@ -6,7 +6,7 @@ use crate::canvas::Canvas;
 use crate::matrix::{self, Matrix};
 use crate::ray::Ray;
 use crate::tuple::Point;
-use crate::world::{World, self};
+use crate::world::{self, World};
 
 #[derive(Debug)]
 pub struct Camera {
@@ -95,11 +95,45 @@ impl Camera {
 
 #[cfg(test)]
 mod tests {
-    use crate::assert_approx;
     use crate::color::Color;
+    use crate::light::Light;
+    use crate::material::{Material, Texture};
+    use crate::shape::{Shape, Shapes, Sphere};
     use crate::tuple::Vector;
+    use crate::{assert_approx, color};
 
     use super::*;
+
+    fn test_default_world() -> World {
+        let inner_sphere = Shapes::from(Sphere(Shape {
+            material: Material {
+                diffuse: 0.7,
+                specular: 0.2,
+                texture: Texture::from(Color {
+                    red: 0.8,
+                    green: 1.0,
+                    blue: 0.6,
+                }),
+                ..Default::default()
+            },
+            ..Default::default()
+        }));
+
+        let outer_sphere = Shapes::from(Sphere(Shape {
+            transform: Matrix::scaling(0.5, 0.5, 0.5),
+            ..Default::default()
+        }));
+
+        let main_light = Light {
+            position: Point::new(-10.0, 10.0, -10.0),
+            intensity: color::WHITE,
+        };
+
+        World {
+            objects: vec![inner_sphere, outer_sphere],
+            lights: vec![main_light],
+        }
+    }
 
     #[test]
     fn constructing_a_camera() {
@@ -165,7 +199,7 @@ mod tests {
 
     #[test]
     fn rendering_a_world_with_a_camera() {
-        let world = World::default();
+        let world = test_default_world();
 
         let mut camera = Camera::new(11, 11, std::f64::consts::FRAC_PI_2);
 

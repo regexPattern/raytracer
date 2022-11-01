@@ -2,7 +2,7 @@ use crate::color::Color;
 use crate::tuple::Point;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct PointLight {
+pub struct Light {
     pub position: Point,
     pub intensity: Color,
 }
@@ -15,10 +15,10 @@ mod tests {
 
     #[test]
     fn a_point_light_has_a_position_and_intensity() {
-        let intensity = color::WHITE;
         let position = Point::new(0.0, 0.0, 0.0);
+        let intensity = color::WHITE;
 
-        let light = PointLight {
+        let light = Light {
             position,
             intensity,
         };

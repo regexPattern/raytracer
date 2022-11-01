@@ -1,3 +1,4 @@
+mod convert;
 mod plane;
 mod sphere;
 
@@ -11,12 +12,12 @@ pub use plane::Plane;
 pub use sphere::Sphere;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Figure {
+pub struct Shape {
     pub material: Material,
     pub transform: Matrix<4, 4>,
 }
 
-impl Default for Figure {
+impl Default for Shape {
     fn default() -> Self {
         Self {
             material: Material::default(),
@@ -26,12 +27,12 @@ impl Default for Figure {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum Shape {
+pub enum Shapes {
     Plane(Plane),
     Sphere(Sphere),
 }
 
-impl Shape {
+impl Shapes {
     pub fn intersect(&self, ray: &Ray) -> Vec<Intersection> {
         let object_ray = self.object_ray(ray);
         match self {
@@ -51,20 +52,20 @@ impl Shape {
     }
 
     fn object_ray(&self, ray: &Ray) -> Ray {
-        ray.transform(self.figure().transform.inverse())
+        ray.transform(self.shape().transform.inverse())
     }
 
     fn object_point(&self, world_point: Point) -> Point {
-        self.figure().transform.inverse() * world_point
+        self.shape().transform.inverse() * world_point
     }
 
     fn world_normal(&self, object_normal: Vector) -> Vector {
-        let mut world_normal = self.figure().transform.inverse().transpose() * object_normal;
+        let mut world_normal = self.shape().transform.inverse().transpose() * object_normal;
         world_normal.0.w = 0.0;
         world_normal.normalize()
     }
 
-    pub fn figure(&self) -> Figure {
+    pub const fn shape(&self) -> Shape {
         match self {
             Self::Plane(p) => p.0,
             Self::Sphere(s) => s.0,
@@ -76,14 +77,14 @@ impl Shape {
 mod tests {
     use super::*;
 
-    fn test_shape(transform: Matrix<4, 4>) -> Shape {
-        Shape::Sphere(Sphere(Figure {
+    fn test_shape(transform: Matrix<4, 4>) -> Shapes {
+        Shapes::from(Sphere(Shape {
             transform,
             ..Default::default()
         }))
     }
 
-    fn test_shape_normal_at(shape: Shape, world_point: Point) -> Vector {
+    fn test_shape_normal_at(shape: Shapes, world_point: Point) -> Vector {
         let object_point = shape.object_point(world_point);
         let object_normal = Vector::new(object_point.0.x, object_point.0.y, object_point.0.z);
         shape.world_normal(object_normal)
@@ -91,14 +92,14 @@ mod tests {
 
     #[test]
     fn the_default_transformation() {
-        let shape = Figure::default();
+        let shape = Shape::default();
 
         assert_eq!(shape.transform, matrix::IDENTITY4X4);
     }
 
     #[test]
     fn assigning_a_transformation() {
-        let mut shape = Figure::default();
+        let mut shape = Shape::default();
         let transform = Matrix::translation(2.0, 3.0, 4.0);
 
         shape.transform = transform;
@@ -108,14 +109,14 @@ mod tests {
 
     #[test]
     fn the_default_material() {
-        let shape = Figure::default();
+        let shape = Shape::default();
 
         assert_eq!(shape.material, Material::default());
     }
 
     #[test]
     fn assigning_a_material() {
-        let mut shape = Figure::default();
+        let mut shape = Shape::default();
         let mut material = Material::default();
         material.ambient = 1.0;
 

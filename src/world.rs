@@ -2,49 +2,16 @@ use crate::color::{self, Color};
 use crate::float;
 use crate::intersection::Computation;
 use crate::intersection::Intersection;
-use crate::light::PointLight;
-use crate::material::{Material, Texture};
-use crate::matrix::Matrix;
+use crate::light::Light;
 use crate::ray::Ray;
-use crate::shape::{Figure, Shape, Sphere};
+use crate::shape::Shapes;
 use crate::tuple::Point;
 
 pub const REFLECTION_LIMIT: u32 = 5;
 
 pub struct World {
-    pub objects: Vec<Shape>,
-    pub lights: Vec<PointLight>,
-}
-
-impl Default for World {
-    fn default() -> Self {
-        let objects = vec![
-            Shape::Sphere(Sphere(Figure {
-                material: Material {
-                    texture: Texture::Color(Color {
-                        red: 0.8,
-                        green: 1.0,
-                        blue: 0.6,
-                    }),
-                    diffuse: 0.7,
-                    specular: 0.2,
-                    ..Default::default()
-                },
-                ..Default::default()
-            })),
-            Shape::Sphere(Sphere(Figure {
-                transform: Matrix::scaling(0.5, 0.5, 0.5),
-                ..Default::default()
-            })),
-        ];
-
-        let lights = vec![PointLight {
-            position: Point::new(-10.0, 10.0, -10.0),
-            intensity: color::WHITE,
-        }];
-
-        Self { objects, lights }
-    }
+    pub objects: Vec<Shapes>,
+    pub lights: Vec<Light>,
 }
 
 impl World {
@@ -70,8 +37,8 @@ impl World {
         self.lights.iter().fold(color::BLACK, |shade, light| {
             let shadowed = self.is_shadowed(light, comps.over_point);
             let surface = shade
-                + comps.i.object.figure().material.lighting(
-                    comps.i.object,
+                + comps.i.object.shape().material.lighting(
+                    &comps.i.object,
                     *light,
                     comps.over_point,
                     comps.eyev,
@@ -86,7 +53,7 @@ impl World {
     }
 
     fn reflected_color(&self, comps: &Computation, remaining: u32) -> Color {
-        let material = comps.i.object.figure().material;
+        let material = comps.i.object.shape().material;
 
         if remaining == 0 || float::approx(material.reflective, 0.0) {
             return color::BLACK;
@@ -102,7 +69,7 @@ impl World {
         color * material.reflective
     }
 
-    fn is_shadowed(&self, light: &PointLight, world_point: Point) -> bool {
+    fn is_shadowed(&self, light: &Light, world_point: Point) -> bool {
         let v = light.position - world_point;
         let distance = v.magnitude();
         let direction = v.normalize();
@@ -124,39 +91,72 @@ impl World {
 
 #[cfg(test)]
 mod tests {
-    use crate::shape::Plane;
+    use crate::material::{Material, Texture};
+    use crate::matrix::Matrix;
+    use crate::shape::{Plane, Shape, Sphere};
     use crate::tuple::Vector;
     use crate::{assert_approx, world};
 
     use super::*;
 
-    #[test]
-    fn the_default_world() {
-        let light = PointLight {
-            position: Point::new(-10.0, 10.0, -10.0),
-            intensity: color::WHITE,
-        };
-
-        let s1 = Shape::Sphere(Sphere(Figure {
+    fn test_default_world() -> World {
+        let inner_sphere = Shapes::from(Sphere(Shape {
             material: Material {
-                texture: Texture::Color(Color {
+                diffuse: 0.7,
+                specular: 0.2,
+                texture: Texture::from(Color {
                     red: 0.8,
                     green: 1.0,
                     blue: 0.6,
                 }),
-                diffuse: 0.7,
-                specular: 0.2,
                 ..Default::default()
             },
             ..Default::default()
         }));
 
-        let s2 = Shape::Sphere(Sphere(Figure {
+        let outer_sphere = Shapes::from(Sphere(Shape {
             transform: Matrix::scaling(0.5, 0.5, 0.5),
             ..Default::default()
         }));
 
-        let world = World::default();
+        let main_light = Light {
+            position: Point::new(-10.0, 10.0, -10.0),
+            intensity: color::WHITE,
+        };
+
+        World {
+            objects: vec![inner_sphere, outer_sphere],
+            lights: vec![main_light],
+        }
+    }
+
+    #[test]
+    fn the_default_world() {
+        let light = Light {
+            position: Point::new(-10.0, 10.0, -10.0),
+            intensity: color::WHITE,
+        };
+
+        let s1 = Shapes::from(Sphere(Shape {
+            material: Material {
+                diffuse: 0.7,
+                specular: 0.2,
+                texture: Texture::from(Color {
+                    red: 0.8,
+                    green: 1.0,
+                    blue: 0.6,
+                }),
+                ..Default::default()
+            },
+            ..Default::default()
+        }));
+
+        let s2 = Shapes::from(Sphere(Shape {
+            transform: Matrix::scaling(0.5, 0.5, 0.5),
+            ..Default::default()
+        }));
+
+        let world = test_default_world();
 
         assert!(world.lights.contains(&light));
         assert!(world.objects.contains(&s1));
@@ -165,7 +165,7 @@ mod tests {
 
     #[test]
     fn intersect_a_world_with_a_ray() {
-        let world = World::default();
+        let world = test_default_world();
 
         let ray = Ray {
             origin: Point::new(0.0, 0.0, -5.0),
@@ -183,18 +183,18 @@ mod tests {
 
     #[test]
     fn shading_an_intersection() {
-        let world = World::default();
+        let world = test_default_world();
+
+        let shape = world.objects[0];
 
         let ray = Ray {
             origin: Point::new(0.0, 0.0, -5.0),
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let shape = world.objects[0];
-
         let i = Intersection {
-            t: 4.0,
             object: shape,
+            t: 4.0,
         };
 
         let comps = i.comps(&ray);
@@ -214,23 +214,23 @@ mod tests {
     #[test]
     fn shading_an_intersection_from_the_inside() {
         let world = World {
-            lights: vec![PointLight {
+            lights: vec![Light {
                 position: Point::new(0.0, 0.25, 0.0),
                 intensity: color::WHITE,
             }],
-            ..Default::default()
+            ..test_default_world()
         };
+
+        let shape = world.objects[1];
 
         let ray = Ray {
             origin: Point::new(0.0, 0.0, 0.0),
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let shape = world.objects[1];
-
         let i = Intersection {
-            t: 0.5,
             object: shape,
+            t: 0.5,
         };
 
         let comps = i.comps(&ray);
@@ -249,7 +249,7 @@ mod tests {
 
     #[test]
     fn the_color_when_a_ray_misses() {
-        let world = World::default();
+        let world = test_default_world();
 
         let ray = Ray {
             origin: Point::new(0.0, 0.0, -5.0),
@@ -263,7 +263,7 @@ mod tests {
 
     #[test]
     fn the_color_when_a_ray_hits() {
-        let world = World::default();
+        let world = test_default_world();
 
         let ray = Ray {
             origin: Point::new(0.0, 0.0, -5.0),
@@ -284,15 +284,15 @@ mod tests {
 
     #[test]
     fn the_color_with_an_intersection_behind_the_ray() {
-        let mut world = World::default();
+        let mut world = test_default_world();
 
         let outer = &mut world.objects[0];
-        if let Shape::Sphere(shape) = outer {
+        if let Shapes::Sphere(shape) = outer {
             shape.0.material.ambient = 1.0;
         }
 
         let inner = &mut world.objects[1];
-        if let Shape::Sphere(shape) = inner {
+        if let Shapes::Sphere(shape) = inner {
             shape.0.material.ambient = 1.0;
         }
 
@@ -305,12 +305,12 @@ mod tests {
 
         let color = world.color_at(&ray, world::REFLECTION_LIMIT);
 
-        assert_eq!(Texture::Color(color), inner.figure().material.texture);
+        assert_eq!(Texture::from(color), inner.shape().material.texture);
     }
 
     #[test]
     fn there_is_no_shadow_when_nothing_is_collinear_with_point_and_light() {
-        let world = World::default();
+        let world = test_default_world();
         let point = Point::new(0.0, 10.0, 0.0);
 
         assert!(!world.is_shadowed(&world.lights[0], point));
@@ -318,7 +318,7 @@ mod tests {
 
     #[test]
     fn the_shadow_when_an_object_is_between_the_point_and_the_light() {
-        let world = World::default();
+        let world = test_default_world();
         let point = Point::new(10.0, -10.0, 10.0);
 
         assert!(world.is_shadowed(&world.lights[0], point));
@@ -326,7 +326,7 @@ mod tests {
 
     #[test]
     fn there_is_no_shadow_when_an_object_is_behind_the_light() {
-        let world = World::default();
+        let world = test_default_world();
         let point = Point::new(-20.0, 20.0, -20.0);
 
         assert!(!world.is_shadowed(&world.lights[0], point));
@@ -334,7 +334,7 @@ mod tests {
 
     #[test]
     fn there_is_no_shadow_when_an_object_is_behind_the_point() {
-        let world = World::default();
+        let world = test_default_world();
         let point = Point::new(-2.0, 2.0, -2.0);
 
         assert!(!world.is_shadowed(&world.lights[0], point));
@@ -342,14 +342,14 @@ mod tests {
 
     #[test]
     fn shade_hit_is_given_an_intersection_in_shadow() {
-        let s1 = Shape::Sphere(Sphere::default());
+        let s1 = Shapes::from(Sphere::default());
 
-        let s2 = Shape::Sphere(Sphere(Figure {
+        let s2 = Shapes::from(Sphere(Shape {
             transform: Matrix::translation(0.0, 0.0, 10.0),
             ..Default::default()
         }));
 
-        let light = PointLight {
+        let light = Light {
             position: Point::new(0.0, 0.0, -10.0),
             intensity: color::WHITE,
         };
@@ -364,7 +364,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let i = Intersection { t: 4.0, object: s2 };
+        let i = Intersection { object: s2, t: 4.0 };
 
         let comps = i.comps(&ray);
 
@@ -382,7 +382,7 @@ mod tests {
 
     #[test]
     fn the_reflected_color_for_a_nonreflective_material() {
-        let mut world = World::default();
+        let mut world = test_default_world();
 
         let ray = Ray {
             origin: Point::new(0.0, 0.0, 0.0),
@@ -390,13 +390,13 @@ mod tests {
         };
 
         let shape = &mut world.objects[1];
-        shape.figure().material.ambient = 1.0;
+        shape.shape().material.ambient = 1.0;
 
         let shape = world.objects[1];
 
         let i = Intersection {
-            t: 1.0,
             object: shape,
+            t: 1.0,
         };
 
         let comps = i.comps(&ray);
@@ -408,9 +408,9 @@ mod tests {
 
     #[test]
     fn the_reflected_color_for_a_reflective_material() {
-        let mut world = World::default();
+        let mut world = test_default_world();
 
-        let shape = Shape::Plane(Plane(Figure {
+        let shape = Shapes::Plane(Plane(Shape {
             material: Material {
                 reflective: 0.5,
                 ..Default::default()
@@ -426,8 +426,8 @@ mod tests {
         };
 
         let i = Intersection {
-            t: 2_f64.sqrt(),
             object: shape,
+            t: 2_f64.sqrt(),
         };
 
         let comps = i.comps(&ray);
@@ -446,9 +446,9 @@ mod tests {
 
     #[test]
     fn shade_hit_with_a_reflective_material() {
-        let mut world = World::default();
+        let mut world = test_default_world();
 
-        let shape = Shape::Plane(Plane(Figure {
+        let shape = Shapes::Plane(Plane(Shape {
             material: Material {
                 reflective: 0.5,
                 ..Default::default()
@@ -464,8 +464,8 @@ mod tests {
         };
 
         let i = Intersection {
-            t: 2_f64.sqrt(),
             object: shape,
+            t: 2_f64.sqrt(),
         };
 
         let comps = i.comps(&ray);
@@ -484,9 +484,9 @@ mod tests {
 
     #[test]
     fn the_reflected_color_at_the_maximum_recursive_depth() {
-        let mut world = World::default();
+        let mut world = test_default_world();
 
-        let shape = Shape::Plane(Plane(Figure {
+        let shape = Shapes::Plane(Plane(Shape {
             material: Material {
                 reflective: 0.5,
                 ..Default::default()
@@ -502,8 +502,8 @@ mod tests {
         };
 
         let i = Intersection {
-            t: 2_f64.sqrt(),
             object: shape,
+            t: 2_f64.sqrt(),
         };
 
         let comps = i.comps(&ray);

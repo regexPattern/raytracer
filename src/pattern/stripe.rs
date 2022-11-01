@@ -2,10 +2,10 @@ use crate::color::Color;
 use crate::float;
 use crate::tuple::Point;
 
-use super::Design;
+use super::Scheme;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Stripe(pub Design);
+pub struct Stripe(pub Scheme);
 
 impl Stripe {
     pub fn pattern_at(&self, pattern_point: Point) -> Color {
@@ -25,7 +25,7 @@ mod tests {
 
     #[test]
     fn creating_a_stripe_pattern() {
-        let pattern = Stripe(Design::new(color::WHITE, color::BLACK));
+        let pattern = Stripe(Scheme::new(color::WHITE, color::BLACK));
 
         assert_eq!(pattern.0.a, color::WHITE);
         assert_eq!(pattern.0.b, color::BLACK);
@@ -33,7 +33,7 @@ mod tests {
 
     #[test]
     fn a_stripe_pattern_is_constant_in_y() {
-        let pattern = Stripe(Design::new(color::WHITE, color::BLACK));
+        let pattern = Stripe(Scheme::new(color::WHITE, color::BLACK));
 
         assert_eq!(pattern.pattern_at(Point::new(0.0, 0.0, 0.0)), color::WHITE);
         assert_eq!(pattern.pattern_at(Point::new(0.0, 1.0, 0.0)), color::WHITE);
@@ -42,7 +42,7 @@ mod tests {
 
     #[test]
     fn a_stripe_pattern_is_constant_in_z() {
-        let pattern = Stripe(Design::new(color::WHITE, color::BLACK));
+        let pattern = Stripe(Scheme::new(color::WHITE, color::BLACK));
 
         assert_eq!(pattern.pattern_at(Point::new(0.0, 0.0, 0.0)), color::WHITE);
         assert_eq!(pattern.pattern_at(Point::new(0.0, 0.0, 1.0)), color::WHITE);
@@ -51,7 +51,7 @@ mod tests {
 
     #[test]
     fn a_stripe_pattern_alternates_in_x() {
-        let pattern = Stripe(Design::new(color::WHITE, color::BLACK));
+        let pattern = Stripe(Scheme::new(color::WHITE, color::BLACK));
 
         assert_eq!(pattern.pattern_at(Point::new(0.0, 0.0, 0.0)), color::WHITE);
         assert_eq!(pattern.pattern_at(Point::new(0.9, 0.0, 0.0)), color::WHITE);
