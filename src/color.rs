@@ -42,13 +42,6 @@ pub struct Color {
     pub blue: f64,
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct RGB {
-    pub red: u8,
-    pub green: u8,
-    pub blue: u8,
-}
-
 impl PartialEq for Color {
     fn eq(&self, other: &Self) -> bool {
         float::approx(self.red, other.red)
@@ -57,8 +50,15 @@ impl PartialEq for Color {
     }
 }
 
-impl From<RGB> for Color {
-    fn from(rgb: RGB) -> Self {
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct Rgb {
+    pub red: u8,
+    pub green: u8,
+    pub blue: u8,
+}
+
+impl From<Rgb> for Color {
+    fn from(rgb: Rgb) -> Self {
         let red = f64::from(rgb.red) / 255.0;
         let green = f64::from(rgb.green) / 255.0;
         let blue = f64::from(rgb.blue) / 255.0;
@@ -67,7 +67,7 @@ impl From<RGB> for Color {
     }
 }
 
-impl From<Color> for RGB {
+impl From<Color> for Rgb {
     fn from(color: Color) -> Self {
         let red = (color.red * 255.0) as u8;
         let green = (color.green * 255.0) as u8;
@@ -249,13 +249,13 @@ mod tests {
 
     #[test]
     fn constructing_colors_from_rgb_values() {
-        let c1 = RGB {
+        let c1 = Rgb {
             red: 255,
             green: 127,
             blue: 0,
         };
 
-        let c2 = RGB {
+        let c2 = Rgb {
             red: 241,
             green: 113,
             blue: 14,
@@ -300,24 +300,24 @@ mod tests {
         };
 
         assert_eq!(
-            RGB::from(c1),
-            RGB {
+            Rgb::from(c1),
+            Rgb {
                 red: 0,
                 green: 0,
                 blue: 0
             }
         );
         assert_eq!(
-            RGB::from(c2),
-            RGB {
+            Rgb::from(c2),
+            Rgb {
                 red: 255,
                 green: 255,
                 blue: 255
             }
         );
         assert_eq!(
-            RGB::from(c3),
-            RGB {
+            Rgb::from(c3),
+            Rgb {
                 red: 127,
                 green: 191,
                 blue: 63
