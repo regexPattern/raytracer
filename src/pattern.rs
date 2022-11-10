@@ -97,7 +97,7 @@ mod tests {
 
     #[test]
     fn a_pattern_with_an_object_transformation() {
-        let shape = Shapes::from(Sphere(Shape {
+        let shape = Shapes::Sphere(Sphere(Shape {
             transform: Matrix::scaling(2.0, 2.0, 2.0),
             ..Default::default()
         }));
@@ -118,7 +118,7 @@ mod tests {
 
     #[test]
     fn a_pattern_with_a_pattern_transformation() {
-        let shape = Shapes::from(Sphere::default());
+        let shape = Shapes::Sphere(Sphere::default());
 
         let pattern = test_pattern(Matrix::scaling(2.0, 2.0, 2.0));
 
@@ -136,7 +136,7 @@ mod tests {
 
     #[test]
     fn a_pattern_with_both_an_object_and_a_pattern_transformation() {
-        let shape = Shapes::from(Sphere(Shape {
+        let shape = Shapes::Sphere(Sphere(Shape {
             transform: Matrix::scaling(2.0, 2.0, 2.0),
             ..Default::default()
         }));

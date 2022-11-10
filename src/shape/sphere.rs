@@ -25,11 +25,11 @@ impl Sphere {
         let t2 = (-b + discriminant.sqrt()) / (2.0 * a);
 
         let i1 = Intersection {
-            object: Shapes::from(*self),
+            object: Shapes::Sphere(*self),
             t: t1,
         };
         let i2 = Intersection {
-            object: Shapes::from(*self),
+            object: Shapes::Sphere(*self),
             t: t2,
         };
 
@@ -76,8 +76,8 @@ mod tests {
         let xs = sphere.intersect(&ray);
 
         assert_eq!(xs.len(), 2);
-        assert_eq!(xs[0].object, Shapes::from(sphere));
-        assert_eq!(xs[1].object, Shapes::from(sphere));
+        assert_eq!(xs[0].object, Shapes::Sphere(sphere));
+        assert_eq!(xs[1].object, Shapes::Sphere(sphere));
     }
 
     #[test]

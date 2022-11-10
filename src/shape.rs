@@ -1,4 +1,3 @@
-mod convert;
 mod plane;
 mod sphere;
 
@@ -78,7 +77,7 @@ mod tests {
     use super::*;
 
     fn test_shape(transform: Matrix<4, 4>) -> Shapes {
-        Shapes::from(Sphere(Shape {
+        Shapes::Sphere(Sphere(Shape {
             transform,
             ..Default::default()
         }))

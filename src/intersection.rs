@@ -67,7 +67,7 @@ mod tests {
 
     #[test]
     fn an_intersection_encapsulates_t_and_object() {
-        let shape = Shapes::from(Sphere::default());
+        let shape = Shapes::Sphere(Sphere::default());
 
         let i = Intersection {
             object: shape,
@@ -80,7 +80,7 @@ mod tests {
 
     #[test]
     fn aggregating_intersections() {
-        let shape = Shapes::from(Sphere::default());
+        let shape = Shapes::Sphere(Sphere::default());
 
         let i1 = Intersection {
             object: shape,
@@ -101,7 +101,7 @@ mod tests {
 
     #[test]
     fn the_hit_when_all_intersections_have_positive_t() {
-        let shape = Shapes::from(Sphere::default());
+        let shape = Shapes::Sphere(Sphere::default());
 
         let i1 = Intersection {
             object: shape,
@@ -122,7 +122,7 @@ mod tests {
 
     #[test]
     fn the_hit_when_some_intersections_have_negative_t() {
-        let shape = Shapes::from(Sphere::default());
+        let shape = Shapes::Sphere(Sphere::default());
 
         let i1 = Intersection {
             object: shape,
@@ -143,7 +143,7 @@ mod tests {
 
     #[test]
     fn the_hit_when_all_intersections_have_negative_t() {
-        let shape = Shapes::from(Sphere::default());
+        let shape = Shapes::Sphere(Sphere::default());
 
         let i1 = Intersection {
             object: shape,
@@ -163,7 +163,7 @@ mod tests {
 
     #[test]
     fn the_hit_is_always_the_lowest_nonnegative_intersection() {
-        let shape = Shapes::from(Sphere::default());
+        let shape = Shapes::Sphere(Sphere::default());
 
         let i1 = Intersection {
             object: shape,
@@ -194,7 +194,7 @@ mod tests {
 
     #[test]
     fn precomputing_the_state_of_an_intersection() {
-        let shape = Shapes::from(Sphere::default());
+        let shape = Shapes::Sphere(Sphere::default());
 
         let ray = Ray {
             origin: Point::new(0.0, 0.0, -5.0),
@@ -217,7 +217,7 @@ mod tests {
 
     #[test]
     fn the_hit_when_an_intersection_occurs_on_the_outside() {
-        let shape = Shapes::from(Sphere::default());
+        let shape = Shapes::Sphere(Sphere::default());
 
         let ray = Ray {
             origin: Point::new(0.0, 0.0, -5.0),
@@ -236,7 +236,7 @@ mod tests {
 
     #[test]
     fn the_hit_when_an_intersection_occurs_on_the_inside() {
-        let shape = Shapes::from(Sphere::default());
+        let shape = Shapes::Sphere(Sphere::default());
 
         let ray = Ray {
             origin: Point::new(0.0, 0.0, 0.0),
@@ -255,7 +255,7 @@ mod tests {
 
     #[test]
     fn the_hit_should_offset_the_point() {
-        let shape = Shapes::from(Sphere(Shape {
+        let shape = Shapes::Sphere(Sphere(Shape {
             transform: Matrix::translation(0.0, 0.0, 1.0),
             ..Default::default()
         }));

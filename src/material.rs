@@ -100,7 +100,7 @@ mod tests {
         (
             Material::default(),
             Point::new(0.0, 0.0, 0.0),
-            Shapes::from(Sphere::default()),
+            Shapes::Sphere(Sphere::default()),
         )
     }
 

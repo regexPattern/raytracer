@@ -105,7 +105,7 @@ mod tests {
     use super::*;
 
     fn test_default_world() -> World {
-        let inner_sphere = Shapes::from(Sphere(Shape {
+        let inner_sphere = Shapes::Sphere(Sphere(Shape {
             material: Material {
                 diffuse: 0.7,
                 specular: 0.2,
@@ -119,7 +119,7 @@ mod tests {
             ..Default::default()
         }));
 
-        let outer_sphere = Shapes::from(Sphere(Shape {
+        let outer_sphere = Shapes::Sphere(Sphere(Shape {
             transform: Matrix::scaling(0.5, 0.5, 0.5),
             ..Default::default()
         }));
