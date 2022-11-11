@@ -2,11 +2,13 @@
 
 use std::sync::{Arc, Mutex};
 
-use crate::canvas::Canvas;
-use crate::matrix::{self, Matrix};
-use crate::ray::Ray;
-use crate::tuple::Point;
-use crate::world::{self, World};
+use crate::{
+    canvas::Canvas,
+    matrix::{self, Matrix},
+    ray::Ray,
+    tuple::Point,
+    world::{self, World},
+};
 
 #[derive(Debug)]
 pub struct Camera {
@@ -95,17 +97,19 @@ impl Camera {
 
 #[cfg(test)]
 mod tests {
-    use crate::color::Color;
-    use crate::light::Light;
-    use crate::material::{Material, Texture};
-    use crate::shape::{Shape, Shapes, Sphere};
-    use crate::tuple::Vector;
-    use crate::{assert_approx, color};
+    use crate::{
+        color::Color,
+        light::PointLight,
+        material::{Material, Texture},
+        shape::{Figure, Shapes, Sphere},
+        tuple::Vector,
+        {assert_approx, color},
+    };
 
     use super::*;
 
     fn test_default_world() -> World {
-        let inner_sphere = Shapes::Sphere(Sphere(Shape {
+        let inner_sphere = Shapes::Sphere(Sphere(Figure {
             material: Material {
                 diffuse: 0.7,
                 specular: 0.2,
@@ -119,12 +123,12 @@ mod tests {
             ..Default::default()
         }));
 
-        let outer_sphere = Shapes::Sphere(Sphere(Shape {
+        let outer_sphere = Shapes::Sphere(Sphere(Figure {
             transform: Matrix::scaling(0.5, 0.5, 0.5),
             ..Default::default()
         }));
 
-        let main_light = Light {
+        let main_light = PointLight {
             position: Point::new(-10.0, 10.0, -10.0),
             intensity: color::WHITE,
         };

@@ -1,8 +1,9 @@
-use super::Matrix;
 use crate::{
     float,
     tuple::{Point, Vector},
 };
+
+use super::Matrix;
 
 impl Matrix<4, 4> {
     pub fn rotation_x(rad: f64) -> Self {

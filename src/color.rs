@@ -42,19 +42,19 @@ pub struct Color {
     pub blue: f64,
 }
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct Rgb {
+    pub red: u8,
+    pub green: u8,
+    pub blue: u8,
+}
+
 impl PartialEq for Color {
     fn eq(&self, other: &Self) -> bool {
         float::approx(self.red, other.red)
             && float::approx(self.green, other.green)
             && float::approx(self.blue, other.blue)
     }
-}
-
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct Rgb {
-    pub red: u8,
-    pub green: u8,
-    pub blue: u8,
 }
 
 impl From<Rgb> for Color {

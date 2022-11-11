@@ -1,17 +1,19 @@
-use crate::color::{self, Color};
-use crate::float;
-use crate::intersection::Computation;
-use crate::intersection::Intersection;
-use crate::light::Light;
-use crate::ray::Ray;
-use crate::shape::Shapes;
-use crate::tuple::Point;
+use crate::{
+    color::{self, Color},
+    float,
+    intersection::Computation,
+    intersection::Intersection,
+    light::PointLight,
+    ray::Ray,
+    shape::Shapes,
+    tuple::Point,
+};
 
 pub const REFLECTION_LIMIT: u32 = 5;
 
 pub struct World {
     pub objects: Vec<Shapes>,
-    pub lights: Vec<Light>,
+    pub lights: Vec<PointLight>,
 }
 
 impl World {
@@ -69,7 +71,7 @@ impl World {
         color * material.reflective
     }
 
-    fn is_shadowed(&self, light: &Light, world_point: Point) -> bool {
+    fn is_shadowed(&self, light: &PointLight, world_point: Point) -> bool {
         let v = light.position - world_point;
         let distance = v.magnitude();
         let direction = v.normalize();
@@ -91,16 +93,19 @@ impl World {
 
 #[cfg(test)]
 mod tests {
-    use crate::material::{Material, Texture};
-    use crate::matrix::Matrix;
-    use crate::shape::{Plane, Shape, Sphere};
-    use crate::tuple::Vector;
-    use crate::{assert_approx, world};
+    use crate::{
+        assert_approx,
+        material::{Material, Texture},
+        matrix::Matrix,
+        shape::{Figure, Plane, Sphere},
+        tuple::Vector,
+        world,
+    };
 
     use super::*;
 
     fn test_default_world() -> World {
-        let inner_sphere = Shapes::Sphere(Sphere(Shape {
+        let inner_sphere = Shapes::Sphere(Sphere(Figure {
             material: Material {
                 diffuse: 0.7,
                 specular: 0.2,
@@ -114,12 +119,12 @@ mod tests {
             ..Default::default()
         }));
 
-        let outer_sphere = Shapes::Sphere(Sphere(Shape {
+        let outer_sphere = Shapes::Sphere(Sphere(Figure {
             transform: Matrix::scaling(0.5, 0.5, 0.5),
             ..Default::default()
         }));
 
-        let main_light = Light {
+        let main_light = PointLight {
             position: Point::new(-10.0, 10.0, -10.0),
             intensity: color::WHITE,
         };
@@ -132,12 +137,12 @@ mod tests {
 
     #[test]
     fn the_default_world() {
-        let light = Light {
+        let light = PointLight {
             position: Point::new(-10.0, 10.0, -10.0),
             intensity: color::WHITE,
         };
 
-        let s1 = Shapes::Sphere(Sphere(Shape {
+        let s1 = Shapes::Sphere(Sphere(Figure {
             material: Material {
                 diffuse: 0.7,
                 specular: 0.2,
@@ -151,7 +156,7 @@ mod tests {
             ..Default::default()
         }));
 
-        let s2 = Shapes::Sphere(Sphere(Shape {
+        let s2 = Shapes::Sphere(Sphere(Figure {
             transform: Matrix::scaling(0.5, 0.5, 0.5),
             ..Default::default()
         }));
@@ -214,7 +219,7 @@ mod tests {
     #[test]
     fn shading_an_intersection_from_the_inside() {
         let world = World {
-            lights: vec![Light {
+            lights: vec![PointLight {
                 position: Point::new(0.0, 0.25, 0.0),
                 intensity: color::WHITE,
             }],
@@ -344,12 +349,12 @@ mod tests {
     fn shade_hit_is_given_an_intersection_in_shadow() {
         let s1 = Shapes::Sphere(Sphere::default());
 
-        let s2 = Shapes::Sphere(Sphere(Shape {
+        let s2 = Shapes::Sphere(Sphere(Figure {
             transform: Matrix::translation(0.0, 0.0, 10.0),
             ..Default::default()
         }));
 
-        let light = Light {
+        let light = PointLight {
             position: Point::new(0.0, 0.0, -10.0),
             intensity: color::WHITE,
         };
@@ -410,7 +415,7 @@ mod tests {
     fn the_reflected_color_for_a_reflective_material() {
         let mut world = test_default_world();
 
-        let shape = Shapes::Plane(Plane(Shape {
+        let shape = Shapes::Plane(Plane(Figure {
             material: Material {
                 reflective: 0.5,
                 ..Default::default()
@@ -448,7 +453,7 @@ mod tests {
     fn shade_hit_with_a_reflective_material() {
         let mut world = test_default_world();
 
-        let shape = Shapes::Plane(Plane(Shape {
+        let shape = Shapes::Plane(Plane(Figure {
             material: Material {
                 reflective: 0.5,
                 ..Default::default()
@@ -486,7 +491,7 @@ mod tests {
     fn the_reflected_color_at_the_maximum_recursive_depth() {
         let mut world = test_default_world();
 
-        let shape = Shapes::Plane(Plane(Shape {
+        let shape = Shapes::Plane(Plane(Figure {
             material: Material {
                 reflective: 0.5,
                 ..Default::default()

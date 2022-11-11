@@ -1,12 +1,14 @@
-use crate::float;
-use crate::intersection::Intersection;
-use crate::ray::Ray;
-use crate::tuple::{Point, Vector};
+use crate::{
+    float,
+    intersection::Intersection,
+    ray::Ray,
+    tuple::{Point, Vector},
+};
 
-use super::{Shape, Shapes};
+use super::{Figure, Shapes};
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
-pub struct Plane(pub Shape);
+pub struct Plane(pub Figure);
 
 impl Plane {
     pub fn intersect(&self, object_ray: &Ray) -> Vec<Intersection> {

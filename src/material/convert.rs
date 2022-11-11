@@ -1,5 +1,7 @@
-use crate::color::Color;
-use crate::pattern::{Checker, Gradient, Patterns, Ring, Stripe};
+use crate::{
+    color::Color,
+    pattern::{Checker, Gradient, Patterns, Ring, Stripe},
+};
 
 use super::Texture;
 

@@ -1,6 +1,6 @@
-pub const EPSILON: f64 = 0.00001;
+pub(crate) const EPSILON: f64 = 0.00001;
 
-pub fn approx(lhs: f64, rhs: f64) -> bool {
+pub(crate) fn approx(lhs: f64, rhs: f64) -> bool {
     (lhs - rhs).abs() < EPSILON
 }
 

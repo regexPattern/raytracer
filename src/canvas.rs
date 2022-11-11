@@ -2,13 +2,14 @@ use std::collections::HashMap;
 
 use crate::color::{self, Color, Rgb};
 
+#[derive(Debug)]
 pub struct Canvas {
     pub width: u32,
     pub height: u32,
     pixels: HashMap<Pixel, Color>,
 }
 
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Debug, Eq, Hash, PartialEq)]
 struct Pixel {
     x: u32,
     y: u32,

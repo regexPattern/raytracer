@@ -1,7 +1,9 @@
-use crate::float;
-use crate::ray::Ray;
-use crate::shape::Shapes;
-use crate::tuple::{Point, Vector};
+use crate::{
+    float,
+    ray::Ray,
+    shape::Shapes,
+    tuple::{Point, Vector},
+};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Intersection {
@@ -59,9 +61,11 @@ impl Intersection {
 
 #[cfg(test)]
 mod tests {
-    use crate::assert_approx;
-    use crate::matrix::Matrix;
-    use crate::shape::{Plane, Shape, Sphere};
+    use crate::{
+        assert_approx,
+        matrix::Matrix,
+        shape::{Figure, Plane, Sphere},
+    };
 
     use super::*;
 
@@ -255,7 +259,7 @@ mod tests {
 
     #[test]
     fn the_hit_should_offset_the_point() {
-        let shape = Shapes::Sphere(Sphere(Shape {
+        let shape = Shapes::Sphere(Sphere(Figure {
             transform: Matrix::translation(0.0, 0.0, 1.0),
             ..Default::default()
         }));

@@ -1,8 +1,7 @@
-use crate::color::Color;
-use crate::tuple::Point;
+use crate::{color::Color, tuple::Point};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Light {
+pub struct PointLight {
     pub position: Point,
     pub intensity: Color,
 }
@@ -18,7 +17,7 @@ mod tests {
         let position = Point::new(0.0, 0.0, 0.0);
         let intensity = color::WHITE;
 
-        let light = Light {
+        let light = PointLight {
             position,
             intensity,
         };

@@ -1,11 +1,13 @@
-use crate::intersection::Intersection;
-use crate::ray::Ray;
-use crate::tuple::{Point, Vector};
+use crate::{
+    intersection::Intersection,
+    ray::Ray,
+    tuple::{Point, Vector},
+};
 
-use super::{Shape, Shapes};
+use super::{Figure, Shapes};
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
-pub struct Sphere(pub Shape);
+pub struct Sphere(pub Figure);
 
 impl Sphere {
     pub fn intersect(&self, object_ray: &Ray) -> Vec<Intersection> {
@@ -43,8 +45,10 @@ impl Sphere {
 
 #[cfg(test)]
 mod tests {
-    use crate::assert_approx;
-    use crate::tuple::Vector;
+    use crate::{
+        assert_approx,
+        tuple::Vector,
+    };
 
     use super::*;
 

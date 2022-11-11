@@ -1,5 +1,7 @@
-use crate::matrix::Matrix;
-use crate::tuple::{Point, Vector};
+use crate::{
+    matrix::Matrix,
+    tuple::{Point, Vector},
+};
 
 #[derive(Debug)]
 pub struct Ray {

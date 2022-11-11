@@ -1,11 +1,13 @@
 mod convert;
 
-use crate::color::{self, Color};
-use crate::float;
-use crate::light::Light;
-use crate::pattern::Patterns;
-use crate::shape::Shapes;
-use crate::tuple::{Point, Vector};
+use crate::{
+    color::{self, Color},
+    float,
+    light::PointLight,
+    pattern::Patterns,
+    shape::Shapes,
+    tuple::{Point, Vector},
+};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Material {
@@ -15,6 +17,12 @@ pub struct Material {
     pub shininess: f64,
     pub specular: f64,
     pub texture: Texture,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum Texture {
+    Color(Color),
+    Pattern(Patterns),
 }
 
 impl Default for Material {
@@ -44,7 +52,7 @@ impl Material {
     pub fn lighting(
         &self,
         object: &Shapes,
-        light: Light,
+        light: PointLight,
         world_point: Point,
         eyev: Vector,
         normalv: Vector,
@@ -82,17 +90,14 @@ impl Material {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum Texture {
-    Color(Color),
-    Pattern(Patterns),
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::pattern::{Scheme, Stripe};
-    use crate::shape::Sphere;
-    use crate::{assert_approx, matrix};
+    use crate::{
+        assert_approx,
+        matrix,
+        pattern::{Scheme, Stripe},
+        shape::Sphere,
+    };
 
     use super::*;
 
@@ -121,7 +126,7 @@ mod tests {
 
         let eyev = Vector::new(0.0, 0.0, -1.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
-        let light = Light {
+        let light = PointLight {
             position: Point::new(0.0, 0.0, -10.0),
             intensity: color::WHITE,
         };
@@ -144,7 +149,7 @@ mod tests {
 
         let eyev = Vector::new(0.0, 2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
-        let light = Light {
+        let light = PointLight {
             position: Point::new(0.0, 0.0, -10.0),
             intensity: color::WHITE,
         };
@@ -167,7 +172,7 @@ mod tests {
 
         let eyev = Vector::new(0.0, 0.0, -1.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
-        let light = Light {
+        let light = PointLight {
             position: Point::new(0.0, 10.0, -10.0),
             intensity: color::WHITE,
         };
@@ -190,7 +195,7 @@ mod tests {
 
         let eyev = Vector::new(0.0, -2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
-        let light = Light {
+        let light = PointLight {
             position: Point::new(0.0, 10.0, -10.0),
             intensity: color::WHITE,
         };
@@ -213,7 +218,7 @@ mod tests {
 
         let eyev = Vector::new(0.0, 0.0, -1.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
-        let light = Light {
+        let light = PointLight {
             position: Point::new(0.0, 0.0, 10.0),
             intensity: color::WHITE,
         };
@@ -236,7 +241,7 @@ mod tests {
 
         let eyev = Vector::new(0.0, 0.0, -1.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
-        let light = Light {
+        let light = PointLight {
             position: Point::new(0.0, 0.0, -10.0),
             intensity: color::WHITE,
         };
@@ -272,7 +277,7 @@ mod tests {
 
         let eyev = Vector::new(0.0, 0.0, -1.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
-        let light = Light {
+        let light = PointLight {
             position: Point::new(0.0, 0.0, -10.0),
             intensity: color::WHITE,
         };

@@ -1,12 +1,14 @@
+use crate::{
+    color::Color,
+    matrix::{self, Matrix},
+    shape::Shapes,
+    tuple::Point,
+};
+
 mod checker;
 mod gradient;
 mod ring;
 mod stripe;
-
-use crate::color::Color;
-use crate::matrix::{self, Matrix};
-use crate::shape::Shapes;
-use crate::tuple::Point;
 
 pub use checker::Checker;
 pub use gradient::Gradient;
@@ -66,8 +68,10 @@ impl Scheme {
 
 #[cfg(test)]
 mod tests {
-    use crate::color;
-    use crate::shape::{Shape, Sphere};
+    use crate::{
+        color,
+        shape::{Figure, Sphere},
+    };
 
     use super::*;
 
@@ -97,7 +101,7 @@ mod tests {
 
     #[test]
     fn a_pattern_with_an_object_transformation() {
-        let shape = Shapes::Sphere(Sphere(Shape {
+        let shape = Shapes::Sphere(Sphere(Figure {
             transform: Matrix::scaling(2.0, 2.0, 2.0),
             ..Default::default()
         }));
@@ -136,7 +140,7 @@ mod tests {
 
     #[test]
     fn a_pattern_with_both_an_object_and_a_pattern_transformation() {
-        let shape = Shapes::Sphere(Sphere(Shape {
+        let shape = Shapes::Sphere(Sphere(Figure {
             transform: Matrix::scaling(2.0, 2.0, 2.0),
             ..Default::default()
         }));

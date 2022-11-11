@@ -1,17 +1,17 @@
 use raytracer::{
-    color,
-    light::Light,
     camera::Camera,
+    color,
+    light::PointLight,
     material::{Material, Texture},
     matrix::Matrix,
     pattern::{Checker, Scheme},
-    shape::{Plane, Shape, Shapes, Sphere},
+    shape::{Figure, Plane, Shapes, Sphere},
     tuple::{Point, Vector},
     world::World,
 };
 
 fn main() {
-    let sphere = Shapes::Sphere(Sphere(Shape {
+    let sphere = Shapes::Sphere(Sphere(Figure {
         material: Material {
             reflective: 0.5,
             texture: Texture::from(color::WHITE),
@@ -20,7 +20,7 @@ fn main() {
         transform: Matrix::translation(0.0, 1.0, 0.0),
     }));
 
-    let plane = Shapes::Plane(Plane(Shape {
+    let plane = Shapes::Plane(Plane(Figure {
         material: Material {
             texture: Texture::from(Checker(Scheme::new(color::WHITE, color::BLACK))),
             ..Default::default()
@@ -28,7 +28,7 @@ fn main() {
         ..Default::default()
     }));
 
-    let light = Light {
+    let light = PointLight {
         position: Point::new(3.0, 3.0, 3.0),
         intensity: color::WHITE,
     };

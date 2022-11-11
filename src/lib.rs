@@ -5,6 +5,7 @@
 
 mod float;
 mod intersection;
+mod parser;
 
 pub mod camera;
 pub mod canvas;

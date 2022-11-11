@@ -1,34 +1,36 @@
+use crate::{
+    intersection::Intersection,
+    material::Material,
+    matrix::{self, Matrix},
+    ray::Ray,
+    tuple::{Point, Vector},
+};
+
 mod plane;
 mod sphere;
-
-use crate::intersection::Intersection;
-use crate::material::Material;
-use crate::matrix::{self, Matrix};
-use crate::ray::Ray;
-use crate::tuple::{Point, Vector};
 
 pub use plane::Plane;
 pub use sphere::Sphere;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Shape {
+pub struct Figure {
     pub material: Material,
     pub transform: Matrix<4, 4>,
-}
-
-impl Default for Shape {
-    fn default() -> Self {
-        Self {
-            material: Material::default(),
-            transform: matrix::IDENTITY4X4,
-        }
-    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Shapes {
     Plane(Plane),
     Sphere(Sphere),
+}
+
+impl Default for Figure {
+    fn default() -> Self {
+        Self {
+            material: Material::default(),
+            transform: matrix::IDENTITY4X4,
+        }
+    }
 }
 
 impl Shapes {
@@ -64,7 +66,7 @@ impl Shapes {
         world_normal.normalize()
     }
 
-    pub const fn shape(&self) -> Shape {
+    pub const fn shape(&self) -> Figure {
         match self {
             Self::Plane(p) => p.0,
             Self::Sphere(s) => s.0,
@@ -77,7 +79,7 @@ mod tests {
     use super::*;
 
     fn test_shape(transform: Matrix<4, 4>) -> Shapes {
-        Shapes::Sphere(Sphere(Shape {
+        Shapes::Sphere(Sphere(Figure {
             transform,
             ..Default::default()
         }))
@@ -91,14 +93,14 @@ mod tests {
 
     #[test]
     fn the_default_transformation() {
-        let shape = Shape::default();
+        let shape = Figure::default();
 
         assert_eq!(shape.transform, matrix::IDENTITY4X4);
     }
 
     #[test]
     fn assigning_a_transformation() {
-        let mut shape = Shape::default();
+        let mut shape = Figure::default();
         let transform = Matrix::translation(2.0, 3.0, 4.0);
 
         shape.transform = transform;
@@ -108,14 +110,14 @@ mod tests {
 
     #[test]
     fn the_default_material() {
-        let shape = Shape::default();
+        let shape = Figure::default();
 
         assert_eq!(shape.material, Material::default());
     }
 
     #[test]
     fn assigning_a_material() {
-        let mut shape = Shape::default();
+        let mut shape = Figure::default();
         let mut material = Material::default();
         material.ambient = 1.0;
 
