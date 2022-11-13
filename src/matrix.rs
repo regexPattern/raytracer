@@ -1,7 +1,7 @@
 use crate::float;
 
 mod ops;
-mod transformations;
+mod transform;
 
 pub const IDENTITY4X4: Matrix<4, 4> = Matrix([
     [1.0, 0.0, 0.0, 0.0],

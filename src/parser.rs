@@ -1,7 +1,5 @@
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn creating_a_sphere_from_a_file() {}
-}
+mod color;
+mod material;
+mod pattern;
+mod texture;
+mod transform;

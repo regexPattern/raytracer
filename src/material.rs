@@ -1,13 +1,14 @@
-mod convert;
-
 use crate::{
     color::{self, Color},
     float,
     light::PointLight,
-    pattern::Patterns,
     shape::Shapes,
     tuple::{Point, Vector},
 };
+
+mod texture;
+
+pub use texture::Texture;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Material {
@@ -19,12 +20,6 @@ pub struct Material {
     pub texture: Texture,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum Texture {
-    Color(Color),
-    Pattern(Patterns),
-}
-
 impl Default for Material {
     fn default() -> Self {
         Self {
@@ -33,7 +28,7 @@ impl Default for Material {
             reflective: 0.0,
             shininess: 200.0,
             specular: 0.9,
-            texture: color::WHITE.into(),
+            texture: Texture::Color(color::WHITE),
         }
     }
 }
@@ -93,9 +88,8 @@ impl Material {
 #[cfg(test)]
 mod tests {
     use crate::{
-        assert_approx,
-        matrix,
-        pattern::{Scheme, Stripe},
+        assert_approx, matrix,
+        pattern::{Scheme, Stripe, Pattern},
         shape::Sphere,
     };
 
@@ -113,7 +107,7 @@ mod tests {
     fn the_default_material() {
         let material = Material::default();
 
-        assert_eq!(material.texture, Texture::from(color::WHITE));
+        assert_eq!(material.texture, Texture::Color(color::WHITE));
         assert_eq!(material.ambient, 0.1);
         assert_eq!(material.diffuse, 0.9);
         assert_eq!(material.specular, 0.9);
@@ -264,11 +258,11 @@ mod tests {
         let (_, _, object) = test_defaults();
 
         let material = Material {
-            texture: Texture::from(Stripe(Scheme {
+            texture: Texture::Pattern(Pattern::Stripe(Stripe(Scheme {
                 a: color::WHITE,
                 b: color::BLACK,
                 transform: matrix::IDENTITY4X4,
-            })),
+            }))),
             ambient: 1.0,
             diffuse: 0.0,
             specular: 0.0,

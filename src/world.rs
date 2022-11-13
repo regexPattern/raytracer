@@ -109,7 +109,7 @@ mod tests {
             material: Material {
                 diffuse: 0.7,
                 specular: 0.2,
-                texture: Texture::from(Color {
+                texture: Texture::Color(Color {
                     red: 0.8,
                     green: 1.0,
                     blue: 0.6,
@@ -146,7 +146,7 @@ mod tests {
             material: Material {
                 diffuse: 0.7,
                 specular: 0.2,
-                texture: Texture::from(Color {
+                texture: Texture::Color(Color {
                     red: 0.8,
                     green: 1.0,
                     blue: 0.6,
@@ -310,7 +310,7 @@ mod tests {
 
         let color = world.color_at(&ray, world::REFLECTION_LIMIT);
 
-        assert_eq!(Texture::from(color), inner.shape().material.texture);
+        assert_eq!(Texture::Color(color), inner.shape().material.texture);
     }
 
     #[test]

@@ -1,36 +1,26 @@
-use crate::{
-    color::Color,
-    matrix::{self, Matrix},
-    shape::Shapes,
-    tuple::Point,
-};
+use crate::{color::Color, matrix::Matrix, shape::Shapes, tuple::Point};
 
 mod checker;
 mod gradient;
 mod ring;
+mod scheme;
 mod stripe;
 
 pub use checker::Checker;
 pub use gradient::Gradient;
 pub use ring::Ring;
+pub use scheme::Scheme;
 pub use stripe::Stripe;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum Patterns {
+pub enum Pattern {
     Checker(Checker),
     Gradient(Gradient),
     Ring(Ring),
     Stripe(Stripe),
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Scheme {
-    pub a: Color,
-    pub b: Color,
-    pub transform: Matrix<4, 4>,
-}
-
-impl Patterns {
+impl Pattern {
     pub fn pattern_at(&self, object: &Shapes, world_point: Point) -> Color {
         let pattern_point = self.pattern_point(object, world_point);
 
@@ -58,45 +48,30 @@ impl Patterns {
     }
 }
 
-impl Scheme {
-    pub const fn new(a: Color, b: Color) -> Self {
-        let transform = matrix::IDENTITY4X4;
-
-        Self { a, b, transform }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::{
         color,
-        shape::{Figure, Sphere},
+        shape::{Figure, Sphere}, matrix,
     };
 
     use super::*;
 
-    fn test_pattern(transform: Matrix<4, 4>) -> Patterns {
-        Patterns::Stripe(Stripe(Scheme {
+    fn test_pattern(transform: Matrix<4, 4>) -> Pattern {
+        Pattern::Stripe(Stripe(Scheme {
             a: color::WHITE,
             b: color::BLACK,
             transform,
         }))
     }
 
-    fn test_pattern_pattern_at(pattern: Patterns, object: &Shapes, world_point: Point) -> Color {
+    fn test_pattern_pattern_at(pattern: Pattern, object: &Shapes, world_point: Point) -> Color {
         let pattern_point = pattern.pattern_point(object, world_point);
         Color {
             red: pattern_point.0.x,
             green: pattern_point.0.y,
             blue: pattern_point.0.z,
         }
-    }
-
-    #[test]
-    fn the_default_pattern_transformation() {
-        let pattern = Scheme::new(color::WHITE, color::BLACK);
-
-        assert_eq!(pattern.transform, matrix::IDENTITY4X4);
     }
 
     #[test]

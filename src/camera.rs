@@ -113,7 +113,7 @@ mod tests {
             material: Material {
                 diffuse: 0.7,
                 specular: 0.2,
-                texture: Texture::from(Color {
+                texture: Texture::Color(Color {
                     red: 0.8,
                     green: 1.0,
                     blue: 0.6,
