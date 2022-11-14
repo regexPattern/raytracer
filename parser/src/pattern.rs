@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::{
+use core::{
     color::Color,
     matrix::Matrix,
     pattern::{Checker, Gradient, Pattern, Ring, Scheme, Stripe},
@@ -49,7 +49,9 @@ impl From<PatternParser> for Pattern {
 
 #[cfg(test)]
 mod tests {
-    use crate::{color, parser::transform::TransformParser};
+    use core::color;
+
+    use crate::transform::TransformParser;
 
     use super::*;
 

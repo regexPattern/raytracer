@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::tuple::{Point, Vector};
+use core::tuple::{Point, Vector};
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct PointParser {

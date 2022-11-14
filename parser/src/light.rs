@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::{color::Color, light::PointLight, tuple::Point};
+use core::{color::Color, light::PointLight, tuple::Point};
 
 use super::{color::ColorParser, tuple::PointParser};
 
@@ -24,7 +24,7 @@ impl From<PointLightParser> for PointLight {
 
 #[cfg(test)]
 mod tests {
-    use crate::color;
+    use core::color;
 
     use super::*;
 

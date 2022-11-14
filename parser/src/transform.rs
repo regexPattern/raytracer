@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::matrix::{self, Matrix};
+use core::matrix::{self, Matrix};
 
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case", tag = "type")]

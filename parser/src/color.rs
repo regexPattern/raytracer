@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::color::Color;
+use core::color::Color;
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct ColorParser {

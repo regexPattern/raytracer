@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::{
+use core::{
     material::Material,
     matrix::Matrix,
     shape::{Figure, Plane, Shape, Sphere},
@@ -45,7 +45,7 @@ impl From<ShapeParser> for Shape {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::transform::TransformParser;
+    use crate::transform::TransformParser;
 
     use super::*;
 

@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::{light::PointLight, shape::Shape, world::World};
+use core::{light::PointLight, shape::Shape, world::World};
 
 use super::{light::PointLightParser, shape::ShapeParser};
 
@@ -22,12 +22,13 @@ impl From<WorldParser> for World {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
+    use core::{
         color::Color,
-        parser::{color::ColorParser, shape::FigureParser, tuple::PointParser},
         shape::{Figure, Plane, Sphere},
         tuple::Point,
     };
+
+    use crate::{color::ColorParser, shape::FigureParser, tuple::PointParser};
 
     use super::*;
 

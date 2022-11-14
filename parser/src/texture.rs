@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::{color::Color, material::Texture, pattern::Pattern};
+use core::{color::Color, material::Texture, pattern::Pattern};
 
 use super::{color::ColorParser, pattern::PatternParser};
 
@@ -22,7 +22,7 @@ impl From<TextureParser> for Texture {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::{
+    use crate::{
         pattern::SchemeParser,
         transform::{MultipleTransformParser, TransformParser},
     };

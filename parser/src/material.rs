@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::material::{Material, Texture};
+use core::material::{Material, Texture};
 
 use super::{color::ColorParser, texture::TextureParser};
 
