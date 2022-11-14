@@ -1,3 +1,5 @@
+mod texture;
+
 use crate::{
     color::{self, Color},
     float,
@@ -5,8 +7,6 @@ use crate::{
     shape::Shape,
     tuple::{Point, Vector},
 };
-
-mod texture;
 
 pub use texture::Texture;
 

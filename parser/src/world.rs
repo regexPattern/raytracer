@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use core::{light::PointLight, shape::Shape, world::World};
+use raytracer::{light::PointLight, shape::Shape, world::World};
 
 use super::{light::PointLightParser, shape::ShapeParser};
 
@@ -13,8 +13,8 @@ struct WorldParser {
 
 impl From<WorldParser> for World {
     fn from(w: WorldParser) -> Self {
-        let objects = w.objects.into_iter().map(|s| Shape::from(s)).collect();
-        let lights = w.lights.into_iter().map(|l| PointLight::from(l)).collect();
+        let objects = w.objects.into_iter().map(Shape::from).collect();
+        let lights = w.lights.into_iter().map(PointLight::from).collect();
 
         Self { objects, lights }
     }
@@ -22,7 +22,7 @@ impl From<WorldParser> for World {
 
 #[cfg(test)]
 mod tests {
-    use core::{
+    use raytracer::{
         color::Color,
         shape::{Figure, Plane, Sphere},
         tuple::Point,

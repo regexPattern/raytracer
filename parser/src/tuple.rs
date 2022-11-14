@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use core::tuple::{Point, Vector};
+use raytracer::tuple::{Point, Vector};
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct PointParser {

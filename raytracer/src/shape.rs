@@ -1,12 +1,12 @@
+mod figure;
+mod plane;
+mod sphere;
+
 use crate::{
     intersection::Intersection,
     ray::Ray,
     tuple::{Point, Vector},
 };
-
-mod figure;
-mod plane;
-mod sphere;
 
 pub use figure::Figure;
 pub use plane::Plane;

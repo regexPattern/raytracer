@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use core::matrix::{self, Matrix};
+use raytracer::matrix::{self, Matrix};
 
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case", tag = "type")]
@@ -54,10 +54,10 @@ impl From<TransformParser> for Matrix<4, 4> {
     fn from(t: TransformParser) -> Self {
         match t {
             TransformParser::Identity => matrix::IDENTITY4X4,
-            TransformParser::RotationX { radians } => Matrix::rotation_x(radians),
-            TransformParser::RotationY { radians } => Matrix::rotation_y(radians),
-            TransformParser::RotationZ { radians } => Matrix::rotation_z(radians),
-            TransformParser::Scaling { x, y, z } => Matrix::scaling(x, y, z),
+            TransformParser::RotationX { radians } => Self::rotation_x(radians),
+            TransformParser::RotationY { radians } => Self::rotation_y(radians),
+            TransformParser::RotationZ { radians } => Self::rotation_z(radians),
+            TransformParser::Scaling { x, y, z } => Self::scaling(x, y, z),
             TransformParser::Shearing {
                 xy,
                 xz,
@@ -65,16 +65,16 @@ impl From<TransformParser> for Matrix<4, 4> {
                 yz,
                 zx,
                 zy,
-            } => Matrix::shearing(xy, xz, yx, yz, zx, zy),
-            TransformParser::Translation { x, y, z } => Matrix::translation(x, y, z),
+            } => Self::shearing(xy, xz, yx, yz, zx, zy),
+            TransformParser::Translation { x, y, z } => Self::translation(x, y, z),
         }
     }
 }
 
 impl From<MultipleTransformParser> for Matrix<4, 4> {
-    fn from(mt: MultipleTransformParser) -> Matrix<4, 4> {
+    fn from(mt: MultipleTransformParser) -> Self {
         mt.0.into_iter()
-            .fold(matrix::IDENTITY4X4, |acc, t| Matrix::from(t) * acc)
+            .fold(matrix::IDENTITY4X4, |acc, t| Self::from(t) * acc)
     }
 }
 

@@ -20,10 +20,9 @@ pub struct World {
 impl World {
     pub fn color_at(&self, world_ray: &Ray, remaining: u32) -> Color {
         let xs = self.intersect(world_ray);
-        match Intersection::hit(xs) {
-            Some(hit) => self.shade_hit(&hit.comps(world_ray), remaining),
-            None => color::BLACK,
-        }
+        Intersection::hit(xs).map_or(color::BLACK, |hit| {
+            self.shade_hit(&hit.comps(world_ray), remaining)
+        })
     }
 
     fn intersect(&self, world_ray: &Ray) -> Vec<Intersection> {

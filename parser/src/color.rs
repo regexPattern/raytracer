@@ -1,8 +1,8 @@
 use serde::Deserialize;
 
-use core::color::Color;
+use raytracer::color::Color;
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, Eq, PartialEq)]
 pub struct ColorParser {
     pub red: u8,
     pub green: u8,

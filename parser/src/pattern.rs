@@ -1,12 +1,12 @@
 use serde::Deserialize;
 
-use core::{
+use raytracer::{
     color::Color,
     matrix::Matrix,
     pattern::{Checker, Gradient, Pattern, Ring, Scheme, Stripe},
 };
 
-use super::{color::ColorParser, transform::MultipleTransformParser};
+use crate::{color::ColorParser, transform::MultipleTransformParser};
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct SchemeParser {
@@ -49,7 +49,7 @@ impl From<PatternParser> for Pattern {
 
 #[cfg(test)]
 mod tests {
-    use core::color;
+    use raytracer::color;
 
     use crate::transform::TransformParser;
 

@@ -1,10 +1,10 @@
-use crate::{color::Color, matrix::Matrix, shape::Shape, tuple::Point};
-
 mod checker;
 mod gradient;
 mod ring;
 mod scheme;
 mod stripe;
+
+use crate::{color::Color, matrix::Matrix, shape::Shape, tuple::Point};
 
 pub use checker::Checker;
 pub use gradient::Gradient;

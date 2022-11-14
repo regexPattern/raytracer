@@ -1,8 +1,8 @@
 use serde::Deserialize;
 
-use core::{color::Color, light::PointLight, tuple::Point};
+use raytracer::{color::Color, light::PointLight, tuple::Point};
 
-use super::{color::ColorParser, tuple::PointParser};
+use crate::{color::ColorParser, tuple::PointParser};
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct PointLightParser {
@@ -24,7 +24,7 @@ impl From<PointLightParser> for PointLight {
 
 #[cfg(test)]
 mod tests {
-    use core::color;
+    use raytracer::color;
 
     use super::*;
 

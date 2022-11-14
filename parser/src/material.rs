@@ -1,8 +1,8 @@
 use serde::Deserialize;
 
-use core::material::{Material, Texture};
+use raytracer::material::{Material, Texture};
 
-use super::{color::ColorParser, texture::TextureParser};
+use crate::{color::ColorParser, texture::TextureParser};
 
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(default)]

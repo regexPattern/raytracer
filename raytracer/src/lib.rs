@@ -1,3 +1,4 @@
+#![allow(clippy::module_name_repetitions)]
 #![allow(clippy::must_use_candidate)]
 #![allow(clippy::return_self_not_must_use)]
 #![allow(clippy::similar_names)]

@@ -1,12 +1,12 @@
 use serde::Deserialize;
 
-use core::{
+use raytracer::{
     material::Material,
     matrix::Matrix,
     shape::{Figure, Plane, Shape, Sphere},
 };
 
-use super::{material::MaterialParser, transform::MultipleTransformParser};
+use crate::{material::MaterialParser, transform::MultipleTransformParser};
 
 #[derive(Debug, Deserialize, Default, PartialEq)]
 #[serde(default)]
