@@ -22,7 +22,10 @@ impl From<TextureParser> for Texture {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::{pattern::SchemeParser, transform::TransformParser};
+    use crate::parser::{
+        pattern::SchemeParser,
+        transform::{MultipleTransformParser, TransformParser},
+    };
 
     use super::*;
 
@@ -81,7 +84,7 @@ mod tests {
                     green: 0,
                     blue: 0
                 },
-                transform: TransformParser::Identity
+                transform: MultipleTransformParser(vec![TransformParser::Identity]),
             }))
         );
     }

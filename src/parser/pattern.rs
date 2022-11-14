@@ -3,10 +3,10 @@ use serde::Deserialize;
 use crate::{
     color::Color,
     matrix::Matrix,
-    pattern::{Checker, Gradient, Pattern, Scheme, Ring, Stripe},
+    pattern::{Checker, Gradient, Pattern, Ring, Scheme, Stripe},
 };
 
-use super::{color::ColorParser, transform::TransformParser};
+use super::{color::ColorParser, transform::MultipleTransformParser};
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct SchemeParser {
@@ -14,7 +14,7 @@ pub struct SchemeParser {
     pub to: ColorParser,
 
     #[serde(default)]
-    pub transform: TransformParser,
+    pub transform: MultipleTransformParser,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
@@ -49,7 +49,7 @@ impl From<PatternParser> for Pattern {
 
 #[cfg(test)]
 mod tests {
-    use crate::color;
+    use crate::{color, parser::transform::TransformParser};
 
     use super::*;
 
@@ -67,12 +67,14 @@ mod tests {
         "green": 0,
         "blue": 0
     },
-    "transform": {
-        "type": "translation",
-        "x": 1,
-        "y": 2,
-        "z": 3
-    }
+    "transform": [
+        {
+            "type": "translation",
+            "x": 1,
+            "y": 2,
+            "z": 3
+        }
+    ]
 }
         "#;
 
@@ -91,11 +93,11 @@ mod tests {
                     green: 0,
                     blue: 0,
                 },
-                transform: TransformParser::Translation {
+                transform: MultipleTransformParser(vec![TransformParser::Translation {
                     x: 1.0,
                     y: 2.0,
                     z: 3.0
-                }
+                }])
             }
         )
     }
@@ -132,7 +134,7 @@ mod tests {
                     green: 0,
                     blue: 0,
                 },
-                transform: TransformParser::Identity,
+                transform: MultipleTransformParser(vec![TransformParser::Identity]),
             }
         );
     }
@@ -151,12 +153,14 @@ mod tests {
         "green": 0,
         "blue": 0
     },
-    "transform": {
-        "type": "translation",
-        "x": 1,
-        "y": 2,
-        "z": 3
-    }
+    "transform": [
+        {
+            "type": "translation",
+            "x": 1,
+            "y": 2,
+            "z": 3
+        }
+    ]
 }
         "#;
 
@@ -205,7 +209,7 @@ mod tests {
                     green: 0,
                     blue: 0,
                 },
-                transform: TransformParser::Identity
+                transform: MultipleTransformParser(vec![TransformParser::Identity]),
             })
         )
     }
@@ -243,7 +247,7 @@ mod tests {
                     green: 0,
                     blue: 0,
                 },
-                transform: TransformParser::Identity
+                transform: MultipleTransformParser(vec![TransformParser::Identity]),
             })
         )
     }
@@ -281,7 +285,7 @@ mod tests {
                     green: 0,
                     blue: 0,
                 },
-                transform: TransformParser::Identity
+                transform: MultipleTransformParser(vec![TransformParser::Identity]),
             })
         )
     }
@@ -319,7 +323,7 @@ mod tests {
                     green: 0,
                     blue: 0,
                 },
-                transform: TransformParser::Identity
+                transform: MultipleTransformParser(vec![TransformParser::Identity])
             })
         )
     }
@@ -339,12 +343,14 @@ mod tests {
         "green": 0,
         "blue": 0
     },
-    "transform": {
-        "type": "translation",
-        "x": 1,
-        "y": 2,
-        "z": 3
-    }
+    "transform": [
+        {
+            "type": "translation",
+            "x": 1,
+            "y": 2,
+            "z": 3
+        }
+    ]
 }
         "#;
 

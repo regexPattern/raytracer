@@ -11,6 +11,7 @@ use crate::{
 
 pub const REFLECTION_LIMIT: u32 = 5;
 
+#[derive(Debug, PartialEq)]
 pub struct World {
     pub objects: Vec<Shape>,
     pub lights: Vec<PointLight>,

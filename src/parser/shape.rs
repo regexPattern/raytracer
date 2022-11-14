@@ -6,18 +6,18 @@ use crate::{
     shape::{Figure, Plane, Shape, Sphere},
 };
 
-use super::{material::MaterialParser, transform::TransformParser};
+use super::{material::MaterialParser, transform::MultipleTransformParser};
 
 #[derive(Debug, Deserialize, Default, PartialEq)]
 #[serde(default)]
-struct FigureParser {
+pub struct FigureParser {
     material: MaterialParser,
-    transform: TransformParser,
+    transform: MultipleTransformParser,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case", tag = "type")]
-enum ShapeParser {
+pub enum ShapeParser {
     Plane(FigureParser),
     Sphere(FigureParser),
 }
@@ -45,6 +45,8 @@ impl From<ShapeParser> for Shape {
 
 #[cfg(test)]
 mod tests {
+    use crate::parser::transform::TransformParser;
+
     use super::*;
 
     #[test]
@@ -59,7 +61,7 @@ mod tests {
             output,
             FigureParser {
                 material: MaterialParser::default(),
-                transform: TransformParser::default(),
+                transform: MultipleTransformParser::default(),
             }
         );
     }
@@ -73,10 +75,12 @@ mod tests {
         "diffuse": 2,
         "reflective": 3
     },
-    "transform": {
-        "type": "rotation_x",
-        "radians": 1.25
-    }
+    "transform": [
+        {
+            "type": "rotation_x",
+            "radians": 1.25
+        }
+    ]
 }
         "#;
 
@@ -91,7 +95,9 @@ mod tests {
                     reflective: 3.0,
                     ..Default::default()
                 },
-                transform: TransformParser::RotationX { radians: 1.25 }
+                transform: MultipleTransformParser(vec![TransformParser::RotationX {
+                    radians: 1.25
+                }])
             }
         );
     }
@@ -105,10 +111,12 @@ mod tests {
         "diffuse": 2,
         "reflective": 3
     },
-    "transform": {
-        "type": "rotation_x",
-        "radians": 1.25
-    }
+    "transform": [
+        {
+            "type": "rotation_x",
+            "radians": 1.25
+        }
+    ]
 }
         "#;
 

@@ -36,11 +36,17 @@ pub enum TransformParser {
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
-struct MultipleTransformParser(Vec<TransformParser>);
+pub struct MultipleTransformParser(pub Vec<TransformParser>);
 
 impl Default for TransformParser {
     fn default() -> Self {
         Self::Identity
+    }
+}
+
+impl Default for MultipleTransformParser {
+    fn default() -> Self {
+        Self(vec![TransformParser::Identity])
     }
 }
 
