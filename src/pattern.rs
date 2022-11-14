@@ -1,4 +1,4 @@
-use crate::{color::Color, matrix::Matrix, shape::Shapes, tuple::Point};
+use crate::{color::Color, matrix::Matrix, shape::Shape, tuple::Point};
 
 mod checker;
 mod gradient;
@@ -21,7 +21,7 @@ pub enum Pattern {
 }
 
 impl Pattern {
-    pub fn pattern_at(&self, object: &Shapes, world_point: Point) -> Color {
+    pub fn pattern_at(&self, object: &Shape, world_point: Point) -> Color {
         let pattern_point = self.pattern_point(object, world_point);
 
         match self {
@@ -32,7 +32,7 @@ impl Pattern {
         }
     }
 
-    fn pattern_point(&self, object: &Shapes, world_point: Point) -> Point {
+    fn pattern_point(&self, object: &Shape, world_point: Point) -> Point {
         let object_point = object.shape().transform.inverse() * world_point;
 
         self.transform().inverse() * object_point
@@ -65,7 +65,7 @@ mod tests {
         }))
     }
 
-    fn test_pattern_pattern_at(pattern: Pattern, object: &Shapes, world_point: Point) -> Color {
+    fn test_pattern_pattern_at(pattern: Pattern, object: &Shape, world_point: Point) -> Color {
         let pattern_point = pattern.pattern_point(object, world_point);
         Color {
             red: pattern_point.0.x,
@@ -76,7 +76,7 @@ mod tests {
 
     #[test]
     fn a_pattern_with_an_object_transformation() {
-        let shape = Shapes::Sphere(Sphere(Figure {
+        let shape = Shape::Sphere(Sphere(Figure {
             transform: Matrix::scaling(2.0, 2.0, 2.0),
             ..Default::default()
         }));
@@ -97,7 +97,7 @@ mod tests {
 
     #[test]
     fn a_pattern_with_a_pattern_transformation() {
-        let shape = Shapes::Sphere(Sphere::default());
+        let shape = Shape::Sphere(Sphere::default());
 
         let pattern = test_pattern(Matrix::scaling(2.0, 2.0, 2.0));
 
@@ -115,7 +115,7 @@ mod tests {
 
     #[test]
     fn a_pattern_with_both_an_object_and_a_pattern_transformation() {
-        let shape = Shapes::Sphere(Sphere(Figure {
+        let shape = Shape::Sphere(Sphere(Figure {
             transform: Matrix::scaling(2.0, 2.0, 2.0),
             ..Default::default()
         }));

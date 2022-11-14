@@ -2,7 +2,7 @@ use crate::{
     color::{self, Color},
     float,
     light::PointLight,
-    shape::Shapes,
+    shape::Shape,
     tuple::{Point, Vector},
 };
 
@@ -46,7 +46,7 @@ impl PartialEq for Material {
 impl Material {
     pub fn lighting(
         &self,
-        object: &Shapes,
+        object: &Shape,
         light: PointLight,
         world_point: Point,
         eyev: Vector,
@@ -95,11 +95,11 @@ mod tests {
 
     use super::*;
 
-    fn test_defaults() -> (Material, Point, Shapes) {
+    fn test_defaults() -> (Material, Point, Shape) {
         (
             Material::default(),
             Point::new(0.0, 0.0, 0.0),
-            Shapes::Sphere(Sphere::default()),
+            Shape::Sphere(Sphere::default()),
         )
     }
 

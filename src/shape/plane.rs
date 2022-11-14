@@ -5,7 +5,7 @@ use crate::{
     tuple::{Point, Vector},
 };
 
-use super::{Figure, Shapes};
+use super::{Figure, Shape};
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct Plane(pub Figure);
@@ -21,7 +21,7 @@ impl Plane {
         let t = -object_ray.origin.0.y / object_ray.direction.0.y;
 
         let i = Intersection {
-            object: Shapes::Plane(*self),
+            object: Shape::Plane(*self),
             t,
         };
 
@@ -93,7 +93,7 @@ mod tests {
 
         assert_eq!(xs.len(), 1);
         assert_approx!(xs[0].t, 1.0);
-        assert_eq!(xs[0].object, Shapes::Plane(plane));
+        assert_eq!(xs[0].object, Shape::Plane(plane));
     }
 
     #[test]
@@ -109,6 +109,6 @@ mod tests {
 
         assert_eq!(xs.len(), 1);
         assert_approx!(xs[0].t, 1.0);
-        assert_eq!(xs[0].object, Shapes::Plane(plane));
+        assert_eq!(xs[0].object, Shape::Plane(plane));
     }
 }

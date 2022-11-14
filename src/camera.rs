@@ -101,7 +101,7 @@ mod tests {
         color::Color,
         light::PointLight,
         material::{Material, Texture},
-        shape::{Figure, Shapes, Sphere},
+        shape::{Figure, Shape, Sphere},
         tuple::Vector,
         {assert_approx, color},
     };
@@ -109,7 +109,7 @@ mod tests {
     use super::*;
 
     fn test_default_world() -> World {
-        let inner_sphere = Shapes::Sphere(Sphere(Figure {
+        let inner_sphere = Shape::Sphere(Sphere(Figure {
             material: Material {
                 diffuse: 0.7,
                 specular: 0.2,
@@ -123,7 +123,7 @@ mod tests {
             ..Default::default()
         }));
 
-        let outer_sphere = Shapes::Sphere(Sphere(Figure {
+        let outer_sphere = Shape::Sphere(Sphere(Figure {
             transform: Matrix::scaling(0.5, 0.5, 0.5),
             ..Default::default()
         }));
