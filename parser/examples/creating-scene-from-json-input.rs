@@ -4,8 +4,8 @@ fn main() {
     let input = r#"
 {
     "camera": {
-        "width": 1920,
-        "height": 1080,
+        "width": 1280,
+        "height": 720,
         "field_of_view": 60,
         "position": {
             "x": 10,
@@ -18,7 +18,7 @@ fn main() {
             {
                 "type": "sphere",
                 "material": {
-                    "reflective": 0.5,
+                    "reflective": 0.25,
                     "texture": {
                         "type": "color",
                         "red": 127,

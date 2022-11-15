@@ -1,6 +1,6 @@
 [workspace]
 
 members = [
-	"raytracer",
 	"parser",
+	"raytracer",
 ]
