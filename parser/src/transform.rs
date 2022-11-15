@@ -7,13 +7,13 @@ use raytracer::matrix::{self, Matrix};
 pub enum TransformParser {
     Identity,
     RotationX {
-        radians: f64,
+        degrees: f64,
     },
     RotationY {
-        radians: f64,
+        degrees: f64,
     },
     RotationZ {
-        radians: f64,
+        degrees: f64,
     },
     Scaling {
         x: f64,
@@ -54,9 +54,9 @@ impl From<TransformParser> for Matrix<4, 4> {
     fn from(t: TransformParser) -> Self {
         match t {
             TransformParser::Identity => matrix::IDENTITY4X4,
-            TransformParser::RotationX { radians } => Self::rotation_x(radians),
-            TransformParser::RotationY { radians } => Self::rotation_y(radians),
-            TransformParser::RotationZ { radians } => Self::rotation_z(radians),
+            TransformParser::RotationX { degrees } => Self::rotation_x(degrees.to_radians()),
+            TransformParser::RotationY { degrees } => Self::rotation_y(degrees.to_radians()),
+            TransformParser::RotationZ { degrees } => Self::rotation_z(degrees.to_radians()),
             TransformParser::Scaling { x, y, z } => Self::scaling(x, y, z),
             TransformParser::Shearing {
                 xy,
@@ -87,13 +87,13 @@ mod tests {
         let input = r#"
 {
     "type": "rotation_x",
-    "radians": 2
+    "degrees": 2
 }
         "#;
 
         let output: TransformParser = serde_json::from_str(input).unwrap();
 
-        assert_eq!(output, TransformParser::RotationX { radians: 2.0 });
+        assert_eq!(output, TransformParser::RotationX { degrees: 2.0 });
     }
 
     #[test]
@@ -101,13 +101,13 @@ mod tests {
         let input = r#"
 {
     "type": "rotation_y",
-    "radians": 1.5
+    "degrees": 1.5
 }
         "#;
 
         let output: TransformParser = serde_json::from_str(input).unwrap();
 
-        assert_eq!(output, TransformParser::RotationY { radians: 1.5 });
+        assert_eq!(output, TransformParser::RotationY { degrees: 1.5 });
     }
 
     #[test]
@@ -115,13 +115,13 @@ mod tests {
         let input = r#"
 {
     "type": "rotation_z",
-    "radians": 1
+    "degrees": 1
 }
         "#;
 
         let output: TransformParser = serde_json::from_str(input).unwrap();
 
-        assert_eq!(output, TransformParser::RotationZ { radians: 1.0 });
+        assert_eq!(output, TransformParser::RotationZ { degrees: 1.0 });
     }
 
     #[test]

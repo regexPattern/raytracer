@@ -12,7 +12,7 @@ use crate::{material::MaterialParser, transform::MultipleTransformParser};
 #[serde(default)]
 pub struct FigureParser {
     material: MaterialParser,
-    transform: MultipleTransformParser,
+    transforms: MultipleTransformParser,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
@@ -25,7 +25,7 @@ pub enum ShapeParser {
 impl From<FigureParser> for Figure {
     fn from(f: FigureParser) -> Self {
         let material = Material::from(f.material);
-        let transform = Matrix::from(f.transform);
+        let transform = Matrix::from(f.transforms);
 
         Self {
             material,
@@ -61,7 +61,7 @@ mod tests {
             output,
             FigureParser {
                 material: MaterialParser::default(),
-                transform: MultipleTransformParser::default(),
+                transforms: MultipleTransformParser::default(),
             }
         );
     }
@@ -75,10 +75,10 @@ mod tests {
         "diffuse": 2,
         "reflective": 3
     },
-    "transform": [
+    "transforms": [
         {
             "type": "rotation_x",
-            "radians": 1.25
+            "degrees": 1.25
         }
     ]
 }
@@ -95,8 +95,8 @@ mod tests {
                     reflective: 3.0,
                     ..Default::default()
                 },
-                transform: MultipleTransformParser(vec![TransformParser::RotationX {
-                    radians: 1.25
+                transforms: MultipleTransformParser(vec![TransformParser::RotationX {
+                    degrees: 1.25
                 }])
             }
         );
@@ -111,10 +111,10 @@ mod tests {
         "diffuse": 2,
         "reflective": 3
     },
-    "transform": [
+    "transforms": [
         {
             "type": "rotation_x",
-            "radians": 1.25
+            "degrees": 1.25
         }
     ]
 }
@@ -131,7 +131,7 @@ mod tests {
                     reflective: 3.0,
                     ..Default::default()
                 },
-                transform: Matrix::rotation_x(1.25)
+                transform: Matrix::rotation_x(1.25_f64.to_radians())
             }
         )
     }

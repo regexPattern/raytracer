@@ -5,7 +5,7 @@ use raytracer::{color::Color, material::Texture, pattern::Pattern};
 use crate::{color::ColorParser, pattern::PatternParser};
 
 #[derive(Debug, Deserialize, PartialEq)]
-#[serde(untagged)]
+#[serde(rename_all = "snake_case", tag = "type")]
 pub enum TextureParser {
     Color(ColorParser),
     Pattern(PatternParser),
@@ -33,6 +33,7 @@ mod tests {
     fn parsing_a_color_texture() {
         let input = r#"
 {
+    "type": "color",
     "red": 255,
     "green": 127,
     "blue": 0
@@ -55,7 +56,8 @@ mod tests {
     fn parsing_a_pattern_texture() {
         let input = r#"
 {
-    "type": "gradient",
+    "type": "pattern",
+    "pattern": "gradient",
     "from": {
         "red": 255,
         "green": 255,
@@ -93,6 +95,7 @@ mod tests {
     fn getting_a_texture_from_a_parsed_texture() {
         let input = r#"
 {
+    "type": "color",
     "red": 255,
     "green": 0,
     "blue": 0

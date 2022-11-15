@@ -5,8 +5,7 @@ use raytracer::{light::PointLight, shape::Shape, world::World};
 use super::{light::PointLightParser, shape::ShapeParser};
 
 #[derive(Debug, Deserialize, Default, PartialEq)]
-#[serde(default)]
-struct WorldParser {
+pub struct WorldParser {
     objects: Vec<ShapeParser>,
     lights: Vec<PointLightParser>,
 }
@@ -35,7 +34,10 @@ mod tests {
     #[test]
     fn the_default_world_has_no_objects_and_no_lights() {
         let input = r#"
-{}
+{
+    "objects": [],
+    "lights": []
+}
         "#;
 
         let output: WorldParser = serde_json::from_str(input).unwrap();

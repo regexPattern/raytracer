@@ -1,9 +1,12 @@
-use crate::{
-    float,
-    tuple::{Point, Vector},
-};
+use crate::tuple::{Point, Vector};
 
 use super::Matrix;
+
+#[derive(Debug, PartialEq)]
+pub enum InvalidViewMatrix {
+    EqualFromAndToPoints(Point),
+    NullUpVector,
+}
 
 impl Matrix<4, 4> {
     pub fn rotation_x(rad: f64) -> Self {
@@ -60,8 +63,19 @@ impl Matrix<4, 4> {
         ])
     }
 
-    pub fn view(from: Point, to: Point, up: Vector) -> Self {
-        let forward = (to - from).normalize();
+    pub fn view(from: Point, to: Point, up: Vector) -> Result<Self, InvalidViewMatrix> {
+        let null_vector = Vector::new(0.0, 0.0, 0.0);
+
+        if up == null_vector {
+            return Err(InvalidViewMatrix::NullUpVector);
+        }
+
+        let forward = match to - from {
+            x if x == null_vector => return Err(InvalidViewMatrix::EqualFromAndToPoints(from)),
+            x => x.normalize(),
+        };
+
+        let forward = forward.normalize();
         let left = forward.cross(up.normalize());
         let up = left.cross(forward);
 
@@ -72,13 +86,7 @@ impl Matrix<4, 4> {
             [0.0, 0.0, 0.0, 1.0],
         ]);
 
-        assert!(
-            !float::approx(orientation.determinant(), 0.0),
-            "View matrix must be inversible: {:?}",
-            orientation
-        );
-
-        orientation * Self::translation(-from.0.x, -from.0.y, -from.0.z)
+        Ok(orientation * Self::translation(-from.0.x, -from.0.y, -from.0.z))
     }
 }
 
@@ -282,18 +290,18 @@ mod tests {
         let to = Point::new(0.0, 0.0, -1.0);
         let up = Vector::new(0.0, 1.0, 0.0);
 
-        let t = Matrix::view(from, to, up);
+        let t = Matrix::view(from, to, up).unwrap();
 
         assert_eq!(t, matrix::IDENTITY4X4);
     }
 
     #[test]
-    fn a_view_transformation_mtrix_looking_in_positive_z_direction() {
+    fn a_view_transformation_matrix_looking_in_positive_z_direction() {
         let from = Point::new(0.0, 0.0, 0.0);
         let to = Point::new(0.0, 0.0, 1.0);
         let up = Vector::new(0.0, 1.0, 0.0);
 
-        let t = Matrix::view(from, to, up);
+        let t = Matrix::view(from, to, up).unwrap();
 
         assert_eq!(t, Matrix::scaling(-1.0, 1.0, -1.0));
     }
@@ -304,7 +312,7 @@ mod tests {
         let to = Point::new(0.0, 0.0, 0.0);
         let up = Vector::new(0.0, 1.0, 0.0);
 
-        let t = Matrix::view(from, to, up);
+        let t = Matrix::view(from, to, up).unwrap();
 
         assert_eq!(t, Matrix::translation(0.0, 0.0, -8.0));
     }
@@ -315,7 +323,7 @@ mod tests {
         let to = Point::new(4.0, -2.0, 8.0);
         let up = Vector::new(1.0, 1.0, 0.0);
 
-        let t = Matrix::view(from, to, up);
+        let t = Matrix::view(from, to, up).unwrap();
 
         assert_eq!(
             t,
@@ -326,5 +334,27 @@ mod tests {
                 [0.00000, 0.00000, 0.00000, 1.00000]
             ])
         );
+    }
+
+    #[test]
+    fn a_view_transformation_with_equal_from_and_to_points_results_in_an_error() {
+        let from = Point::new(1.0, 2.0, 3.0);
+        let to = from;
+        let up = Vector::new(1.0, 1.0, 1.0);
+
+        let result = Matrix::view(from, to, up);
+
+        assert_eq!(result, Err(InvalidViewMatrix::EqualFromAndToPoints(from)));
+    }
+
+    #[test]
+    fn a_view_transformation_matrix_with_a_null_up_vector() {
+        let from = Point::new(1.0, 2.0, 3.0);
+        let to = Point::new(2.0, 4.0, 6.0);
+        let up = Vector::new(0.0, 0.0, 0.0);
+
+        let result = Matrix::view(from, to, up);
+
+        assert_eq!(result, Err(InvalidViewMatrix::NullUpVector));
     }
 }

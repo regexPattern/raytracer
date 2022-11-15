@@ -89,7 +89,7 @@ impl Material {
 mod tests {
     use crate::{
         assert_approx, matrix,
-        pattern::{Scheme, Stripe, Pattern},
+        pattern::{Pattern, Scheme, Stripe},
         shape::Sphere,
     };
 

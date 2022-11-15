@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::{
     canvas::Canvas,
+    float,
     matrix::{self, Matrix},
     ray::Ray,
     tuple::Point,
@@ -12,12 +13,23 @@ use crate::{
 
 #[derive(Debug)]
 pub struct Camera {
+    pub half_height: f64,
+    pub half_width: f64,
+    pub hsize: u32,
+    pub pixel_size: f64,
     pub transform: Matrix<4, 4>,
-    hsize: u32,
-    vsize: u32,
-    pixel_size: f64,
-    half_height: f64,
-    half_width: f64,
+    pub vsize: u32,
+}
+
+impl PartialEq for Camera {
+    fn eq(&self, other: &Self) -> bool {
+        self.hsize == other.hsize
+            && self.transform == other.transform
+            && self.vsize == other.vsize
+            && float::approx(self.half_height, other.half_height)
+            && float::approx(self.half_width, other.half_width)
+            && float::approx(self.pixel_size, other.pixel_size)
+    }
 }
 
 impl Camera {
@@ -210,7 +222,7 @@ mod tests {
         let from = Point::new(0.0, 0.0, -5.0);
         let to = Point::new(0.0, 0.0, 0.0);
         let up = Vector::new(0.0, 1.0, 0.0);
-        camera.transform = Matrix::view(from, to, up);
+        camera.transform = Matrix::view(from, to, up).unwrap();
 
         let image = camera.render(&world);
 

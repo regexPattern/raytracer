@@ -39,7 +39,7 @@ impl World {
         self.lights.iter().fold(color::BLACK, |shade, light| {
             let shadowed = self.is_shadowed(light, comps.over_point);
             let surface = shade
-                + comps.i.object.shape().material.lighting(
+                + comps.i.object.figure().material.lighting(
                     &comps.i.object,
                     *light,
                     comps.over_point,
@@ -55,7 +55,7 @@ impl World {
     }
 
     fn reflected_color(&self, comps: &Computation, remaining: u32) -> Color {
-        let material = comps.i.object.shape().material;
+        let material = comps.i.object.figure().material;
 
         if remaining == 0 || float::approx(material.reflective, 0.0) {
             return color::BLACK;
@@ -310,7 +310,7 @@ mod tests {
 
         let color = world.color_at(&ray, world::REFLECTION_LIMIT);
 
-        assert_eq!(Texture::Color(color), inner.shape().material.texture);
+        assert_eq!(Texture::Color(color), inner.figure().material.texture);
     }
 
     #[test]
@@ -395,7 +395,7 @@ mod tests {
         };
 
         let shape = &mut world.objects[1];
-        shape.shape().material.ambient = 1.0;
+        shape.figure().material.ambient = 1.0;
 
         let shape = world.objects[1];
 

@@ -45,10 +45,7 @@ impl Sphere {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        assert_approx,
-        tuple::Vector,
-    };
+    use crate::{assert_approx, tuple::Vector};
 
     use super::*;
 

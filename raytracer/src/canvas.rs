@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::color::{self, Color, ClampedColor};
+use crate::color::{self, ClampedColor, Color};
 
 #[derive(Debug)]
 pub struct Canvas {

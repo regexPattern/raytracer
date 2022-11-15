@@ -1,4 +1,3 @@
-// TODO: Cambiar el nombre de core a raytracer.
 use raytracer::{
     camera::Camera,
     color::{self, Color},
@@ -30,8 +29,6 @@ fn main() {
             texture: Texture::Color(color::RED),
             ..Default::default()
         },
-        // scaling * translation : translation en relativas
-        // translation * scaling : translation en absolutas
         transform: Matrix::translation(4.0, 0.5, -6.0) * Matrix::scaling(0.5, 0.5, 0.5),
     }));
 
@@ -63,8 +60,7 @@ fn main() {
 
     let right_wall = Shape::Plane(Plane(Figure {
         transform: Matrix::rotation_x(std::f64::consts::FRAC_PI_2),
-        // TODO: Change this methods name
-        ..left_wall.shape()
+        ..left_wall.figure()
     }));
 
     let main_light = PointLight {
@@ -84,12 +80,13 @@ fn main() {
 
     let world = World { objects, lights };
 
-    let mut camera = Camera::new(1280, 720, std::f64::consts::FRAC_PI_3);
+    let mut camera = Camera::new(1920, 1080, -std::f64::consts::FRAC_PI_3);
     camera.transform = Matrix::view(
         Point::new(10.0, 3.0, -10.0),
         Point::new(0.0, 0.0, 0.0),
         Vector::new(0.0, 1.0, 0.0),
-    );
+    )
+    .unwrap();
 
     let image = camera.render(&world);
     println!("{}", image.to_ppm());

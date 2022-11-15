@@ -38,20 +38,20 @@ impl Shape {
     }
 
     fn object_ray(&self, ray: &Ray) -> Ray {
-        ray.transform(self.shape().transform.inverse())
+        ray.transform(self.figure().transform.inverse())
     }
 
     fn object_point(&self, world_point: Point) -> Point {
-        self.shape().transform.inverse() * world_point
+        self.figure().transform.inverse() * world_point
     }
 
     fn world_normal(&self, object_normal: Vector) -> Vector {
-        let mut world_normal = self.shape().transform.inverse().transpose() * object_normal;
+        let mut world_normal = self.figure().transform.inverse().transpose() * object_normal;
         world_normal.0.w = 0.0;
         world_normal.normalize()
     }
 
-    pub const fn shape(&self) -> Figure {
+    pub const fn figure(&self) -> Figure {
         match self {
             Self::Plane(p) => p.0,
             Self::Sphere(s) => s.0,

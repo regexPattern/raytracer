@@ -33,7 +33,7 @@ impl Pattern {
     }
 
     fn pattern_point(&self, object: &Shape, world_point: Point) -> Point {
-        let object_point = object.shape().transform.inverse() * world_point;
+        let object_point = object.figure().transform.inverse() * world_point;
 
         self.transform().inverse() * object_point
     }
@@ -51,8 +51,8 @@ impl Pattern {
 #[cfg(test)]
 mod tests {
     use crate::{
-        color,
-        shape::{Figure, Sphere}, matrix,
+        color, matrix,
+        shape::{Figure, Sphere},
     };
 
     use super::*;

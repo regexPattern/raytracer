@@ -81,6 +81,7 @@ mod tests {
     "shininess": 4,
     "specular": 5,
     "texture": {
+        "type": "color",
         "red": 255,
         "green": 255,
         "blue": 255

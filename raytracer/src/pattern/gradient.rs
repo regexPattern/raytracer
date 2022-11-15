@@ -1,7 +1,4 @@
-use crate::{
-    color::Color,
-    tuple::Point,
-};
+use crate::{color::Color, tuple::Point};
 
 use super::Scheme;
 

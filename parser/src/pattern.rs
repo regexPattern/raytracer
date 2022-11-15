@@ -18,7 +18,7 @@ pub struct SchemeParser {
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
-#[serde(rename_all = "snake_case", tag = "type")]
+#[serde(rename_all = "snake_case", tag = "pattern")]
 pub enum PatternParser {
     Checker(SchemeParser),
     Gradient(SchemeParser),
@@ -182,7 +182,7 @@ mod tests {
     fn parsing_checker_pattern() {
         let input = r#"
 {
-    "type": "checker",
+    "pattern": "checker",
     "from": {
         "red": 255,
         "green": 255,
@@ -220,7 +220,7 @@ mod tests {
     fn parsing_gradient_pattern() {
         let input = r#"
 {
-    "type": "gradient",
+    "pattern": "gradient",
     "from": {
         "red": 255,
         "green": 255,
@@ -258,7 +258,7 @@ mod tests {
     fn parsing_ring_pattern() {
         let input = r#"
 {
-    "type": "ring",
+    "pattern": "ring",
     "from": {
         "red": 255,
         "green": 255,
@@ -296,7 +296,7 @@ mod tests {
     fn parsing_stripe_pattern() {
         let input = r#"
 {
-    "type": "stripe",
+    "pattern": "stripe",
     "from": {
         "red": 255,
         "green": 255,
@@ -334,7 +334,7 @@ mod tests {
     fn getting_a_pattern_from_a_parsed_pattern() {
         let input = r#"
 {
-    "type": "checker",
+    "pattern": "checker",
     "from": {
         "red": 255,
         "green": 255,
