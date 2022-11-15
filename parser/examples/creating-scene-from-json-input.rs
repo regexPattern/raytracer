@@ -101,7 +101,7 @@ fn main() {
                         },
                         "to": {
                             "red": 0,
-                            "green": 0,
+                            "green": 1,
                             "blue": 0
                         }
                     }
@@ -114,7 +114,7 @@ fn main() {
                     {
                         "type": "translation",
                         "x": 0,
-                        "y": 0,
+                        "y": 1,
                         "z": 0
                     }
                 ]

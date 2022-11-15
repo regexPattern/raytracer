@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use raytracer::{
+use engine::{
     color::Color,
     matrix::Matrix,
     pattern::{Checker, Gradient, Pattern, Ring, Scheme, Stripe},
@@ -49,7 +49,7 @@ impl From<PatternParser> for Pattern {
 
 #[cfg(test)]
 mod tests {
-    use raytracer::color;
+    use engine::color;
 
     use crate::transform::TransformParser;
 

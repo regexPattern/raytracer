@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use raytracer::{color::Color, light::PointLight, tuple::Point};
+use engine::{color::Color, light::PointLight, tuple::Point};
 
 use crate::{color::ColorParser, tuple::PointParser};
 
@@ -24,7 +24,7 @@ impl From<PointLightParser> for PointLight {
 
 #[cfg(test)]
 mod tests {
-    use raytracer::color;
+    use engine::color;
 
     use super::*;
 

@@ -1,5 +1,5 @@
+use engine::color::Color;
 use parser;
-use raytracer::color::Color;
 
 #[test]
 fn parsing_an_empty_file_results_in_eof_error() {

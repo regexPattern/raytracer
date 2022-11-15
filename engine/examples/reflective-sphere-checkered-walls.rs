@@ -1,4 +1,4 @@
-use raytracer::{
+use engine::{
     camera::Camera,
     color::{self, Color},
     light::PointLight,

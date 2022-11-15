@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use raytracer::material::{Material, Texture};
+use engine::material::{Material, Texture};
 
 use crate::{color::ColorParser, texture::TextureParser};
 
