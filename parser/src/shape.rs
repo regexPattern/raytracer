@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use engine::{
+use raytracer::{
     material::Material,
     matrix::Matrix,
     shape::{Figure, Plane, Shape, Sphere},

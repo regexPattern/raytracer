@@ -1,4 +1,4 @@
-use engine::color::Color;
+use raytracer::color::Color;
 use parser;
 
 #[test]

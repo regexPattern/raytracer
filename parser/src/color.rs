@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use engine::color::Color;
+use raytracer::color::Color;
 
 #[derive(Debug, Deserialize, Eq, PartialEq)]
 pub struct ColorParser {

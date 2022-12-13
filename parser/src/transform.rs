@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use engine::matrix::{self, Matrix};
+use raytracer::matrix::{self, Matrix};
 
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case", tag = "type")]

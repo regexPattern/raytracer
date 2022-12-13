@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use engine::{
+use raytracer::{
     camera::Camera,
     matrix::{InvalidViewMatrix, Matrix},
     tuple::{Point, Vector},

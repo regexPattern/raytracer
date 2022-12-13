@@ -13,7 +13,7 @@ mod world;
 
 use serde::Deserialize;
 
-use engine::{camera::Camera, canvas::Canvas, world::World};
+use raytracer::{camera::Camera, canvas::Canvas, world::World};
 
 use camera::{CameraParser, InvalidCamera};
 use world::WorldParser;
@@ -85,7 +85,7 @@ impl Scene {
 
 #[cfg(test)]
 mod tests {
-    use engine::{
+    use raytracer::{
         matrix::Matrix,
         tuple::{Point, Vector},
     };

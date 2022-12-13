@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use engine::{light::PointLight, shape::Shape, world::World};
+use raytracer::{light::PointLight, shape::Shape, world::World};
 
 use super::{light::PointLightParser, shape::ShapeParser};
 
@@ -21,7 +21,7 @@ impl From<WorldParser> for World {
 
 #[cfg(test)]
 mod tests {
-    use engine::{
+    use raytracer::{
         color::Color,
         shape::{Figure, Plane, Sphere},
         tuple::Point,
