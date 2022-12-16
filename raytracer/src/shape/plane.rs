@@ -2,10 +2,9 @@ use crate::{
     float,
     intersection::Intersection,
     ray::Ray,
+    shape::{Figure, Shape},
     tuple::{Point, Vector},
 };
-
-use super::{Figure, Shape};
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct Plane(pub Figure);

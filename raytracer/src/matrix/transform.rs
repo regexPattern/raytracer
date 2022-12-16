@@ -1,6 +1,7 @@
-use crate::tuple::{Point, Vector};
-
-use super::Matrix;
+use crate::{
+    matrix::Matrix,
+    tuple::{Point, Vector},
+};
 
 #[derive(Debug, PartialEq)]
 pub enum InvalidViewMatrix {

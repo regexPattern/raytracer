@@ -1,6 +1,4 @@
-use crate::{color::Color, tuple::Point};
-
-use super::Scheme;
+use crate::{color::Color, pattern::Scheme, tuple::Point};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Gradient(pub Scheme);

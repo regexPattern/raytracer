@@ -1,6 +1,4 @@
-use crate::{color::Color, float, tuple::Point};
-
-use super::Scheme;
+use crate::{color::Color, float, pattern::Scheme, tuple::Point};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Ring(pub Scheme);

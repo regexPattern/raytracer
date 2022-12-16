@@ -1,6 +1,6 @@
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
-use super::{Point, Tuple, Vector};
+use crate::tuple::{Point, Tuple, Vector};
 
 impl Add for Tuple {
     type Output = Self;

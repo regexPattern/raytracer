@@ -3,6 +3,8 @@
 
 use std::ops::{Add, Mul, Sub};
 
+use serde::Deserialize;
+
 use crate::float;
 
 pub const WHITE: Color = Color {
@@ -35,7 +37,7 @@ pub const BLUE: Color = Color {
     blue: 1.0,
 };
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Deserialize)]
 pub struct Color {
     pub red: f64,
     pub green: f64,
@@ -281,5 +283,13 @@ mod tests {
                 blue: 63
             }
         );
+    }
+
+    #[test]
+    fn deserializing_a_color() {
+        let input = r#"\
+{
+}
+        "#;
     }
 }

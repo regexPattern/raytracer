@@ -1,8 +1,9 @@
 use std::ops::{Index, IndexMut, Mul};
 
-use crate::tuple::{Point, Tuple, Vector};
-
-use super::Matrix;
+use crate::{
+    matrix::Matrix,
+    tuple::{Point, Tuple, Vector},
+};
 
 impl<const M: usize, const N: usize> Index<usize> for Matrix<M, N> {
     type Output = [f64; N];

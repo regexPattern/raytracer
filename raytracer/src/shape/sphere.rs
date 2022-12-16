@@ -2,9 +2,8 @@ use crate::{
     intersection::Intersection,
     ray::Ray,
     tuple::{Point, Vector},
+    shape::{Figure, Shape},
 };
-
-use super::{Figure, Shape};
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct Sphere(pub Figure);
