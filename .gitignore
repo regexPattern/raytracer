@@ -1,3 +1,10 @@
 target
-*.ppm
+
+*.bmp
+*.jpeg
 *.png
+*.ppm
+*.webp
+
+/target
+/Cargo.lock

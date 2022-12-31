@@ -1,71 +1,21 @@
-#![allow(clippy::cast_possible_truncation)]
-#![allow(clippy::cast_sign_loss)]
+pub mod consts;
 
 use std::ops::{Add, Mul, Sub};
 
-use serde::Deserialize;
+use crate::utils;
 
-use crate::float;
-
-pub const WHITE: Color = Color {
-    red: 1.0,
-    green: 1.0,
-    blue: 1.0,
-};
-
-pub const BLACK: Color = Color {
-    red: 0.0,
-    green: 0.0,
-    blue: 0.0,
-};
-
-pub const RED: Color = Color {
-    red: 1.0,
-    green: 0.0,
-    blue: 0.0,
-};
-
-pub const GREEN: Color = Color {
-    red: 0.0,
-    green: 1.0,
-    blue: 0.0,
-};
-
-pub const BLUE: Color = Color {
-    red: 0.0,
-    green: 0.0,
-    blue: 1.0,
-};
-
-#[derive(Copy, Clone, Debug, Deserialize)]
+#[derive(Copy, Clone, Debug)]
 pub struct Color {
     pub red: f64,
     pub green: f64,
     pub blue: f64,
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct ClampedColor {
-    pub red: u8,
-    pub green: u8,
-    pub blue: u8,
-}
-
 impl PartialEq for Color {
     fn eq(&self, other: &Self) -> bool {
-        float::approx(self.red, other.red)
-            && float::approx(self.green, other.green)
-            && float::approx(self.blue, other.blue)
-    }
-}
-
-impl From<Color> for ClampedColor {
-    fn from(color: Color) -> Self {
-        let red = (color.red * 255.0) as u8;
-        let green = (color.green * 255.0) as u8;
-        let blue = (color.blue * 255.0) as u8;
-
-        Self { red, green, blue }
+        utils::approx(self.red, other.red)
+            && utils::approx(self.green, other.green)
+            && utils::approx(self.blue, other.blue)
     }
 }
 
@@ -127,12 +77,12 @@ impl Mul for Color {
 
 #[cfg(test)]
 mod tests {
-    use crate::assert_approx;
-
     use super::*;
 
+    use crate::assert_approx;
+
     #[test]
-    fn colores_are_red_green_blue_tuples() {
+    fn colors_are_red_green_blue_tuples() {
         let c = Color {
             red: -0.5,
             green: 0.4,
@@ -163,7 +113,7 @@ mod tests {
             Color {
                 red: 1.6,
                 green: 0.7,
-                blue: 1.0
+                blue: 1.0,
             }
         );
     }
@@ -187,13 +137,13 @@ mod tests {
             Color {
                 red: 0.2,
                 green: 0.5,
-                blue: 0.5
+                blue: 0.5,
             }
         );
     }
 
     #[test]
-    fn multiplying_color_by_scalar() {
+    fn multiplying_a_color_by_a_scalar() {
         let c = Color {
             red: 0.2,
             green: 0.3,
@@ -205,18 +155,14 @@ mod tests {
             Color {
                 red: 0.4,
                 green: 0.6,
-                blue: 0.8
+                blue: 0.8,
             }
         );
-        assert_eq!(
-            c * 2.0,
-            2.0 * c,
-            "`Color` and `f64` multiplication is commutative"
-        )
+        assert_eq!(c * 2.0, 2.0 * c);
     }
 
     #[test]
-    fn multiplying_colors() {
+    fn multiplying_two_colors() {
         let c1 = Color {
             red: 1.0,
             green: 0.2,
@@ -234,62 +180,9 @@ mod tests {
             Color {
                 red: 0.9,
                 green: 0.2,
-                blue: 0.04
+                blue: 0.04,
             }
         );
-    }
-
-    #[test]
-    fn getting_a_colors_rgb_values() {
-        let c1 = Color {
-            red: 0.0,
-            green: 0.0,
-            blue: 0.0,
-        };
-
-        let c2 = Color {
-            red: 1.0,
-            green: 1.0,
-            blue: 1.0,
-        };
-
-        let c3 = Color {
-            red: 0.5,
-            green: 0.75,
-            blue: 0.25,
-        };
-
-        assert_eq!(
-            ClampedColor::from(c1),
-            ClampedColor {
-                red: 0,
-                green: 0,
-                blue: 0
-            }
-        );
-        assert_eq!(
-            ClampedColor::from(c2),
-            ClampedColor {
-                red: 255,
-                green: 255,
-                blue: 255
-            }
-        );
-        assert_eq!(
-            ClampedColor::from(c3),
-            ClampedColor {
-                red: 127,
-                green: 191,
-                blue: 63
-            }
-        );
-    }
-
-    #[test]
-    fn deserializing_a_color() {
-        let input = r#"\
-{
-}
-        "#;
+        assert_eq!(c1 * c2, c2 * c1);
     }
 }
