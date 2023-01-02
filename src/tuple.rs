@@ -68,6 +68,10 @@ impl Vector {
 
         Self::new(x, y, z)
     }
+
+    pub fn reflect(self, normal: Self) -> Self {
+        self - normal * 2.0 * self.dot(normal)
+    }
 }
 
 impl Add for Tuple {
@@ -486,5 +490,25 @@ mod tests {
         assert_eq!(v2.cross(v1), -v1.cross(v2));
         assert_eq!(v1.cross(v1), null);
         assert_eq!(v1.cross(null), null);
+    }
+
+    #[test]
+    fn reflecting_a_vector_approaching_at_45_degrees() {
+        let v = Vector::new(1.0, -1.0, 0.0);
+        let n = Vector::new(0.0, 1.0, 0.0);
+
+        let r = v.reflect(n);
+
+        assert_eq!(r, Vector::new(1.0, 1.0, 0.0));
+    }
+
+    #[test]
+    fn reflecting_a_vector_off_a_slanted_surface() {
+        let v = Vector::new(0.0, -1.0, 0.0);
+        let n = Vector::new(2_f64.sqrt() / 2.0, 2_f64.sqrt() / 2.0, 0.0);
+
+        let r = v.reflect(n);
+
+        assert_eq!(r, Vector::new(1.0, 0.0, 0.0));
     }
 }

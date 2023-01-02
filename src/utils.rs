@@ -4,11 +4,11 @@ pub fn approx(a: f64, b: f64) -> bool {
     (a - b).abs() < EPSILON
 }
 
-fn ge(a: f64, b: f64) -> bool {
+pub fn ge(a: f64, b: f64) -> bool {
     approx(a, b) || a > b
 }
 
-fn le(a: f64, b: f64) -> bool {
+pub fn le(a: f64, b: f64) -> bool {
     approx(a, b) || a < b
 }
 
@@ -31,7 +31,43 @@ macro_rules! assert_approx {
 }
 
 #[cfg(test)]
+pub(crate) fn test_world() -> crate::world::World {
+    use crate::tuple::Point;
+
+    let light = crate::light::PointLight {
+        position: Point::new(-10.0, 10.0, -10.0),
+        intensity: crate::color::consts::WHITE,
+    };
+
+    let s1 = crate::sphere::Sphere {
+        material: crate::material::Material {
+            color: crate::color::Color {
+                red: 0.8,
+                green: 1.0,
+                blue: 0.6,
+            },
+            diffuse: 0.7,
+            specular: 0.2,
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
+    let s2 = crate::sphere::Sphere {
+        transform: crate::transform::Transform::try_scaling(0.5, 0.5, 0.5).unwrap(),
+        ..Default::default()
+    };
+
+    let objects = vec![s1, s2];
+    let lights = vec![light];
+
+    crate::world::World { objects, lights }
+}
+
+#[cfg(test)]
 mod tests {
+    use crate::{light::PointLight, sphere::Sphere};
+
     use super::*;
 
     #[test]
@@ -98,5 +134,38 @@ mod tests {
         assert!(!le(b, a));
         assert!(le(a, c));
         assert_eq!(le(a, c), le(c, a));
+    }
+
+    #[test]
+    fn the_default_test_world() {
+        let light = PointLight {
+            position: crate::tuple::Point::new(-10.0, 10.0, -10.0),
+            intensity: crate::color::consts::WHITE,
+        };
+
+        let s1 = Sphere {
+            material: crate::material::Material {
+                color: crate::color::Color {
+                    red: 0.8,
+                    green: 1.0,
+                    blue: 0.6,
+                },
+                diffuse: 0.7,
+                specular: 0.2,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let s2 = Sphere {
+            transform: crate::transform::Transform::try_scaling(0.5, 0.5, 0.5).unwrap(),
+            ..Default::default()
+        };
+
+        let w = test_world();
+
+        assert!(w.lights.contains(&light));
+        assert!(w.objects.contains(&s1));
+        assert!(w.objects.contains(&s2));
     }
 }
