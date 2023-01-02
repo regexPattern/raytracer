@@ -25,25 +25,4 @@ mod tests {
         assert_eq!(light.position, position);
         assert_eq!(light.intensity, intensity);
     }
-
-    #[test]
-    fn comparing_lights() {
-        let l1 = PointLight {
-            position: Point::new(1.0, 2.0, 3.0),
-            intensity: color::consts::GREEN,
-        };
-
-        let l2 = PointLight {
-            position: Point::new(1.0, 2.0, 3.0),
-            intensity: color::consts::GREEN,
-        };
-
-        let l3 = PointLight {
-            position: Point::new(0.0, 1.0, 2.0),
-            intensity: color::consts::BLUE,
-        };
-
-        assert_eq!(l1, l2);
-        assert_ne!(l1, l3);
-    }
 }

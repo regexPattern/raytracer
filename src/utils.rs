@@ -32,16 +32,24 @@ macro_rules! assert_approx {
 
 #[cfg(test)]
 pub(crate) fn test_world() -> crate::world::World {
-    use crate::tuple::Point;
-
-    let light = crate::light::PointLight {
-        position: Point::new(-10.0, 10.0, -10.0),
-        intensity: crate::color::consts::WHITE,
+    use crate::{
+        color,
+        light::PointLight,
+        material::Material,
+        shape::{Object, Shape, Sphere},
+        transform::Transform,
+        tuple::Point,
+        world::World,
     };
 
-    let s1 = crate::sphere::Sphere {
-        material: crate::material::Material {
-            color: crate::color::Color {
+    let light = PointLight {
+        position: Point::new(-10.0, 10.0, -10.0),
+        intensity: color::consts::WHITE,
+    };
+
+    let s1 = Shape::Sphere(Sphere(Object {
+        material: Material {
+            color: color::Color {
                 red: 0.8,
                 green: 1.0,
                 blue: 0.6,
@@ -51,22 +59,25 @@ pub(crate) fn test_world() -> crate::world::World {
             ..Default::default()
         },
         ..Default::default()
-    };
+    }));
 
-    let s2 = crate::sphere::Sphere {
-        transform: crate::transform::Transform::try_scaling(0.5, 0.5, 0.5).unwrap(),
+    let s2 = Shape::Sphere(Sphere(Object {
+        transform: Transform::try_scaling(0.5, 0.5, 0.5).unwrap(),
         ..Default::default()
-    };
+    }));
 
     let objects = vec![s1, s2];
     let lights = vec![light];
 
-    crate::world::World { objects, lights }
+    World { objects, lights }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{light::PointLight, sphere::Sphere};
+    use crate::{
+        light::PointLight,
+        shape::{Object, Shape, Sphere},
+    };
 
     use super::*;
 
@@ -143,7 +154,7 @@ mod tests {
             intensity: crate::color::consts::WHITE,
         };
 
-        let s1 = Sphere {
+        let s1 = Shape::Sphere(Sphere(Object {
             material: crate::material::Material {
                 color: crate::color::Color {
                     red: 0.8,
@@ -155,12 +166,12 @@ mod tests {
                 ..Default::default()
             },
             ..Default::default()
-        };
+        }));
 
-        let s2 = Sphere {
+        let s2 = Shape::Sphere(Sphere(Object {
             transform: crate::transform::Transform::try_scaling(0.5, 0.5, 0.5).unwrap(),
             ..Default::default()
-        };
+        }));
 
         let w = test_world();
 

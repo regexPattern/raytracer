@@ -20,10 +20,10 @@ pub struct Tuple {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Point(pub Tuple);
+pub struct Point(pub(crate) Tuple);
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Vector(pub Tuple);
+pub struct Vector(pub(crate) Tuple);
 
 impl PartialEq for Tuple {
     fn eq(&self, other: &Self) -> bool {
@@ -49,19 +49,19 @@ impl Vector {
         Self(Tuple { x, y, z, w })
     }
 
-    pub fn magnitude(self) -> f64 {
+    pub(crate) fn magnitude(self) -> f64 {
         (self.0.x.powi(2) + self.0.y.powi(2) + self.0.z.powi(2)).sqrt()
     }
 
-    pub fn normalize(self) -> Result<Self, NormalizeNullVectorError> {
+    pub(crate) fn normalize(self) -> Result<Self, NormalizeNullVectorError> {
         (self / self.magnitude()).map_err(|_| NormalizeNullVectorError)
     }
 
-    pub fn dot(self, rhs: Self) -> f64 {
+    pub(crate) fn dot(self, rhs: Self) -> f64 {
         self.0.x * rhs.0.x + self.0.y * rhs.0.y + self.0.z * rhs.0.z
     }
 
-    pub fn cross(self, rhs: Self) -> Self {
+    pub(crate) fn cross(self, rhs: Self) -> Self {
         let x = self.0.y * rhs.0.z - self.0.z * rhs.0.y;
         let y = self.0.z * rhs.0.x - self.0.x * rhs.0.z;
         let z = self.0.x * rhs.0.y - self.0.y * rhs.0.x;
@@ -69,7 +69,7 @@ impl Vector {
         Self::new(x, y, z)
     }
 
-    pub fn reflect(self, normal: Self) -> Self {
+    pub(crate) fn reflect(self, normal: Self) -> Self {
         self - normal * 2.0 * self.dot(normal)
     }
 }

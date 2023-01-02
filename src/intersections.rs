@@ -2,15 +2,15 @@ use std::cmp::Ordering;
 
 use crate::{
     ray::Ray,
-    sphere::Sphere,
+    shape::Shape,
     tuple::{Point, Vector},
     utils,
 };
 
 #[derive(Clone, Debug)]
-pub struct Intersection<'a> {
+pub(crate) struct Intersection<'a> {
     pub t: f64,
-    pub object: &'a Sphere,
+    pub object: &'a Shape,
 }
 
 #[derive(Debug)]
@@ -20,6 +20,7 @@ pub(crate) struct Computation<'a, 'b> {
     pub eyev: Vector,
     pub normalv: Vector,
     pub inside: bool,
+    pub over_point: Point,
 }
 
 impl PartialEq for Intersection<'_> {
@@ -29,7 +30,7 @@ impl PartialEq for Intersection<'_> {
 }
 
 impl Intersection<'_> {
-    pub(crate) fn sort(xs: &mut [Self]) {
+    pub fn sort(xs: &mut [Self]) {
         xs.sort_unstable_by(|i1, i2| {
             if utils::approx(i1.t, i2.t) {
                 Ordering::Equal
@@ -46,15 +47,16 @@ impl Intersection<'_> {
         xs.into_iter().find(|i| i.t > 0.0)
     }
 
-    pub(crate) fn prepare_computations(&self, ray: &Ray) -> Computation<'_, '_> {
+    pub fn prepare_computations(&self, ray: &Ray) -> Computation<'_, '_> {
         let intersection = self;
         let point = ray.position(self.t);
         let eyev = -ray.direction;
 
         let normalv = self.object.normal_at(point);
         let inside = normalv.dot(eyev) < 0.0;
-
         let normalv = if inside { -normalv } else { normalv };
+
+        let over_point = point + normalv * utils::EPSILON;
 
         Computation {
             intersection,
@@ -62,6 +64,7 @@ impl Intersection<'_> {
             eyev,
             normalv,
             inside,
+            over_point,
         }
     }
 }
@@ -71,6 +74,8 @@ mod tests {
     use crate::{
         assert_approx,
         ray::Ray,
+        shape::{Object, Sphere},
+        transform::Transform,
         tuple::{Point, Vector},
     };
 
@@ -78,7 +83,7 @@ mod tests {
 
     #[test]
     fn an_intersection_encapsulates_t_and_object() {
-        let s = Sphere::default();
+        let s = Shape::Sphere(Sphere::default());
 
         let i = Intersection { t: 3.5, object: &s };
 
@@ -88,7 +93,7 @@ mod tests {
 
     #[test]
     fn aggregating_intesrections() {
-        let s = Sphere::default();
+        let s = Shape::Sphere(Sphere::default());
 
         let i1 = Intersection { t: 1.0, object: &s };
         let i2 = Intersection { t: 2.0, object: &s };
@@ -102,7 +107,7 @@ mod tests {
 
     #[test]
     fn the_hit_when_all_intersections_have_positive_t() {
-        let s = Sphere::default();
+        let s = Shape::Sphere(Sphere::default());
 
         let i1 = Intersection { t: 1.0, object: &s };
         let i2 = Intersection { t: 2.0, object: &s };
@@ -116,7 +121,7 @@ mod tests {
 
     #[test]
     fn the_hit_when_some_intersections_have_negative_t() {
-        let s = Sphere::default();
+        let s = Shape::Sphere(Sphere::default());
 
         let i1 = Intersection {
             t: -1.0,
@@ -133,7 +138,7 @@ mod tests {
 
     #[test]
     fn the_hit_when_all_intersections_have_negative_t() {
-        let s = Sphere::default();
+        let s = Shape::Sphere(Sphere::default());
 
         let i1 = Intersection {
             t: -2.0,
@@ -153,7 +158,7 @@ mod tests {
 
     #[test]
     fn sorting_a_vector_of_intersections() {
-        let s = Sphere::default();
+        let s = Shape::Sphere(Sphere::default());
 
         let i1 = Intersection { t: 5.0, object: &s };
         let i2 = Intersection { t: 7.0, object: &s };
@@ -175,7 +180,7 @@ mod tests {
 
     #[test]
     fn the_hit_is_always_the_lowest_non_negative_intersection() {
-        let s = Sphere::default();
+        let s = Shape::Sphere(Sphere::default());
 
         let i1 = Intersection { t: 5.0, object: &s };
         let i2 = Intersection { t: 7.0, object: &s };
@@ -199,7 +204,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let s = Sphere::default();
+        let s = Shape::Sphere(Sphere::default());
 
         let i = Intersection { t: 4.0, object: &s };
 
@@ -219,7 +224,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let s = Sphere::default();
+        let s = Shape::Sphere(Sphere::default());
 
         let i = Intersection { t: 4.0, object: &s };
 
@@ -235,7 +240,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let s = Sphere::default();
+        let s = Shape::Sphere(Sphere::default());
 
         let i = Intersection { t: 1.0, object: &s };
 
@@ -245,5 +250,25 @@ mod tests {
         assert_eq!(comps.eyev, Vector::new(0.0, 0.0, -1.0));
         assert!(comps.inside);
         assert_eq!(comps.normalv, Vector::new(0.0, 0.0, -1.0));
+    }
+
+    #[test]
+    fn the_hit_should_offset_the_point() {
+        let r = Ray {
+            origin: Point::new(0.0, 0.0, -5.0),
+            direction: Vector::new(0.0, 0.0, 1.0),
+        };
+
+        let s = Shape::Sphere(Sphere(Object {
+            transform: Transform::translation(0.0, 0.0, 1.0),
+            ..Default::default()
+        }));
+
+        let i = Intersection { t: 5.0, object: &s };
+
+        let comps = i.prepare_computations(&r);
+
+        assert!(comps.over_point.0.z < -utils::EPSILON / 2.0);
+        assert!(comps.point.0.z > comps.over_point.0.z);
     }
 }

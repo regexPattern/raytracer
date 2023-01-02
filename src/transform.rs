@@ -23,6 +23,7 @@ pub enum AntiIsomorphicTransformError {
     },
     NullUpVector,
     EqualFromAndToVectors,
+    CollinearToFromAndUpVectors,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -82,14 +83,6 @@ impl Transform {
         ]))
     }
 
-    // TODO: Maybe I could limit the usage of this transformation only to code generated from
-    // within the raytracer itself, so I can assure that this transform is always going to be
-    // invertible.
-    //
-    // If you compute the determinant of the matrix associated with this transformation for a
-    // generic input, then you know that when that determinant is zero, the transformation becomes
-    // anti isomorphic.
-    // det : xz * yx * zy + xy * yz * zx - xy * yx - xz * zx - yz * zy + 1.0
     pub fn try_shearing(
         xy: f64,
         xz: f64,
@@ -134,6 +127,10 @@ impl Transform {
                 .map_err(|_| AntiIsomorphicTransformError::NullUpVector)?,
         );
 
+        if left == Vector::new(0.0, 0.0, 0.0) {
+            return Err(AntiIsomorphicTransformError::CollinearToFromAndUpVectors);
+        }
+
         let up = left.cross(forward);
 
         let orientation = Self(Matrix([
@@ -148,12 +145,12 @@ impl Transform {
 
     // Only isomorphic matrices can be constructed through this type's public API. This means that
     // the matrix associated with every transformation is going to be invertible.
-    pub fn inverse(self) -> Self {
+    pub(crate) fn inverse(self) -> Self {
         #[allow(clippy::unwrap_used)]
         Self(self.0.inverse().unwrap())
     }
 
-    pub fn transpose(self) -> Self {
+    pub(crate) fn transpose(self) -> Self {
         Self(self.0.transpose())
     }
 }
@@ -523,5 +520,19 @@ mod tests {
         let t = Transform::try_view(from, to, up);
 
         assert_eq!(t, Err(AntiIsomorphicTransformError::NullUpVector));
+    }
+
+    #[test]
+    fn trying_to_create_a_view_transformation_with_collinear_direction_and_up_vectors() {
+        let from = Point::new(0.0, 2.0, 0.0);
+        let to = Point::new(0.0, 1.0, 0.0);
+        let up = Vector::new(0.0, -1.0, 0.0);
+
+        let t = Transform::try_view(from, to, up);
+
+        assert_eq!(
+            t,
+            Err(AntiIsomorphicTransformError::CollinearToFromAndUpVectors)
+        );
     }
 }

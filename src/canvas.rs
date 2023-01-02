@@ -6,8 +6,8 @@ use crate::color::{self, Color};
 
 #[derive(Debug)]
 pub struct Canvas {
-    pub width: u32,
-    pub height: u32,
+    pub(crate) width: u32,
+    pub(crate) height: u32,
     pixels: HashMap<(u32, u32), Color>,
 }
 
@@ -22,11 +22,11 @@ impl Canvas {
         }
     }
 
-    fn pixel_at(&self, x: u32, y: u32) -> &Color {
+    pub(crate) fn pixel_at(&self, x: u32, y: u32) -> &Color {
         self.pixels.get(&(x, y)).unwrap_or(&color::consts::BLACK)
     }
 
-    pub fn write_pixel(&mut self, x: u32, y: u32, color: Color) {
+    pub(crate) fn write_pixel(&mut self, x: u32, y: u32, color: Color) {
         self.pixels.insert((x, y), color);
     }
 

@@ -1,17 +1,16 @@
-pub mod consts;
-
 use std::ops::{Index, IndexMut, Mul};
 
 use crate::{tuple::Tuple, utils};
 
+pub mod consts;
+
 #[derive(Debug, PartialEq)]
-pub struct NonInvertibleMatrixError;
+pub(crate) struct NonInvertibleMatrixError;
 
 #[derive(Copy, Clone, Debug)]
 pub(crate) struct Matrix<const M: usize, const N: usize>(pub [[f64; N]; M]);
 
 impl<const M: usize, const N: usize> PartialEq for Matrix<M, N> {
-    // TODO: make this implementation more idiomatic, with a cartesian product maybe?
     fn eq(&self, other: &Self) -> bool {
         for i in 0..M {
             for j in 0..N {
@@ -31,29 +30,38 @@ impl Matrix<2, 2> {
     }
 }
 
-impl Matrix<3, 3> {
-    fn submatrix(self, row: usize, col: usize) -> Matrix<2, 2> {
-        let mut res = Matrix([[0.0; 2]; 2]);
-        let (mut res_rows, mut res_cols) = (0, 0);
+fn populate_submatrix<const N1: usize, const N2: usize>(
+    origin: &Matrix<N1, N1>,
+    dest: &mut Matrix<N2, N2>,
+    row: usize,
+    col: usize,
+) {
+    let mut res_rows = 0;
+    let mut res_cols = 0;
 
-        for i in 0..3 {
-            if i == row {
+    for i in 0..N1 {
+        if i == row {
+            continue;
+        }
+
+        for j in 0..N1 {
+            if j == col {
                 continue;
             }
 
-            for j in 0..3 {
-                if j == col {
-                    continue;
-                }
-
-                res[res_rows][res_cols] = self[i][j];
-
-                res_cols += 1;
-            }
-
-            res_rows += 1;
-            res_cols = 0;
+            dest[res_rows][res_cols] = origin[i][j];
+            res_cols += 1;
         }
+
+        res_rows += 1;
+        res_cols = 0;
+    }
+}
+
+impl Matrix<3, 3> {
+    fn submatrix(self, row: usize, col: usize) -> Matrix<2, 2> {
+        let mut res = Matrix([[0.0; 2]; 2]);
+        populate_submatrix(&self, &mut res, row, col);
 
         res
     }
@@ -90,26 +98,7 @@ impl Matrix<4, 4> {
 
     fn submatrix(self, row: usize, col: usize) -> Matrix<3, 3> {
         let mut res = Matrix([[0.0; 3]; 3]);
-        let (mut res_rows, mut res_cols) = (0, 0);
-
-        for i in 0..4 {
-            if i == row {
-                continue;
-            }
-
-            for j in 0..4 {
-                if j == col {
-                    continue;
-                }
-
-                res[res_rows][res_cols] = self[i][j];
-
-                res_cols += 1;
-            }
-
-            res_rows += 1;
-            res_cols = 0;
-        }
+        populate_submatrix(&self, &mut res, row, col);
 
         res
     }

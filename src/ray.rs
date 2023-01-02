@@ -3,8 +3,8 @@ use crate::{
     tuple::{Point, Vector},
 };
 
-#[derive(Debug)]
-pub struct Ray {
+#[derive(Debug, PartialEq)]
+pub(crate) struct Ray {
     pub origin: Point,
     pub direction: Vector,
 }

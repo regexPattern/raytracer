@@ -1,8 +1,8 @@
-pub mod consts;
-
 use std::ops::{Add, Mul, Sub};
 
 use crate::utils;
+
+pub mod consts;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Color {
