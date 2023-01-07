@@ -1,20 +1,20 @@
 use std::ops::{Index, IndexMut, Mul};
 
-use crate::{tuple::Tuple, utils};
+use crate::{float, tuple::Tuple};
 
 pub mod consts;
 
 #[derive(Debug, PartialEq)]
-pub(crate) struct NonInvertibleMatrixError;
+pub struct NonInvertibleMatrixError;
 
 #[derive(Copy, Clone, Debug)]
-pub(crate) struct Matrix<const M: usize, const N: usize>(pub [[f64; N]; M]);
+pub struct Matrix<const M: usize, const N: usize>(pub [[f64; N]; M]);
 
 impl<const M: usize, const N: usize> PartialEq for Matrix<M, N> {
     fn eq(&self, other: &Self) -> bool {
         for i in 0..M {
             for j in 0..N {
-                if !utils::approx(self[i][j], other[i][j]) {
+                if !float::approx(self[i][j], other[i][j]) {
                     return false;
                 }
             }
@@ -30,40 +30,41 @@ impl Matrix<2, 2> {
     }
 }
 
-fn populate_submatrix<const N1: usize, const N2: usize>(
+fn populate_submatrix_aux<const N1: usize, const N2: usize>(
     origin: &Matrix<N1, N1>,
     dest: &mut Matrix<N2, N2>,
-    row: usize,
-    col: usize,
+    target_row: usize,
+    target_col: usize,
 ) {
-    let mut res_rows = 0;
-    let mut res_cols = 0;
+    let mut rows = 0;
+    let mut cols = 0;
 
     for i in 0..N1 {
-        if i == row {
+        if i == target_row {
             continue;
         }
 
         for j in 0..N1 {
-            if j == col {
+            if j == target_col {
                 continue;
             }
 
-            dest[res_rows][res_cols] = origin[i][j];
-            res_cols += 1;
+            dest[rows][cols] = origin[i][j];
+            cols += 1;
         }
 
-        res_rows += 1;
-        res_cols = 0;
+        rows += 1;
+        cols = 0;
     }
 }
 
 impl Matrix<3, 3> {
     fn submatrix(self, row: usize, col: usize) -> Matrix<2, 2> {
-        let mut res = Matrix([[0.0; 2]; 2]);
-        populate_submatrix(&self, &mut res, row, col);
+        let mut submatrix = Matrix([[0.0; 2]; 2]);
 
-        res
+        populate_submatrix_aux(&self, &mut submatrix, row, col);
+
+        submatrix
     }
 
     fn minor(self, row: usize, col: usize) -> f64 {
@@ -85,22 +86,23 @@ impl Matrix<3, 3> {
 
 impl Matrix<4, 4> {
     pub fn transpose(self) -> Self {
-        let mut res = Matrix([[0.0; 4]; 4]);
+        let mut result = Self([[0.0; 4]; 4]);
 
         for i in 0..4 {
             for j in 0..4 {
-                res[i][j] = self[j][i];
+                result[i][j] = self[j][i];
             }
         }
 
-        res
+        result
     }
 
     fn submatrix(self, row: usize, col: usize) -> Matrix<3, 3> {
-        let mut res = Matrix([[0.0; 3]; 3]);
-        populate_submatrix(&self, &mut res, row, col);
+        let mut submatrix = Matrix([[0.0; 3]; 3]);
 
-        res
+        populate_submatrix_aux(&self, &mut submatrix, row, col);
+
+        submatrix
     }
 
     fn minor(self, row: usize, col: usize) -> f64 {
@@ -121,9 +123,9 @@ impl Matrix<4, 4> {
 
     pub fn inverse(self) -> Result<Self, NonInvertibleMatrixError> {
         let det = self.determinant();
-        let mut inv = Matrix([[0.0; 4]; 4]);
+        let mut inv = Self([[0.0; 4]; 4]);
 
-        if utils::approx(det, 0.0) {
+        if float::approx(det, 0.0) {
             return Err(NonInvertibleMatrixError);
         }
 
@@ -155,15 +157,15 @@ impl<const M: usize, const N: usize, const O: usize> Mul<Matrix<N, O>> for Matri
     type Output = Matrix<M, O>;
 
     fn mul(self, rhs: Matrix<N, O>) -> Self::Output {
-        let mut res = Matrix([[0.0; O]; M]);
+        let mut result = Matrix([[0.0; O]; M]);
 
         for i in 0..N {
             for j in 0..O {
-                res[i][j] = (0..M).fold(0.0, |acc, k| acc + self.0[i][k] * rhs.0[k][j]);
+                result[i][j] = (0..M).fold(0.0, |acc, k| acc + self.0[i][k] * rhs.0[k][j]);
             }
         }
 
-        res
+        result
     }
 }
 
@@ -172,12 +174,12 @@ impl Mul<Tuple> for Matrix<4, 4> {
 
     fn mul(self, rhs: Tuple) -> Self::Output {
         let col = Matrix([[rhs.x], [rhs.y], [rhs.z], [rhs.w]]);
-        let res = self * col;
+        let result = self * col;
 
-        let x = res[0][0];
-        let y = res[1][0];
-        let z = res[2][0];
-        let w = res[3][0];
+        let x = result[0][0];
+        let y = result[1][0];
+        let z = result[2][0];
+        let w = result[3][0];
 
         Tuple { x, y, z, w }
     }
@@ -190,7 +192,7 @@ mod tests {
     use super::*;
 
     fn matrix_is_invertible(m: Matrix<4, 4>) -> bool {
-        !utils::approx(m.determinant(), 0.0)
+        !float::approx(m.determinant(), 0.0)
     }
 
     #[test]

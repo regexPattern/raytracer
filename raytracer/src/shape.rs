@@ -14,8 +14,8 @@ pub use sphere::Sphere;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Object {
-    pub transform: Transform,
     pub material: Material,
+    pub transform: Transform,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -42,47 +42,49 @@ impl AsMut<Object> for Shape {
     }
 }
 
-fn common_intersect<F>(object: &Object, ray: &Ray, local_intersect: F) -> Vec<f64>
+fn common_intersect<F>(object: &Object, world_ray: &Ray, local_intersect: F) -> Vec<f64>
 where
     F: FnOnce(Ray) -> Vec<f64>,
 {
-    let object_ray = ray.transform(object.transform.inverse());
+    let object_ray = world_ray.transform(object.transform.inverse());
     local_intersect(object_ray)
 }
 
-fn common_normal_at<F>(object: &Object, point: Point, local_normal_at: F) -> Vector
+fn common_normal_at<F>(object: &Object, world_point: Point, local_normal_at: F) -> Vector
 where
     F: FnOnce(Point) -> Vector,
 {
-    let object_point = object.transform.inverse() * point;
+    let object_point = object.transform.inverse() * world_point;
     let object_normal = local_normal_at(object_point);
     let mut world_normal = object.transform.inverse().transpose() * object_normal;
     world_normal.0.w = 0.0;
 
+    // The point is ensured to always be on the object surface so a non-null normal always exists
+    // for any object type.
     #[allow(clippy::unwrap_used)]
     world_normal.normalize().unwrap()
 }
 
 impl Shape {
-    pub(crate) fn intersect(&self, ray: &Ray) -> Vec<Intersection<'_>> {
+    pub(crate) fn intersect(&self, world_ray: &Ray) -> Vec<Intersection<'_>> {
         let local_intersect = |object_ray| match self {
             Self::Sphere(s) => s.local_intersect(&object_ray),
             Self::Plane(p) => p.local_intersect(&object_ray),
         };
 
-        common_intersect(self.as_ref(), ray, local_intersect)
+        common_intersect(self.as_ref(), world_ray, local_intersect)
             .into_iter()
             .map(|t| Intersection { t, object: self })
             .collect()
     }
 
-    pub(crate) fn normal_at(&self, point: Point) -> Vector {
+    pub(crate) fn normal_at(&self, world_point: Point) -> Vector {
         let local_normal_at = |object_point| match self {
             Self::Sphere(s) => s.local_normal_at(object_point),
             Self::Plane(p) => p.local_normal_at(object_point),
         };
 
-        common_normal_at(self.as_ref(), point, local_normal_at)
+        common_normal_at(self.as_ref(), world_point, local_normal_at)
     }
 }
 
@@ -97,15 +99,15 @@ mod tests {
     }
 
     impl TestShape {
-        fn intersect(&mut self, ray: &Ray) -> Vec<f64> {
-            common_intersect(&self.object, ray, |object_ray| {
+        fn intersect(&mut self, world_ray: &Ray) -> Vec<f64> {
+            common_intersect(&self.object, world_ray, |object_ray| {
                 self.saved_ray = Some(object_ray);
-                Vec::new()
+                vec![]
             })
         }
 
-        fn normal_at(&self, point: Point) -> Vector {
-            common_normal_at(&self.object, point, |object_point| {
+        fn normal_at(&self, world_point: Point) -> Vector {
+            common_normal_at(&self.object, world_point, |object_point| {
                 Vector::new(object_point.0.x, object_point.0.y, object_point.0.z)
             })
         }

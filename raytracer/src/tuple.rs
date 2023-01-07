@@ -1,6 +1,6 @@
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
-use crate::utils;
+use crate::float;
 
 const POINT_W: f64 = 1.0;
 const VECTOR_W: f64 = 0.0;
@@ -20,17 +20,17 @@ pub struct Tuple {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Point(pub(crate) Tuple);
+pub struct Point(pub Tuple);
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Vector(pub(crate) Tuple);
+pub struct Vector(pub Tuple);
 
 impl PartialEq for Tuple {
     fn eq(&self, other: &Self) -> bool {
-        utils::approx(self.x, other.x)
-            && utils::approx(self.y, other.y)
-            && utils::approx(self.z, other.z)
-            && utils::approx(self.w, other.w)
+        float::approx(self.x, other.x)
+            && float::approx(self.y, other.y)
+            && float::approx(self.z, other.z)
+            && float::approx(self.w, other.w)
     }
 }
 
@@ -49,19 +49,19 @@ impl Vector {
         Self(Tuple { x, y, z, w })
     }
 
-    pub(crate) fn magnitude(self) -> f64 {
+    pub fn magnitude(self) -> f64 {
         (self.0.x.powi(2) + self.0.y.powi(2) + self.0.z.powi(2)).sqrt()
     }
 
-    pub(crate) fn normalize(self) -> Result<Self, NormalizeNullVectorError> {
+    pub fn normalize(self) -> Result<Self, NormalizeNullVectorError> {
         (self / self.magnitude()).map_err(|_| NormalizeNullVectorError)
     }
 
-    pub(crate) fn dot(self, rhs: Self) -> f64 {
+    pub fn dot(self, rhs: Self) -> f64 {
         self.0.x * rhs.0.x + self.0.y * rhs.0.y + self.0.z * rhs.0.z
     }
 
-    pub(crate) fn cross(self, rhs: Self) -> Self {
+    pub fn cross(self, rhs: Self) -> Self {
         let x = self.0.y * rhs.0.z - self.0.z * rhs.0.y;
         let y = self.0.z * rhs.0.x - self.0.x * rhs.0.z;
         let z = self.0.x * rhs.0.y - self.0.y * rhs.0.x;
@@ -69,7 +69,7 @@ impl Vector {
         Self::new(x, y, z)
     }
 
-    pub(crate) fn reflect(self, normal: Self) -> Self {
+    pub fn reflect(self, normal: Self) -> Self {
         self - normal * 2.0 * self.dot(normal)
     }
 }
@@ -180,7 +180,7 @@ impl Div<f64> for Vector {
     type Output = Result<Self, DivisionByZeroError>;
 
     fn div(self, rhs: f64) -> Self::Output {
-        (!utils::approx(rhs, 0.0))
+        (!float::approx(rhs, 0.0))
             .then_some(self * (1.0 / rhs))
             .ok_or(DivisionByZeroError)
     }
@@ -193,11 +193,11 @@ mod tests {
     use super::*;
 
     fn is_a_point(t: Tuple) -> bool {
-        utils::approx(t.w, 1.0)
+        float::approx(t.w, 1.0)
     }
 
     fn is_a_vector(t: Tuple) -> bool {
-        utils::approx(t.w, 0.0)
+        float::approx(t.w, 0.0)
     }
 
     #[test]

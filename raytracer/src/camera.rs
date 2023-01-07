@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use indicatif::ProgressBar;
 use rayon::ThreadPoolBuilder;
 
-use crate::{canvas::Canvas, ray::Ray, transform::Transform, tuple::Point, utils, world::World};
+use crate::{canvas::Canvas, float, ray::Ray, transform::Transform, tuple::Point, world::World};
 
 const DEFAULT_THREADS: usize = 8;
 
@@ -35,10 +35,10 @@ impl PartialEq for Camera {
         self.transform == other.transform
             && self.hsize == other.hsize
             && self.vsize == other.vsize
-            && utils::approx(self.field_of_view, other.field_of_view)
-            && utils::approx(self.pixel_size, other.pixel_size)
-            && utils::approx(self.half_width, other.half_width)
-            && utils::approx(self.half_height, other.half_height)
+            && float::approx(self.field_of_view, other.field_of_view)
+            && float::approx(self.pixel_size, other.pixel_size)
+            && float::approx(self.half_width, other.half_width)
+            && float::approx(self.half_height, other.half_height)
     }
 }
 
@@ -48,7 +48,7 @@ impl Camera {
             return Err(CameraError::NullDimension);
         }
 
-        if utils::approx(field_of_view % std::f64::consts::PI, 0.0) {
+        if float::approx(field_of_view % std::f64::consts::PI, 0.0) {
             return Err(CameraError::MultipleOfPiFieldOfView);
         }
 
@@ -102,6 +102,8 @@ impl Camera {
             value.parse().unwrap_or(DEFAULT_THREADS)
         });
 
+        // https://docs.rs/rayon/1.6.1/rayon/struct.ThreadPoolBuildError.html
+        #[allow(clippy::unwrap_used)]
         let pool = ThreadPoolBuilder::new()
             .num_threads(threads)
             .build()
@@ -122,12 +124,13 @@ impl Camera {
 
                     for x in 0..self.hsize {
                         let ray = self.ray_for_pixel(x, y);
-                        let color = world.color_at(&ray);
+                        let color = world.color_at(&ray, crate::world::RECURSION_DEPTH);
                         buffer.push((x, color));
 
                         progress_bar.inc(1);
                     }
 
+                    // https://doc.rust-lang.org/std/sync/type.LockResult.html
                     #[allow(clippy::unwrap_used)]
                     let mut image = image.lock().unwrap();
                     for (x, pixel) in buffer {
@@ -143,7 +146,7 @@ impl Camera {
 
 #[cfg(test)]
 mod tests {
-    use crate::{assert_approx, color::Color, tuple::Vector, utils::test_world};
+    use crate::{assert_approx, color::Color, tuple::Vector, world::test_utils::test_world};
 
     use super::*;
 

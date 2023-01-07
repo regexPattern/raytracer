@@ -4,7 +4,7 @@ use crate::{
 };
 
 #[derive(Debug, PartialEq)]
-pub(crate) struct Ray {
+pub struct Ray {
     pub origin: Point,
     pub direction: Vector,
 }

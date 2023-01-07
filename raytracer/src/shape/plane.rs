@@ -1,7 +1,7 @@
 use crate::{
+    float,
     ray::Ray,
     tuple::{Point, Vector},
-    utils,
 };
 
 use super::Object;
@@ -11,9 +11,9 @@ pub struct Plane(pub Object);
 
 impl Plane {
     pub(crate) fn local_intersect(&self, object_ray: &Ray) -> Vec<f64> {
-        utils::approx(object_ray.direction.0.y, 0.0)
+        float::approx(object_ray.direction.0.y, 0.0)
             .then_some(vec![])
-            .unwrap_or(vec![-object_ray.origin.0.y / object_ray.direction.0.y])
+            .unwrap_or_else(|| vec![-object_ray.origin.0.y / object_ray.direction.0.y])
     }
 
     pub(crate) fn local_normal_at(&self, _: Point) -> Vector {

@@ -1,6 +1,6 @@
 use std::ops::{Add, Mul, Sub};
 
-use crate::utils;
+use crate::float;
 
 pub mod consts;
 
@@ -13,9 +13,9 @@ pub struct Color {
 
 impl PartialEq for Color {
     fn eq(&self, other: &Self) -> bool {
-        utils::approx(self.red, other.red)
-            && utils::approx(self.green, other.green)
-            && utils::approx(self.blue, other.blue)
+        float::approx(self.red, other.red)
+            && float::approx(self.green, other.green)
+            && float::approx(self.blue, other.blue)
     }
 }
 

@@ -29,3 +29,9 @@ pub const BLUE: Color = Color {
     green: 0.0,
     blue: 1.0,
 };
+
+pub const LIGHT_SKY_BLUE: Color = Color {
+    red: 0.5294,
+    green: 0.8078,
+    blue: 0.9804,
+};

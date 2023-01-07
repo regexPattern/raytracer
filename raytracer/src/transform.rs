@@ -1,9 +1,9 @@
 use std::ops::Mul;
 
 use crate::{
+    float,
     matrix::{self, Matrix},
     tuple::{Point, Vector},
-    utils,
 };
 
 #[derive(Debug, PartialEq)]
@@ -23,7 +23,10 @@ pub enum AntiIsomorphicTransformError {
     },
     NullUpVector,
     EqualFromAndToVectors,
-    CollinearToFromAndUpVectors,
+    CollinearToFromAndUpVectors {
+        to_from: Vector,
+        up: Vector,
+    },
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -46,7 +49,7 @@ impl Transform {
     }
 
     pub fn try_scaling(x: f64, y: f64, z: f64) -> Result<Self, AntiIsomorphicTransformError> {
-        (!utils::approx(x * y * z, 0.0))
+        (!float::approx(x * y * z, 0.0))
             .then_some(Self(Matrix([
                 [x, 0.0, 0.0, 0.0],
                 [0.0, y, 0.0, 0.0],
@@ -91,7 +94,7 @@ impl Transform {
         zx: f64,
         zy: f64,
     ) -> Result<Self, AntiIsomorphicTransformError> {
-        (!utils::approx(
+        (!float::approx(
             xz * yx * zy + xy * yz * zx - xy * yx - xz * zx - yz * zy + 1.0,
             0.0,
         ))
@@ -128,7 +131,10 @@ impl Transform {
         );
 
         if left == Vector::new(0.0, 0.0, 0.0) {
-            return Err(AntiIsomorphicTransformError::CollinearToFromAndUpVectors);
+            return Err(AntiIsomorphicTransformError::CollinearToFromAndUpVectors {
+                to_from: to - from,
+                up,
+            });
         }
 
         let up = left.cross(forward);
@@ -143,9 +149,9 @@ impl Transform {
         Ok(orientation * Self::translation(-from.0.x, -from.0.y, -from.0.z))
     }
 
-    // Only isomorphic matrices can be constructed through this type's public API. This means that
-    // the matrix associated with every transformation is going to be invertible.
     pub(crate) fn inverse(self) -> Self {
+        // Only isomorphic matrices can be constructed through this type's public API. This means that
+        // the matrix associated with every transformation is going to be invertible.
         #[allow(clippy::unwrap_used)]
         Self(self.0.inverse().unwrap())
     }
@@ -532,7 +538,10 @@ mod tests {
 
         assert_eq!(
             t,
-            Err(AntiIsomorphicTransformError::CollinearToFromAndUpVectors)
+            Err(AntiIsomorphicTransformError::CollinearToFromAndUpVectors {
+                to_from: to - from,
+                up,
+            })
         );
     }
 }

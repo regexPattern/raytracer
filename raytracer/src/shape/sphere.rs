@@ -19,7 +19,7 @@ impl Sphere {
         let discriminant = b.powi(2) - 4.0 * a * c;
 
         if discriminant < 0.0 {
-            return Vec::new();
+            return vec![];
         }
 
         let t1 = (-b - discriminant.sqrt()) / (2.0 * a);
