@@ -101,7 +101,7 @@ impl Material {
 
 #[cfg(test)]
 mod tests {
-    use crate::{assert_approx, pattern::Pattern3D};
+    use crate::{assert_approx, pattern::{Pattern3D, Texture3D}};
 
     use super::*;
 
@@ -295,7 +295,7 @@ mod tests {
         let object = Object::default();
 
         let m = Material {
-            pattern: Pattern3D::Stripe(Pattern3D {
+            pattern: Pattern3D::Stripe(Texture3D {
                 a: color::consts::WHITE,
                 b: color::consts::BLACK,
                 transform: Default::default(),

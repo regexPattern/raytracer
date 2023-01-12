@@ -1,12 +1,10 @@
-#![allow(unused_variables, unused_imports)]
-
 use raytracer::{
     camera::{Camera, RenderProgress},
     color::{self, Color},
     light::PointLight,
-    material::{self, Material},
-    pattern::{Pattern3D, Pattern3D},
-    shape::{Object, Plane, Shape, Sphere},
+    material::Material,
+    pattern::{Pattern3D, Texture3D},
+    shape::{Cube, Object, Plane, Shape, Sphere},
     transform::Transform,
     tuple::{Point, Vector},
     world::World,
@@ -31,37 +29,26 @@ fn main() {
                 green: 0.4627,
                 blue: 0.3255,
             }),
-            ambient: -1.0,
-            diffuse: -1.0,
-            index_of_refraction: -1.0,
-            reflectivity: -1.0,
-            shininess: -1.0,
-            specular: -1.0,
-            transparency: -1.0,
+            ..Default::default()
         },
         ..Default::default()
     }));
 
-    let sphere = Shape::Sphere(Sphere(Object {
+    let checkered_sphere = Shape::Sphere(Sphere(Object {
         material: Material {
-            pattern: Pattern3D::Solid(Color {
-                red: 0.1,
-                green: 0.1,
-                blue: 0.1,
+            pattern: Pattern3D::Checker(Texture3D {
+                a: color::consts::WHITE,
+                b: color::consts::BLACK,
+                transform: Transform::try_scaling(0.25, 0.25, 0.25).unwrap(),
             }),
-            reflectivity: 0.9,
-            transparency: 0.9,
-            shininess: 600.0,
-            ambient: 0.01,
-            index_of_refraction: material::consts::GLASS_INDEX_OF_REFRACTION,
             ..Default::default()
         },
         transform: Transform::translation(0.0, 1.0, 0.0),
     }));
 
-    let checkered_sphere = Shape::Sphere(Sphere(Object {
+    let cube = Shape::Cube(Cube(Object {
         material: Material {
-            pattern: Pattern3D::Checker(Pattern3D {
+            pattern: Pattern3D::Checker(Texture3D {
                 a: color::consts::WHITE,
                 b: color::consts::BLACK,
                 transform: Transform::try_scaling(0.25, 0.25, 0.25).unwrap(),
@@ -76,7 +63,7 @@ fn main() {
         intensity: color::consts::WHITE,
     };
 
-    let objects = vec![floor, checkered_sphere, sky];
+    let objects = vec![floor, cube, sky];
     let lights = vec![light];
 
     let world = World { objects, lights };

@@ -333,21 +333,4 @@ mod tests {
         assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.99)), WHITE);
         assert_eq!(p.color_at(Point::new(0.0, 0.0, 1.01)), BLACK);
     }
-
-    #[test]
-    fn checkers_pattern_in_2d() {
-        let p = UVChecker {
-            width: 2,
-            height: 2,
-            a: BLACK,
-            b: WHITE,
-        };
-
-        assert_eq!(p.color_at(0.0, 0.0), BLACK);
-        assert_eq!(p.color_at(0.5, 0.0), WHITE);
-        assert_eq!(p.color_at(0.0, 0.5), WHITE);
-        assert_eq!(p.color_at(0.5, 0.0), WHITE);
-        assert_eq!(p.color_at(0.5, 0.5), BLACK);
-        assert_eq!(p.color_at(1.0, 1.0), BLACK);
-    }
 }

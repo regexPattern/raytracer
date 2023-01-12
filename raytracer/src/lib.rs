@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 mod float;
 mod intersections;
 mod matrix;

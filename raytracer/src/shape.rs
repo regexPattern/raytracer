@@ -6,9 +6,11 @@ use crate::{
     tuple::{Point, Vector},
 };
 
+mod cube;
 mod plane;
 mod sphere;
 
+pub use cube::Cube;
 pub use plane::Plane;
 pub use sphere::Sphere;
 
@@ -20,6 +22,7 @@ pub struct Object {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Shape {
+    Cube(Cube),
     Plane(Plane),
     Sphere(Sphere),
 }
@@ -27,6 +30,7 @@ pub enum Shape {
 impl AsRef<Object> for Shape {
     fn as_ref(&self) -> &Object {
         match self {
+            Self::Cube(c) => &c.0,
             Self::Plane(p) => &p.0,
             Self::Sphere(s) => &s.0,
         }
@@ -36,6 +40,7 @@ impl AsRef<Object> for Shape {
 impl AsMut<Object> for Shape {
     fn as_mut(&mut self) -> &mut Object {
         match self {
+            Self::Cube(c) => &mut c.0,
             Self::Plane(p) => &mut p.0,
             Self::Sphere(s) => &mut s.0,
         }
@@ -68,6 +73,7 @@ where
 impl Shape {
     pub(crate) fn intersect(&self, world_ray: &Ray) -> Vec<Intersection<'_>> {
         let local_intersect = |object_ray| match self {
+            Self::Cube(c) => c.local_intersect(&object_ray),
             Self::Sphere(s) => s.local_intersect(&object_ray),
             Self::Plane(p) => p.local_intersect(&object_ray),
         };
@@ -80,6 +86,7 @@ impl Shape {
 
     pub(crate) fn normal_at(&self, world_point: Point) -> Vector {
         let local_normal_at = |object_point| match self {
+            Self::Cube(c) => c.local_normal_at(object_point),
             Self::Sphere(s) => s.local_normal_at(object_point),
             Self::Plane(p) => p.local_normal_at(object_point),
         };

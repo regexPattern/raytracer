@@ -3,10 +3,10 @@ use raytracer::{
     color::{self, Color},
     light::PointLight,
     material::Material,
-    pattern::{Pattern3D, Pattern3D},
+    pattern::{Pattern3D, Texture3D},
     shape::{Object, Plane, Shape, Sphere},
     transform::Transform,
-    tuple::{Point, Vector},
+    tuple::Point,
     world::World,
 };
 
@@ -68,7 +68,7 @@ fn main() {
 
     let floor = Shape::Plane(Plane(Object {
         material: Material {
-            pattern: Pattern3D::Checker(Pattern3D::new(color::consts::WHITE, color::consts::BLACK)),
+            pattern: Pattern3D::Checker(Texture3D::new(color::consts::WHITE, color::consts::BLACK)),
             ..Default::default()
         },
         ..Default::default()
