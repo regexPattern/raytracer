@@ -8,6 +8,10 @@ pub fn ge(a: f64, b: f64) -> bool {
     approx(a, b) || a > b
 }
 
+pub fn le(a: f64, b: f64) -> bool {
+    approx(a, b) || a < b
+}
+
 #[macro_export]
 macro_rules! assert_approx {
     ($a:expr, $b:expr) => {{

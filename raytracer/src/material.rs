@@ -2,12 +2,17 @@ use crate::{
     color::{self, Color},
     float,
     light::PointLight,
-    pattern::Pattern3D,
-    shape::Object,
+    object::Object,
+    pattern::Pattern,
     tuple::{Point, Vector},
 };
 
-pub mod consts;
+pub mod consts {
+    pub const VACUUM_INDEX_OF_REFRACTION: f64 = 1.0;
+    pub const AIR_INDEX_OF_REFRACTION: f64 = 1.00029;
+    pub const WATER_INDEX_OF_REFRACTION: f64 = 1.333;
+    pub const GLASS_INDEX_OF_REFRACTION: f64 = 1.52;
+}
 
 #[derive(Debug, PartialEq)]
 pub struct LightOnTheSurfaceError;
@@ -17,7 +22,7 @@ pub struct Material {
     pub ambient: f64,
     pub diffuse: f64,
     pub index_of_refraction: f64,
-    pub pattern: Pattern3D,
+    pub pattern: Pattern,
     pub reflectivity: f64,
     pub shininess: f64,
     pub specular: f64,
@@ -39,24 +44,15 @@ impl PartialEq for Material {
 
 impl Default for Material {
     fn default() -> Self {
-        let ambient = 0.1;
-        let diffuse = 0.9;
-        let index_of_refraction = consts::VACUUM_INDEX_OF_REFRACTION;
-        let pattern = Pattern3D::Solid(color::consts::WHITE);
-        let reflectivity = 0.0;
-        let shininess = 200.0;
-        let specular = 0.9;
-        let transparency = 0.0;
-
         Self {
-            ambient,
-            diffuse,
-            index_of_refraction,
-            pattern,
-            reflectivity,
-            shininess,
-            specular,
-            transparency,
+            ambient: 0.1,
+            diffuse: 0.9,
+            index_of_refraction: self::consts::VACUUM_INDEX_OF_REFRACTION,
+            pattern: Pattern::Solid(color::consts::WHITE),
+            reflectivity: 0.0,
+            shininess: 200.0,
+            specular: 0.9,
+            transparency: 0.0,
         }
     }
 }
@@ -101,13 +97,16 @@ impl Material {
 
 #[cfg(test)]
 mod tests {
-    use crate::{assert_approx, pattern::{Pattern3D, Texture3D}};
+    use crate::{
+        assert_approx,
+        pattern::{Pattern, Schema},
+    };
 
     use super::*;
 
-    fn object_material_and_position() -> (Object, Material, Point) {
+    fn test_object_material_point() -> (Object, Material, Point) {
         (
-            Default::default(),
+            Object::Sphere(Default::default()),
             Default::default(),
             Point::new(0.0, 0.0, 0.0),
         )
@@ -117,7 +116,7 @@ mod tests {
     fn the_default_matrial() {
         let m = Material::default();
 
-        assert_eq!(m.pattern, Pattern3D::Solid(color::consts::WHITE));
+        assert_eq!(m.pattern, Pattern::Solid(color::consts::WHITE));
         assert_approx!(m.ambient, 0.1);
         assert_approx!(m.diffuse, 0.9);
         assert_approx!(m.specular, 0.9);
@@ -129,7 +128,7 @@ mod tests {
 
     #[test]
     fn lighting_with_the_eye_between_the_light_and_the_surface() {
-        let (object, m, position) = object_material_and_position();
+        let (object, m, position) = test_object_material_point();
 
         let eyev = Vector::new(0.0, 0.0, -1.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
@@ -152,7 +151,7 @@ mod tests {
 
     #[test]
     fn lighting_with_the_eye_between_the_light_and_the_surface_eye_offset_45_degrees() {
-        let (object, m, position) = object_material_and_position();
+        let (object, m, position) = test_object_material_point();
 
         let eyev = Vector::new(0.0, 2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
@@ -175,7 +174,7 @@ mod tests {
 
     #[test]
     fn lighting_with_eye_opposite_surface_light_offset_45_degrees() {
-        let (object, m, position) = object_material_and_position();
+        let (object, m, position) = test_object_material_point();
 
         let eyev = Vector::new(0.0, 0.0, -1.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
@@ -198,7 +197,7 @@ mod tests {
 
     #[test]
     fn lighting_with_eye_in_the_path_of_the_reflection_vector() {
-        let (object, m, position) = object_material_and_position();
+        let (object, m, position) = test_object_material_point();
 
         let eyev = Vector::new(0.0, -2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
@@ -221,7 +220,7 @@ mod tests {
 
     #[test]
     fn lighting_with_the_light_behind_the_surface() {
-        let (object, m, position) = object_material_and_position();
+        let (object, m, position) = test_object_material_point();
 
         let eyev = Vector::new(0.0, 0.0, -1.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
@@ -244,7 +243,7 @@ mod tests {
 
     #[test]
     fn lighting_with_the_light_on_the_surface() {
-        let (object, m, position) = object_material_and_position();
+        let (object, m, position) = test_object_material_point();
 
         let eyev = Vector::new(0.0, 0.0, -1.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
@@ -267,7 +266,7 @@ mod tests {
 
     #[test]
     fn lighting_with_the_surface_in_shadow() {
-        let (object, m, position) = object_material_and_position();
+        let (object, m, position) = test_object_material_point();
 
         let eyev = Vector::new(0.0, 0.0, -1.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
@@ -292,10 +291,10 @@ mod tests {
 
     #[test]
     fn lighting_with_a_pattern_applied() {
-        let object = Object::default();
+        let (o, _, _) = test_object_material_point();
 
         let m = Material {
-            pattern: Pattern3D::Stripe(Texture3D {
+            pattern: Pattern::Stripe(Schema {
                 a: color::consts::WHITE,
                 b: color::consts::BLACK,
                 transform: Default::default(),
@@ -313,22 +312,8 @@ mod tests {
             intensity: color::consts::WHITE,
         };
 
-        let c1 = m.lighting(
-            &object,
-            &light,
-            Point::new(0.9, 0.0, 0.0),
-            eyev,
-            normalv,
-            false,
-        );
-        let c2 = m.lighting(
-            &object,
-            &light,
-            Point::new(1.1, 0.0, 0.0),
-            eyev,
-            normalv,
-            false,
-        );
+        let c1 = m.lighting(&o, &light, Point::new(0.9, 0.0, 0.0), eyev, normalv, false);
+        let c2 = m.lighting(&o, &light, Point::new(1.1, 0.0, 0.0), eyev, normalv, false);
 
         assert_eq!(c1, color::consts::WHITE);
         assert_eq!(c2, color::consts::BLACK);

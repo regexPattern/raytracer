@@ -1,34 +1,34 @@
 use crate::{
     color::Color,
     float,
-    shape::Object,
+    object::Object,
     transform::Transform,
     tuple::{Point, Tuple},
 };
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Texture3D {
+pub struct Schema {
     pub a: Color,
     pub b: Color,
     pub transform: Transform,
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum Pattern3D {
+pub enum Pattern {
     Solid(Color),
-    Stripe(Texture3D),
-    Gradient(Texture3D),
-    Ring(Texture3D),
-    Checker(Texture3D),
+    Stripe(Schema),
+    Gradient(Schema),
+    Ring(Schema),
+    Checker(Schema),
 }
 
-fn pattern_point(object: &Object, pattern_transform: Transform, world_point: Point) -> Point {
-    let object_point = object.transform.inverse() * world_point;
+fn pattern_point(object: &Object, transform: Transform, point: Point) -> Point {
+    let object_point = object.transform().inverse() * point;
 
-    pattern_transform.inverse() * object_point
+    transform.inverse() * object_point
 }
 
-impl Texture3D {
+impl Schema {
     pub fn new(a: Color, b: Color) -> Self {
         let transform = Transform::default();
 
@@ -36,13 +36,13 @@ impl Texture3D {
     }
 }
 
-impl Pattern3D {
-    pub(crate) fn color_at_object(&self, object: &Object, world_point: Point) -> Color {
-        self.color_at(pattern_point(object, self.transform(), world_point))
+impl Pattern {
+    pub(crate) fn color_at_object(&self, object: &Object, point: Point) -> Color {
+        self.color_at(pattern_point(object, self.transform(), point))
     }
 
-    fn color_at(&self, pattern_point: Point) -> Color {
-        let Point(Tuple { x, y, z, .. }) = pattern_point;
+    fn color_at(&self, point: Point) -> Color {
+        let Point(Tuple { x, y, z, .. }) = point;
 
         match self {
             Self::Solid(c) => c.to_owned(),
@@ -81,18 +81,25 @@ impl Pattern3D {
 
 #[cfg(test)]
 mod tests {
-    use crate::color::consts::{BLACK, WHITE};
+    use crate::{
+        color,
+        object::{Object, Sphere},
+    };
 
     use super::*;
 
+    fn test_object() -> Object {
+        Object::Sphere(Default::default())
+    }
+
     #[derive(Debug)]
-    struct TestPattern(Texture3D);
+    struct TestPattern(Schema);
 
     impl Default for TestPattern {
         fn default() -> Self {
-            Self(Texture3D {
-                a: WHITE,
-                b: BLACK,
+            Self(Schema {
+                a: color::consts::WHITE,
+                b: color::consts::BLACK,
                 transform: Default::default(),
             })
         }
@@ -112,98 +119,98 @@ mod tests {
 
     #[test]
     fn creating_a_stripe_pattern() {
-        let p = Pattern3D::Stripe(Texture3D::new(WHITE, BLACK));
+        let p = Pattern::Stripe(Schema::new(color::consts::WHITE, color::consts::BLACK));
 
-        assert!(matches!(p, Pattern3D::Stripe(Texture3D { a, .. }) if a == WHITE));
-        assert!(matches!(p, Pattern3D::Stripe(Texture3D { b, .. }) if b == BLACK));
+        assert!(matches!(p, Pattern::Stripe(Schema { a, .. }) if a == color::consts::WHITE));
+        assert!(matches!(p, Pattern::Stripe(Schema { b, .. }) if b == color::consts::BLACK));
         assert!(
-            matches!(p, Pattern3D::Stripe(Texture3D { transform: t, .. }) if t == Default::default())
+            matches!(p, Pattern::Stripe(Schema { transform: t, .. }) if t == Default::default())
         );
     }
 
     #[test]
     fn a_stripe_pattern_is_constant_in_y() {
-        let p = Pattern3D::Stripe(Texture3D::new(WHITE, BLACK));
+        let p = Pattern::Stripe(Schema::new(color::consts::WHITE, color::consts::BLACK));
 
-        assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), WHITE);
-        assert_eq!(p.color_at(Point::new(0.0, 1.0, 0.0)), WHITE);
-        assert_eq!(p.color_at(Point::new(0.0, 2.0, 0.0)), WHITE);
+        assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), color::consts::WHITE);
+        assert_eq!(p.color_at(Point::new(0.0, 1.0, 0.0)), color::consts::WHITE);
+        assert_eq!(p.color_at(Point::new(0.0, 2.0, 0.0)), color::consts::WHITE);
     }
 
     #[test]
     fn a_stripe_pattern_is_constant_in_z() {
-        let p = Pattern3D::Stripe(Texture3D::new(WHITE, BLACK));
+        let p = Pattern::Stripe(Schema::new(color::consts::WHITE, color::consts::BLACK));
 
-        assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), WHITE);
-        assert_eq!(p.color_at(Point::new(0.0, 0.0, 1.0)), WHITE);
-        assert_eq!(p.color_at(Point::new(0.0, 0.0, 2.0)), WHITE);
+        assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), color::consts::WHITE);
+        assert_eq!(p.color_at(Point::new(0.0, 0.0, 1.0)), color::consts::WHITE);
+        assert_eq!(p.color_at(Point::new(0.0, 0.0, 2.0)), color::consts::WHITE);
     }
 
     #[test]
     fn a_stripe_pattern_alternates_in_x() {
-        let p = Pattern3D::Stripe(Texture3D::new(WHITE, BLACK));
+        let p = Pattern::Stripe(Schema::new(color::consts::WHITE, color::consts::BLACK));
 
-        assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), WHITE);
-        assert_eq!(p.color_at(Point::new(0.9, 0.0, 0.0)), WHITE);
-        assert_eq!(p.color_at(Point::new(1.0, 0.0, 0.0)), BLACK);
-        assert_eq!(p.color_at(Point::new(-0.1, 0.0, 0.0)), BLACK);
-        assert_eq!(p.color_at(Point::new(-1.0, 0.0, 0.0)), BLACK);
-        assert_eq!(p.color_at(Point::new(-1.1, 0.0, 0.0)), WHITE);
+        assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), color::consts::WHITE);
+        assert_eq!(p.color_at(Point::new(0.9, 0.0, 0.0)), color::consts::WHITE);
+        assert_eq!(p.color_at(Point::new(1.0, 0.0, 0.0)), color::consts::BLACK);
+        assert_eq!(p.color_at(Point::new(-0.1, 0.0, 0.0)), color::consts::BLACK);
+        assert_eq!(p.color_at(Point::new(-1.0, 0.0, 0.0)), color::consts::BLACK);
+        assert_eq!(p.color_at(Point::new(-1.1, 0.0, 0.0)), color::consts::WHITE);
     }
 
     #[test]
     fn stripes_with_object_transform() {
-        let o = Object {
+        let o = Object::Sphere(Sphere {
             transform: Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
             ..Default::default()
-        };
+        });
 
-        let p = Pattern3D::Stripe(Texture3D::new(WHITE, BLACK));
+        let p = Pattern::Stripe(Schema::new(color::consts::WHITE, color::consts::BLACK));
 
         let c = p.color_at_object(&o, Point::new(1.5, 0.0, 0.0));
 
-        assert_eq!(c, WHITE);
+        assert_eq!(c, color::consts::WHITE);
     }
 
     #[test]
     fn stripes_with_a_pattern_transformation() {
-        let o = Object::default();
+        let o = test_object();
 
-        let p = Pattern3D::Stripe(Texture3D {
-            a: WHITE,
-            b: BLACK,
+        let p = Pattern::Stripe(Schema {
+            a: color::consts::WHITE,
+            b: color::consts::BLACK,
             transform: Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
         });
 
         let c = p.color_at_object(&o, Point::new(1.5, 0.0, 0.0));
 
-        assert_eq!(c, WHITE);
+        assert_eq!(c, color::consts::WHITE);
     }
 
     #[test]
     fn stripes_with_both_an_object_and_a_pattern_transformation() {
-        let o = Object {
+        let o = Object::Sphere(Sphere {
             transform: Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
             ..Default::default()
-        };
+        });
 
-        let p = Pattern3D::Stripe(Texture3D {
-            a: WHITE,
-            b: BLACK,
+        let p = Pattern::Stripe(Schema {
+            a: color::consts::WHITE,
+            b: color::consts::BLACK,
             transform: Transform::translation(0.5, 0.0, 0.0),
         });
 
         let c = p.color_at_object(&o, Point::new(2.5, 0.0, 0.0));
 
-        assert_eq!(c, WHITE);
+        assert_eq!(c, color::consts::WHITE);
     }
 
     #[test]
     fn a_pattern_with_an_object_transformation() {
-        let o = Object {
+        let o = Object::Sphere(Sphere {
             transform: Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
             ..Default::default()
-        };
+        });
 
         let p = TestPattern::default();
 
@@ -221,11 +228,11 @@ mod tests {
 
     #[test]
     fn a_pattern_with_a_pattern_transformation() {
-        let o = Object::default();
+        let o = test_object();
 
-        let p = TestPattern(Texture3D {
-            a: WHITE,
-            b: BLACK,
+        let p = TestPattern(Schema {
+            a: color::consts::WHITE,
+            b: color::consts::BLACK,
             transform: Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
         });
 
@@ -243,14 +250,14 @@ mod tests {
 
     #[test]
     fn a_pattern_with_both_an_object_and_a_pattern_transformation() {
-        let o = Object {
+        let o = Object::Sphere(Sphere {
             transform: Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
             ..Default::default()
-        };
+        });
 
-        let p = TestPattern(Texture3D {
-            a: WHITE,
-            b: BLACK,
+        let p = TestPattern(Schema {
+            a: color::consts::WHITE,
+            b: color::consts::BLACK,
             transform: Transform::translation(0.5, 1.0, 1.5),
         });
 
@@ -268,9 +275,9 @@ mod tests {
 
     #[test]
     fn a_gradient_linearly_interpolates_between_colors() {
-        let p = Pattern3D::Gradient(Texture3D::new(WHITE, BLACK));
+        let p = Pattern::Gradient(Schema::new(color::consts::WHITE, color::consts::BLACK));
 
-        assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), WHITE);
+        assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), color::consts::WHITE);
         assert_eq!(
             p.color_at(Point::new(0.25, 0.0, 0.0)),
             Color {
@@ -299,38 +306,41 @@ mod tests {
 
     #[test]
     fn a_ring_should_extend_in_both_x_and_z() {
-        let p = Pattern3D::Ring(Texture3D::new(WHITE, BLACK));
+        let p = Pattern::Ring(Schema::new(color::consts::WHITE, color::consts::BLACK));
 
-        assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), WHITE);
-        assert_eq!(p.color_at(Point::new(1.0, 0.0, 0.0)), BLACK);
-        assert_eq!(p.color_at(Point::new(0.0, 0.0, 1.0)), BLACK);
-        assert_eq!(p.color_at(Point::new(0.708, 0.0, 0.708)), BLACK);
+        assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), color::consts::WHITE);
+        assert_eq!(p.color_at(Point::new(1.0, 0.0, 0.0)), color::consts::BLACK);
+        assert_eq!(p.color_at(Point::new(0.0, 0.0, 1.0)), color::consts::BLACK);
+        assert_eq!(
+            p.color_at(Point::new(0.708, 0.0, 0.708)),
+            color::consts::BLACK
+        );
     }
 
     #[test]
     fn checkers_should_repeat_in_x() {
-        let p = Pattern3D::Checker(Texture3D::new(WHITE, BLACK));
+        let p = Pattern::Checker(Schema::new(color::consts::WHITE, color::consts::BLACK));
 
-        assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), WHITE);
-        assert_eq!(p.color_at(Point::new(0.99, 0.0, 0.0)), WHITE);
-        assert_eq!(p.color_at(Point::new(1.01, 0.0, 0.0)), BLACK);
+        assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), color::consts::WHITE);
+        assert_eq!(p.color_at(Point::new(0.99, 0.0, 0.0)), color::consts::WHITE);
+        assert_eq!(p.color_at(Point::new(1.01, 0.0, 0.0)), color::consts::BLACK);
     }
 
     #[test]
     fn checkers_should_repeat_in_y() {
-        let p = Pattern3D::Checker(Texture3D::new(WHITE, BLACK));
+        let p = Pattern::Checker(Schema::new(color::consts::WHITE, color::consts::BLACK));
 
-        assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), WHITE);
-        assert_eq!(p.color_at(Point::new(0.0, 0.99, 0.0)), WHITE);
-        assert_eq!(p.color_at(Point::new(0.0, 1.01, 0.0)), BLACK);
+        assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), color::consts::WHITE);
+        assert_eq!(p.color_at(Point::new(0.0, 0.99, 0.0)), color::consts::WHITE);
+        assert_eq!(p.color_at(Point::new(0.0, 1.01, 0.0)), color::consts::BLACK);
     }
 
     #[test]
     fn checkers_should_repeat_in_z() {
-        let p = Pattern3D::Checker(Texture3D::new(WHITE, BLACK));
+        let p = Pattern::Checker(Schema::new(color::consts::WHITE, color::consts::BLACK));
 
-        assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), WHITE);
-        assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.99)), WHITE);
-        assert_eq!(p.color_at(Point::new(0.0, 0.0, 1.01)), BLACK);
+        assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), color::consts::WHITE);
+        assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.99)), color::consts::WHITE);
+        assert_eq!(p.color_at(Point::new(0.0, 0.0, 1.01)), color::consts::BLACK);
     }
 }

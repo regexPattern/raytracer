@@ -1,81 +1,93 @@
+#![allow(unused, dead_code)]
+
 use raytracer::{
-    camera::{Camera, RenderProgress},
-    color::{self, Color},
+    camera::Camera,
+    color,
     light::PointLight,
     material::Material,
-    pattern::{Pattern3D, Texture3D},
-    shape::{Cube, Object, Plane, Shape, Sphere},
+    object::{Cylinder, Group, Object, Plane, Sphere},
+    pattern::{Pattern, Schema},
     transform::Transform,
     tuple::{Point, Vector},
-    world::World,
+    world::{self, World},
 };
 
 fn main() {
-    let sky = Shape::Plane(Plane(Object {
+    let sky = Object::Plane(Plane {
         material: Material {
-            pattern: Pattern3D::Solid(color::consts::LIGHT_SKY_BLUE),
-            shininess: 1000.0,
-            specular: 0.0,
+            pattern: Pattern::Solid(color::consts::LIGHT_SKY_BLUE),
             ..Default::default()
         },
-        transform: Transform::translation(0.0, 0.0, 100.0)
-            * Transform::rotation_x(std::f64::consts::FRAC_PI_2),
-    }));
+        transform: Transform::translation(-40.0, 0.0, 0.0)
+            * Transform::rotation_z(std::f64::consts::FRAC_PI_2),
+    });
 
-    let floor = Shape::Plane(Plane(Object {
+    let floor = Object::Plane(Plane {
         material: Material {
-            pattern: Pattern3D::Solid(Color {
-                red: 0.6078,
-                green: 0.4627,
-                blue: 0.3255,
+            shininess: 200.0,
+            pattern: Pattern::Solid(color::consts::DIRT),
+            ..Default::default()
+        },
+        transform: Transform::translation(0.0, 0.0, 0.0),
+    });
+
+    let s1 = Object::Sphere(Sphere {
+        material: Material {
+            pattern: Pattern::Checker(Schema {
+                a: color::consts::LIGHT_SKY_BLUE,
+                b: color::consts::BLUE,
+                transform: Default::default(),
             }),
             ..Default::default()
         },
         ..Default::default()
-    }));
+    });
 
-    let checkered_sphere = Shape::Sphere(Sphere(Object {
+    let c1 = Object::Cylinder(Cylinder {
+        minimum: 0.0,
+        maximum: 1.0,
+        closed: true,
         material: Material {
-            pattern: Pattern3D::Checker(Texture3D {
+            pattern: Pattern::Checker(Schema {
                 a: color::consts::WHITE,
-                b: color::consts::BLACK,
-                transform: Transform::try_scaling(0.25, 0.25, 0.25).unwrap(),
+                b: color::consts::RED,
+                transform: Default::default(),
             }),
             ..Default::default()
         },
-        transform: Transform::translation(0.0, 1.0, 0.0),
-    }));
+        transform: Transform::translation(0.0, 0.0, 3.0) * Transform::rotation_x(std::f64::consts::FRAC_PI_2),
+    });
 
-    let cube = Shape::Cube(Cube(Object {
-        material: Material {
-            pattern: Pattern3D::Checker(Texture3D {
-                a: color::consts::WHITE,
-                b: color::consts::BLACK,
-                transform: Transform::try_scaling(0.25, 0.25, 0.25).unwrap(),
-            }),
-            ..Default::default()
-        },
+    let mut group = Group {
+        children: vec![],
         transform: Transform::translation(0.0, 1.0, 0.0),
-    }));
+    };
+
+    group.add_child(s1);
+    group.add_child(c1);
+
+    let group = Object::Group(group);
 
     let light = PointLight {
-        position: Point::new(20.0, 50.0, -20.0),
+        position: Point::new(40.0, 40.0, 40.0),
         intensity: color::consts::WHITE,
     };
 
-    let objects = vec![floor, cube, sky];
-    let lights = vec![light];
+    let world = World {
+        objects: vec![floor, sky, group],
+        lights: vec![light],
+    };
 
-    let world = World { objects, lights };
-
-    let mut camera = Camera::try_new(720, 720, std::f64::consts::FRAC_PI_3).unwrap();
+    let mut camera = Camera::try_new(480, 270, std::f64::consts::FRAC_PI_3).unwrap();
     camera.transform = Transform::try_view(
-        Point::new(0.0, 3.0, -5.0),
-        Point::new(0.0, 1.0, 0.0),
+        Point::new(8.0, 3.0, 20.0),
+        Point::new(0.0, 2.0, 0.0),
         Vector::new(0.0, 1.0, 0.0),
     )
     .unwrap();
 
-    let image = camera.render(&world, RenderProgress::Enable).to_image();
+    let image = camera
+        .render(&world, raytracer::camera::RenderProgress::Enable)
+        .to_image();
     image.save("image.png").unwrap();
 }
