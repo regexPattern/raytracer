@@ -15,13 +15,13 @@ pub enum CameraError {
 
 #[derive(Debug)]
 pub struct Camera {
-    pub transform: Transform,
-    hsize: u32,
-    vsize: u32,
     field_of_view: f64,
-    pixel_size: f64,
-    half_width: f64,
     half_height: f64,
+    half_width: f64,
+    hsize: u32,
+    pixel_size: f64,
+    transform: Transform,
+    vsize: u32,
 }
 
 #[derive(Debug)]
@@ -74,6 +74,11 @@ impl Camera {
             half_width,
             half_height,
         })
+    }
+
+    pub fn with_transform(mut self, transform: Transform) -> Self {
+        self.transform = transform;
+        self
     }
 
     fn ray_for_pixel(&self, x: u32, y: u32) -> Ray {
@@ -146,7 +151,7 @@ impl Camera {
 
 #[cfg(test)]
 mod tests {
-    use crate::{assert_approx, color::Color, tuple::Vector, world::test_utils::test_world};
+    use crate::{assert_approx, color::Color, tuple::Vector, world::test_world};
 
     use super::*;
 

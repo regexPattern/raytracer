@@ -2,7 +2,7 @@ use crate::{
     color::{self, Color},
     float,
     light::PointLight,
-    object::Object,
+    shape::Shape,
     pattern::Pattern,
     tuple::{Point, Vector},
 };
@@ -60,7 +60,7 @@ impl Default for Material {
 impl Material {
     pub fn lighting(
         &self,
-        object: &Object,
+        object: &Shape,
         light: &PointLight,
         world_point: Point,
         eyev: Vector,
@@ -104,9 +104,9 @@ mod tests {
 
     use super::*;
 
-    fn test_object_material_point() -> (Object, Material, Point) {
+    fn test_object_material_point() -> (Shape, Material, Point) {
         (
-            Object::Sphere(Default::default()),
+            Shape::Sphere(Default::default()),
             Default::default(),
             Point::new(0.0, 0.0, 0.0),
         )

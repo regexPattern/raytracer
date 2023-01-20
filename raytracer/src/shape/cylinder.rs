@@ -1,27 +1,23 @@
 use crate::{
     float,
-    intersections::Intersection,
-    material::Material,
+    intersection::Intersection,
     ray::Ray,
-    transform::Transform,
     tuple::{Point, Tuple, Vector},
 };
 
-use super::Object;
+use super::{BaseShape, Shape};
 
 #[derive(Clone, Debug)]
 pub struct Cylinder {
-    pub material: Material,
-    pub transform: Transform,
+    pub base_shape: BaseShape,
+    pub closed: bool,
     pub minimum: f64,
     pub maximum: f64,
-    pub closed: bool,
 }
 
 impl PartialEq for Cylinder {
     fn eq(&self, other: &Self) -> bool {
-        self.material == other.material
-            && self.transform == other.transform
+        self.base_shape == other.base_shape
             && float::approx(self.minimum, other.minimum)
             && float::approx(self.maximum, other.maximum)
             && self.closed == other.closed
@@ -31,8 +27,7 @@ impl PartialEq for Cylinder {
 impl Default for Cylinder {
     fn default() -> Self {
         Self {
-            material: Default::default(),
-            transform: Default::default(),
+            base_shape: Default::default(),
             minimum: std::f64::NEG_INFINITY,
             maximum: std::f64::INFINITY,
             closed: false,
@@ -41,11 +36,7 @@ impl Default for Cylinder {
 }
 
 impl Cylinder {
-    pub(crate) fn local_intersect<'a>(
-        &self,
-        object: &'a Object,
-        ray: Ray,
-    ) -> Vec<Intersection<'a>> {
+    pub fn intersect<'a>(&self, object: &'a Shape, ray: Ray) -> Vec<Intersection<'a>> {
         let mut xs = vec![];
 
         let a = ray.direction.0.x.powi(2) + ray.direction.0.z.powi(2);
@@ -63,25 +54,25 @@ impl Cylinder {
             return xs;
         }
 
-        let t1 = (-b - discriminant.sqrt()) / (2.0 * a);
-        let t2 = (-b + discriminant.sqrt()) / (2.0 * a);
+        let t0 = (-b - discriminant.sqrt()) / (2.0 * a);
+        let t1 = (-b + discriminant.sqrt()) / (2.0 * a);
 
-        let (t1, t2) = if t1 > t2 { (t2, t1) } else { (t1, t2) };
+        let (t0, t1) = if t0 > t1 { (t1, t0) } else { (t0, t1) };
+
+        let y0 = ray.origin.0.y + t0 * ray.direction.0.y;
+        if self.minimum < y0 && y0 < self.maximum {
+            xs.push(Intersection { t: t0, object });
+        }
 
         let y1 = ray.origin.0.y + t1 * ray.direction.0.y;
         if self.minimum < y1 && y1 < self.maximum {
             xs.push(Intersection { t: t1, object });
         }
 
-        let y2 = ray.origin.0.y + t2 * ray.direction.0.y;
-        if self.minimum < y2 && y2 < self.maximum {
-            xs.push(Intersection { t: t2, object });
-        }
-
         self.intersect_caps(object, ray, xs)
     }
 
-    pub(crate) fn local_normal_at(&self, point: Point) -> Vector {
+    pub fn normal_at(&self, point: Point) -> Vector {
         let Point(Tuple { x, y, z, .. }) = point;
 
         let distance = x.powi(2) + z.powi(2);
@@ -104,7 +95,7 @@ impl Cylinder {
 
     fn intersect_caps<'a>(
         &self,
-        object: &'a Object,
+        object: &'a Shape,
         ray: Ray,
         mut xs: Vec<Intersection<'a>>,
     ) -> Vec<Intersection<'a>> {
@@ -128,102 +119,86 @@ impl Cylinder {
 
 #[cfg(test)]
 mod tests {
+    use crate::assert_approx;
+
     use super::*;
 
-    macro_rules! assert_hits {
-        ($xs:expr, $t1:expr, $t2:expr) => {{
-            assert_eq!($xs.len(), 2);
-            $crate::assert_approx!($xs[0].t, $t1);
-            $crate::assert_approx!($xs[1].t, $t2);
-        }};
-    }
-
-    fn test_cylinder_object() -> Object {
-        Object::Cylinder(Default::default())
+    fn dummy_object() -> Shape {
+        Shape::Cylinder(Default::default())
     }
 
     #[test]
     fn a_ray_misses_a_cylinder() {
-        let o = test_cylinder_object();
         let c = Cylinder::default();
 
-        assert_eq!(
-            c.local_intersect(
-                &o,
+        assert!(c
+            .intersect(
+                &dummy_object(),
                 Ray {
                     origin: Point::new(1.0, 0.0, 0.0),
                     direction: Vector::new(0.0, 1.0, 0.0)
                 }
             )
-            .len(),
-            0
-        );
+            .is_empty());
 
-        assert_eq!(
-            c.local_intersect(
-                &o,
+        assert!(c
+            .intersect(
+                &dummy_object(),
                 Ray {
                     origin: Point::new(0.0, 0.0, 0.0),
                     direction: Vector::new(0.0, 1.0, 0.0)
                 }
             )
-            .len(),
-            0
-        );
+            .is_empty());
 
-        assert_eq!(
-            c.local_intersect(
-                &o,
+        assert!(c
+            .intersect(
+                &dummy_object(),
                 Ray {
                     origin: Point::new(0.0, 0.0, -5.0),
                     direction: Vector::new(1.0, 1.0, 1.0)
                 }
             )
-            .len(),
-            0
-        );
+            .is_empty());
     }
 
     #[test]
     fn a_ray_strikes_a_cylinder() {
-        let o = test_cylinder_object();
+        let o = dummy_object();
         let c = Cylinder::default();
 
-        assert_hits!(
-            c.local_intersect(
-                &o,
-                Ray {
-                    origin: Point::new(1.0, 0.0, -5.0),
-                    direction: Vector::new(0.0, 0.0, 1.0)
-                }
-            ),
-            5.0,
-            5.0
+        let xs = c.intersect(
+            &o,
+            Ray {
+                origin: Point::new(1.0, 0.0, -5.0),
+                direction: Vector::new(0.0, 0.0, 1.0),
+            },
         );
 
-        assert_hits!(
-            c.local_intersect(
-                &o,
-                Ray {
-                    origin: Point::new(0.0, 0.0, -5.0),
-                    direction: Vector::new(0.0, 0.0, 1.0)
-                }
-            ),
-            4.0,
-            6.0
+        assert_approx!(xs[0].t, 5.0);
+        assert_approx!(xs[1].t, 5.0);
+
+        let xs = c.intersect(
+            &o,
+            Ray {
+                origin: Point::new(0.0, 0.0, -5.0),
+                direction: Vector::new(0.0, 0.0, 1.0),
+            },
         );
 
-        assert_hits!(
-            c.local_intersect(
-                &o,
-                Ray {
-                    origin: Point::new(0.5, 0.0, -5.0),
-                    direction: Vector::new(0.1, 1.0, 1.0).normalize().unwrap()
-                }
-            ),
-            6.80798,
-            7.08872
+        assert_approx!(xs[0].t, 4.0);
+        assert_approx!(xs[1].t, 6.0);
+
+        let xs = c.intersect(
+            &o,
+            Ray {
+                origin: Point::new(0.5, 0.0, -5.0),
+                direction: Vector::new(0.1, 1.0, 1.0).normalize().unwrap(),
+            },
         );
+
+        assert_approx!(xs[0].t, 6.80798);
+        assert_approx!(xs[1].t, 7.08872);
     }
 
     #[test]
@@ -231,22 +206,22 @@ mod tests {
         let c = Cylinder::default();
 
         assert_eq!(
-            c.local_normal_at(Point::new(1.0, 0.0, 0.0)),
+            c.normal_at(Point::new(1.0, 0.0, 0.0)),
             Vector::new(1.0, 0.0, 0.0)
         );
 
         assert_eq!(
-            c.local_normal_at(Point::new(0.0, 5.0, -1.0)),
+            c.normal_at(Point::new(0.0, 5.0, -1.0)),
             Vector::new(0.0, 0.0, -1.0)
         );
 
         assert_eq!(
-            c.local_normal_at(Point::new(0.0, -2.0, 1.0)),
+            c.normal_at(Point::new(0.0, -2.0, 1.0)),
             Vector::new(0.0, 0.0, 1.0)
         );
 
         assert_eq!(
-            c.local_normal_at(Point::new(-1.0, 1.0, 0.0)),
+            c.normal_at(Point::new(-1.0, 1.0, 0.0)),
             Vector::new(-1.0, 0.0, 0.0)
         );
     }
@@ -267,87 +242,73 @@ mod tests {
             ..Default::default()
         };
 
-        assert_eq!(
-            c.local_intersect(
-                &test_cylinder_object(),
+        assert!(c
+            .intersect(
+                &dummy_object(),
                 Ray {
                     origin: Point::new(0.0, 1.5, 0.0),
                     direction: Vector::new(0.1, 1.0, 0.0)
                 }
             )
-            .len(),
-            0
-        );
+            .is_empty());
     }
 
     #[test]
     fn intersecting_a_tangent_ray_above_and_below_to_constrained_cylinders_caps() {
-        let o = test_cylinder_object();
-
         let c = Cylinder {
             minimum: 1.0,
             maximum: 2.0,
             ..Default::default()
         };
 
-        assert_eq!(
-            c.local_intersect(
-                &o,
+        assert!(c
+            .intersect(
+                &dummy_object(),
                 Ray {
                     origin: Point::new(0.0, 3.0, -5.0),
                     direction: Vector::new(0.0, 0.0, 1.0)
                 }
             )
-            .len(),
-            0
-        );
+            .is_empty());
 
-        assert_eq!(
-            c.local_intersect(
-                &o,
+        assert!(c
+            .intersect(
+                &dummy_object(),
                 Ray {
                     origin: Point::new(0.0, 0.0, -5.0),
                     direction: Vector::new(0.0, 0.0, 1.0)
                 }
             )
-            .len(),
-            0
-        );
+            .is_empty());
     }
 
     #[test]
     fn intersecting_a_tangent_ray_exactly_through_a_constrained_cylinders_caps() {
-        let o = test_cylinder_object();
-
         let c = Cylinder {
             minimum: 1.0,
             maximum: 2.0,
             ..Default::default()
         };
 
-        assert_eq!(
-            c.local_intersect(
-                &o,
+        assert!(c
+            .intersect(
+                &dummy_object(),
                 Ray {
                     origin: Point::new(0.0, 2.0, -5.0),
                     direction: Vector::new(0.0, 0.0, 1.0)
                 }
             )
-            .len(),
-            0
-        );
+            .is_empty());
 
-        assert_eq!(
-            c.local_intersect(
-                &o,
+        assert!(c
+            .intersect(
+                &dummy_object(),
                 Ray {
                     origin: Point::new(0.0, 1.0, -5.0),
                     direction: Vector::new(0.0, 0.0, 1.0)
                 }
             )
-            .len(),
-            0
-        );
+            .is_empty());
     }
 
     #[test]
@@ -359,8 +320,8 @@ mod tests {
         };
 
         assert_eq!(
-            c.local_intersect(
-                &test_cylinder_object(),
+            c.intersect(
+                &dummy_object(),
                 Ray {
                     origin: Point::new(0.0, 1.5, -2.0),
                     direction: Vector::new(0.0, 0.0, 1.0)
@@ -380,8 +341,6 @@ mod tests {
 
     #[test]
     fn intersecting_the_caps_of_a_closed_cylinder() {
-        let o = test_cylinder_object();
-
         let c = Cylinder {
             minimum: 1.0,
             maximum: 2.0,
@@ -390,8 +349,8 @@ mod tests {
         };
 
         assert_eq!(
-            c.local_intersect(
-                &o,
+            c.intersect(
+                &dummy_object(),
                 Ray {
                     origin: Point::new(0.0, 3.0, 0.0),
                     direction: Vector::new(0.0, -1.0, 0.0)
@@ -402,8 +361,8 @@ mod tests {
         );
 
         assert_eq!(
-            c.local_intersect(
-                &o,
+            c.intersect(
+                &dummy_object(),
                 Ray {
                     origin: Point::new(0.0, 3.0, -2.0),
                     direction: Vector::new(0.0, -1.0, 2.0)
@@ -414,8 +373,8 @@ mod tests {
         );
 
         assert_eq!(
-            c.local_intersect(
-                &o,
+            c.intersect(
+                &dummy_object(),
                 Ray {
                     origin: Point::new(0.0, 0.0, -2.0),
                     direction: Vector::new(0.0, 1.0, 2.0)
@@ -428,7 +387,7 @@ mod tests {
 
     #[test]
     fn intersecting_the_border_of_the_caps_of_a_closed_cylinder() {
-        let o = test_cylinder_object();
+        let o = dummy_object();
 
         let c = Cylinder {
             minimum: 1.0,
@@ -438,7 +397,7 @@ mod tests {
         };
 
         assert_eq!(
-            c.local_intersect(
+            c.intersect(
                 &o,
                 Ray {
                     origin: Point::new(0.0, 4.0, -2.0),
@@ -450,7 +409,7 @@ mod tests {
         );
 
         assert_eq!(
-            c.local_intersect(
+            c.intersect(
                 &o,
                 Ray {
                     origin: Point::new(0.0, -1.0, -2.0),
@@ -472,32 +431,32 @@ mod tests {
         };
 
         assert_eq!(
-            c.local_normal_at(Point::new(0.0, 1.0, 0.0)),
+            c.normal_at(Point::new(0.0, 1.0, 0.0)),
             Vector::new(0.0, -1.0, 0.0)
         );
 
         assert_eq!(
-            c.local_normal_at(Point::new(0.5, 1.0, 0.0)),
+            c.normal_at(Point::new(0.5, 1.0, 0.0)),
             Vector::new(0.0, -1.0, 0.0)
         );
 
         assert_eq!(
-            c.local_normal_at(Point::new(0.0, 1.0, 0.5)),
+            c.normal_at(Point::new(0.0, 1.0, 0.5)),
             Vector::new(0.0, -1.0, 0.0)
         );
 
         assert_eq!(
-            c.local_normal_at(Point::new(0.0, 2.0, 0.0)),
+            c.normal_at(Point::new(0.0, 2.0, 0.0)),
             Vector::new(0.0, 1.0, 0.0)
         );
 
         assert_eq!(
-            c.local_normal_at(Point::new(0.5, 2.0, 0.0)),
+            c.normal_at(Point::new(0.5, 2.0, 0.0)),
             Vector::new(0.0, 1.0, 0.0)
         );
 
         assert_eq!(
-            c.local_normal_at(Point::new(0.0, 2.0, 0.5)),
+            c.normal_at(Point::new(0.0, 2.0, 0.5)),
             Vector::new(0.0, 1.0, 0.0)
         );
     }

@@ -4,87 +4,78 @@ use raytracer::{
     camera::Camera,
     color,
     light::PointLight,
-    material::Material,
-    object::{Cylinder, Group, Object, Plane, Sphere},
-    pattern::{Pattern, Schema},
+    shape::{BaseShape, Cylinder, Group, Shape},
     transform::Transform,
     tuple::{Point, Vector},
-    world::{self, World},
+    world::World,
 };
 
-fn main() {
-    let sky = Object::Plane(Plane {
-        material: Material {
-            pattern: Pattern::Solid(color::consts::LIGHT_SKY_BLUE),
-            ..Default::default()
-        },
-        transform: Transform::translation(-40.0, 0.0, 0.0)
-            * Transform::rotation_z(std::f64::consts::FRAC_PI_2),
-    });
-
-    let floor = Object::Plane(Plane {
-        material: Material {
-            shininess: 200.0,
-            pattern: Pattern::Solid(color::consts::DIRT),
-            ..Default::default()
-        },
-        transform: Transform::translation(0.0, 0.0, 0.0),
-    });
-
-    let s1 = Object::Sphere(Sphere {
-        material: Material {
-            pattern: Pattern::Checker(Schema {
-                a: color::consts::LIGHT_SKY_BLUE,
-                b: color::consts::BLUE,
-                transform: Default::default(),
-            }),
-            ..Default::default()
-        },
+fn hexagon_corner() -> Shape {
+    Shape::Sphere(BaseShape {
+        transform: Transform::translation(0.0, 0.0, -1.0)
+            * Transform::try_scaling(0.25, 0.25, 0.25).unwrap(),
         ..Default::default()
-    });
+    })
+}
 
-    let c1 = Object::Cylinder(Cylinder {
+fn hexagon_edge() -> Shape {
+    Shape::Cylinder(Cylinder {
+        base_shape: BaseShape {
+            transform: Transform::translation(0.0, 0.0, -1.0)
+                * Transform::rotation_y(-std::f64::consts::FRAC_PI_6)
+                * Transform::rotation_z(-std::f64::consts::FRAC_PI_2)
+                * Transform::try_scaling(0.25, 1.0, 0.25).unwrap(),
+            ..Default::default()
+        },
         minimum: 0.0,
         maximum: 1.0,
-        closed: true,
-        material: Material {
-            pattern: Pattern::Checker(Schema {
-                a: color::consts::WHITE,
-                b: color::consts::RED,
-                transform: Default::default(),
-            }),
-            ..Default::default()
-        },
-        transform: Transform::translation(0.0, 0.0, 3.0) * Transform::rotation_x(std::f64::consts::FRAC_PI_2),
-    });
+        closed: false,
+    })
+}
 
-    let mut group = Group {
-        children: vec![],
-        transform: Transform::translation(0.0, 1.0, 0.0),
-    };
+fn hexagon_side() -> Shape {
+    Shape::Group(Group::new(
+        [hexagon_corner(), hexagon_edge()],
+        Default::default()
+    ))
+}
 
-    group.add_child(s1);
-    group.add_child(c1);
+fn hexagon() -> Shape {
+    let mut hex = Group::default();
 
-    let group = Object::Group(group);
+    for n in 0..6 {
+        let mut side = hexagon_side();
+        side.set_transform(Transform::rotation_y(f64::from(n) * std::f64::consts::FRAC_PI_3));
+        hex.add_child(side);
+    }
 
+    Shape::Group(hex)
+}
+
+fn main() {
     let light = PointLight {
-        position: Point::new(40.0, 40.0, 40.0),
+        position: Point::new(10.0, 10.0, 10.0),
         intensity: color::consts::WHITE,
     };
 
     let world = World {
-        objects: vec![floor, sky, group],
+        objects: vec![hexagon()],
         lights: vec![light],
     };
 
-    let mut camera = Camera::try_new(480, 270, std::f64::consts::FRAC_PI_3).unwrap();
-    camera.transform = Transform::try_view(
-        Point::new(8.0, 3.0, 20.0),
-        Point::new(0.0, 2.0, 0.0),
-        Vector::new(0.0, 1.0, 0.0),
-    )
-    .unwrap();
+    let mut shape = Shape::Sphere(Default::default());
+    shape.set_transform(Transform::translation(10.0, 15.0, 20.0));
+
+    let camera = Camera::try_new(500, 500, std::f64::consts::FRAC_PI_3)
+        .unwrap()
+        .with_transform(
+            Transform::try_view(
+                Point::new(5.0, 5.0, 0.0),
+                Point::new(0.0, 0.0, 0.0),
+                Vector::new(0.0, 1.0, 0.0),
+            )
+            .unwrap(),
+        );
 
     let image = camera
         .render(&world, raytracer::camera::RenderProgress::Enable)

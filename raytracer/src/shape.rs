@@ -1,5 +1,5 @@
 use crate::{
-    intersections::Intersection,
+    intersection::Intersection,
     material::Material,
     ray::Ray,
     transform::Transform,
@@ -12,19 +12,22 @@ mod group;
 mod plane;
 mod sphere;
 
-pub use cube::Cube;
 pub use cylinder::Cylinder;
 pub use group::Group;
-pub use plane::Plane;
-pub use sphere::Sphere;
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct BaseShape {
+    pub material: Material,
+    pub transform: Transform,
+}
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum Object {
-    Cube(Cube),
+pub enum Shape {
+    Cube(BaseShape),
     Cylinder(Cylinder),
     Group(Group),
-    Plane(Plane),
-    Sphere(Sphere),
+    Plane(BaseShape),
+    Sphere(BaseShape),
 }
 
 fn object_ray(ray: &Ray, transform: Transform) -> Ray {
@@ -46,26 +49,26 @@ where
     world_normal.normalize().unwrap()
 }
 
-impl Object {
-    pub fn intersect(&self, world_ray: &Ray) -> Vec<Intersection<'_>> {
-        let object_ray = object_ray(world_ray, self.transform());
+impl Shape {
+    pub fn intersect(&self, ray: &Ray) -> Vec<Intersection<'_>> {
+        let object_ray = object_ray(ray, self.get_transform());
 
         match self {
-            Self::Cube(_) => Cube::local_intersect(self, object_ray),
-            Self::Cylinder(cylinder) => cylinder.local_intersect(self, object_ray),
-            Self::Group(group) => group.local_intersect(&world_ray),
-            Self::Plane(_) => Plane::local_intersect(self, object_ray),
-            Self::Sphere(_) => Sphere::local_intersect(self, object_ray),
+            Self::Cube(_) => cube::intersect(self, object_ray),
+            Self::Cylinder(cylinder) => cylinder.intersect(self, object_ray),
+            Self::Group(group) => group.intersect(&ray),
+            Self::Plane(_) => plane::intersect(self, object_ray),
+            Self::Sphere(_) => sphere::intersect(self, object_ray),
         }
     }
 
     pub fn normal_at(&self, point: Point) -> Vector {
-        world_normal(point, self.transform(), |object_point| {
+        world_normal(point, self.get_transform(), |object_point| {
             match &self {
-                Self::Cube(_) => Cube::local_normal_at(object_point),
-                Self::Cylinder(cylinder) => cylinder.local_normal_at(object_point),
-                Self::Plane(_) => Plane::local_normal_at(object_point),
-                Self::Sphere(_) => Sphere::local_normal_at(object_point),
+                Self::Cube(_) => self::cube::normal_at(object_point),
+                Self::Cylinder(cylinder) => cylinder.normal_at(object_point),
+                Self::Plane(_) => self::plane::normal_at(object_point),
+                Self::Sphere(_) => self::sphere::normal_at(object_point),
 
                 // This function is never called, since an object's normal is used only when shading
                 // this object, accessed through the vector of intersections that `Object::intersect`
@@ -77,62 +80,37 @@ impl Object {
         })
     }
 
-    fn world_to_object(&self, point: Point) -> Point {
-        self.transform().inverse() * point
-    }
-
-    fn normal_to_world(&self, normal: Vector) -> Vector {
-        let mut normal = self.transform().inverse().transpose() * normal;
-        normal.0.w = 0.0;
-
-        // The point is ensured to always be on the object surface so a non-null normal always exists
-        // for any object type.
-        #[allow(clippy::unwrap_used)]
-        normal.normalize().unwrap()
-    }
-
-    pub fn material(&self) -> &Material {
+    pub fn get_material(&self) -> &Material {
         match self {
-            Self::Cube(cube) => &cube.material,
-            Self::Cylinder(cylinder) => &cylinder.material,
-            Self::Plane(plane) => &plane.material,
-            Self::Sphere(sphere) => &sphere.material,
-
+            Self::Cube(bs) | Self::Plane(bs) | Self::Sphere(bs) => &bs.material,
+            Self::Cylinder(cylinder) => &cylinder.base_shape.material,
             // Same reason as `Self::normal_at`.
             Self::Group(_) => unreachable!(),
         }
     }
 
-    pub fn material_mut(&mut self) -> &mut Material {
+    pub fn set_material(&mut self, material: Material) {
         match self {
-            Self::Cube(cube) => &mut cube.material,
-            Self::Cylinder(cylinder) => &mut cylinder.material,
-            Self::Plane(plane) => &mut plane.material,
-            Self::Sphere(sphere) => &mut sphere.material,
-
+            Self::Cube(bs) | Self::Plane(bs) | Self::Sphere(bs) => bs.material = material,
+            Self::Cylinder(cylinder) => cylinder.base_shape.material = material,
             // Same reason as `Self::normal_at`.
             Self::Group(_) => unreachable!(),
         }
     }
 
-    // TODO: Maybe I could build a derive macro that implements the mutable version of this match.
-    pub fn transform(&self) -> Transform {
+    pub fn get_transform(&self) -> Transform {
         match self {
-            Self::Cube(cube) => cube.transform,
-            Self::Cylinder(cylinder) => cylinder.transform,
-            Self::Plane(plane) => plane.transform,
-            Self::Sphere(sphere) => sphere.transform,
+            Self::Cube(bs) | Self::Plane(bs) | Self::Sphere(bs) => bs.transform,
+            Self::Cylinder(cylinder) => cylinder.base_shape.transform,
             Self::Group(group) => group.transform,
         }
     }
 
-    pub fn transform_mut(&mut self) -> &mut Transform {
+    pub fn set_transform(&mut self, transform: Transform) {
         match self {
-            Self::Cube(cube) => &mut cube.transform,
-            Self::Cylinder(cylinder) => &mut cylinder.transform,
-            Self::Plane(plane) => &mut plane.transform,
-            Self::Sphere(sphere) => &mut sphere.transform,
-            Self::Group(group) => &mut group.transform,
+            Self::Cube(bs) | Self::Plane(bs) | Self::Sphere(bs) => bs.transform = transform,
+            Self::Cylinder(cylinder) => cylinder.base_shape.transform = transform,
+            Self::Group(group) => group.update_transform(transform),
         }
     }
 }
@@ -160,9 +138,9 @@ mod tests {
         }
     }
 
-    fn get_subgroup_child(super_group: &Group) -> &Object {
+    fn get_subgroup_child(super_group: &Group) -> &Shape {
         match &super_group.children[0] {
-            Object::Group(sub_group) => &sub_group.children[0],
+            Shape::Group(sub_group) => &sub_group.children[0],
             _ => unimplemented!(),
         }
     }
@@ -239,85 +217,18 @@ mod tests {
     }
 
     #[test]
-    fn converting_a_point_from_world_to_object_space() {
-        let s = Object::Sphere(Sphere {
-            transform: Transform::translation(5.0, 0.0, 0.0),
-            ..Default::default()
-        });
-
-        let mut g2 = Group {
-            transform: Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
-            ..Default::default()
-        };
-
-        g2.add_child(s);
-
-        let mut g1 = Group {
-            transform: Transform::rotation_y(std::f64::consts::FRAC_PI_2),
-            ..Default::default()
-        };
-
-        g1.add_child(Object::Group(g2));
-
-        let s = get_subgroup_child(&g1);
-
-        let p = s.world_to_object(Point::new(-2.0, 0.0, -10.0));
-
-        assert_eq!(p, Point::new(0.0, 0.0, -1.0));
-    }
-
-    #[test]
-    fn converting_a_normal_from_object_to_world_space() {
-        let s = Object::Sphere(Sphere {
-            transform: Transform::translation(5.0, 0.0, 0.0),
-            ..Default::default()
-        });
-
-        let mut g2 = Group {
-            transform: Transform::try_scaling(1.0, 2.0, 3.0).unwrap(),
-            ..Default::default()
-        };
-
-        g2.add_child(s);
-
-        let mut g1 = Group {
-            transform: Transform::rotation_y(std::f64::consts::FRAC_PI_2),
-            ..Default::default()
-        };
-
-        g1.add_child(Object::Group(g2));
-
-        let s = get_subgroup_child(&g1);
-
-        let n = s.normal_to_world(Vector::new(
-            3_f64.sqrt() / 3.0,
-            3_f64.sqrt() / 3.0,
-            3_f64.sqrt() / 3.0,
-        ));
-
-        assert_eq!(n, Vector::new(0.28571, 0.42857, -0.85714));
-    }
-
-    #[test]
     fn finding_the_normal_on_a_child_object() {
-        let s = Object::Sphere(Sphere {
+        let s = Shape::Sphere(BaseShape {
             transform: Transform::translation(5.0, 0.0, 0.0),
             ..Default::default()
         });
 
-        let mut g2 = Group {
-            transform: Transform::try_scaling(1.0, 2.0, 3.0).unwrap(),
-            ..Default::default()
-        };
+        let g2 = Group::new([s], Transform::try_scaling(1.0, 2.0, 3.0).unwrap());
 
-        g2.add_child(s);
-
-        let mut g1 = Group {
-            transform: Transform::rotation_y(std::f64::consts::FRAC_PI_2),
-            ..Default::default()
-        };
-
-        g1.add_child(Object::Group(g2));
+        let g1 = Group::new(
+            [Shape::Group(g2)],
+            Transform::rotation_y(std::f64::consts::FRAC_PI_2),
+        );
 
         let s = get_subgroup_child(&g1);
 

@@ -1,7 +1,7 @@
 use crate::{
     color::Color,
     float,
-    object::Object,
+    shape::Shape,
     transform::Transform,
     tuple::{Point, Tuple},
 };
@@ -22,8 +22,8 @@ pub enum Pattern {
     Checker(Schema),
 }
 
-fn pattern_point(object: &Object, transform: Transform, point: Point) -> Point {
-    let object_point = object.transform().inverse() * point;
+fn pattern_point(object: &Shape, transform: Transform, point: Point) -> Point {
+    let object_point = object.get_transform().inverse() * point;
 
     transform.inverse() * object_point
 }
@@ -37,7 +37,7 @@ impl Schema {
 }
 
 impl Pattern {
-    pub(crate) fn color_at_object(&self, object: &Object, point: Point) -> Color {
+    pub(crate) fn color_at_object(&self, object: &Shape, point: Point) -> Color {
         self.color_at(pattern_point(object, self.transform(), point))
     }
 
@@ -81,15 +81,12 @@ impl Pattern {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        color,
-        object::{Object, Sphere},
-    };
+    use crate::{color, shape::BaseShape};
 
     use super::*;
 
-    fn test_object() -> Object {
-        Object::Sphere(Default::default())
+    fn test_object() -> Shape {
+        Shape::Sphere(Default::default())
     }
 
     #[derive(Debug)]
@@ -106,7 +103,7 @@ mod tests {
     }
 
     impl TestPattern {
-        fn color_at_object(&self, object: &Object, point: Point) -> Color {
+        fn color_at_object(&self, object: &Shape, point: Point) -> Color {
             let pattern_point = pattern_point(object, self.0.transform, point);
 
             Color {
@@ -160,7 +157,7 @@ mod tests {
 
     #[test]
     fn stripes_with_object_transform() {
-        let o = Object::Sphere(Sphere {
+        let o = Shape::Sphere(BaseShape {
             transform: Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
             ..Default::default()
         });
@@ -189,7 +186,7 @@ mod tests {
 
     #[test]
     fn stripes_with_both_an_object_and_a_pattern_transformation() {
-        let o = Object::Sphere(Sphere {
+        let o = Shape::Sphere(BaseShape {
             transform: Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
             ..Default::default()
         });
@@ -207,7 +204,7 @@ mod tests {
 
     #[test]
     fn a_pattern_with_an_object_transformation() {
-        let o = Object::Sphere(Sphere {
+        let o = Shape::Sphere(BaseShape {
             transform: Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
             ..Default::default()
         });
@@ -250,7 +247,7 @@ mod tests {
 
     #[test]
     fn a_pattern_with_both_an_object_and_a_pattern_transformation() {
-        let o = Object::Sphere(Sphere {
+        let o = Shape::Sphere(BaseShape {
             transform: Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
             ..Default::default()
         });
