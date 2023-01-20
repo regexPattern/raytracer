@@ -11,9 +11,11 @@ mod cylinder;
 mod group;
 mod plane;
 mod sphere;
+mod triangle;
 
 pub use cylinder::Cylinder;
 pub use group::Group;
+pub use triangle::Triangle;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct BaseShape {
@@ -28,6 +30,7 @@ pub enum Shape {
     Group(Group),
     Plane(BaseShape),
     Sphere(BaseShape),
+    Triangle(Triangle),
 }
 
 fn object_ray(ray: &Ray, transform: Transform) -> Ray {
@@ -59,16 +62,18 @@ impl Shape {
             Self::Group(group) => group.intersect(&ray),
             Self::Plane(_) => plane::intersect(self, object_ray),
             Self::Sphere(_) => sphere::intersect(self, object_ray),
+            Self::Triangle(triangle) => triangle.intersect(self, object_ray),
         }
     }
 
     pub fn normal_at(&self, point: Point) -> Vector {
         world_normal(point, self.get_transform(), |object_point| {
             match &self {
-                Self::Cube(_) => self::cube::normal_at(object_point),
+                Self::Cube(_) => cube::normal_at(object_point),
                 Self::Cylinder(cylinder) => cylinder.normal_at(object_point),
-                Self::Plane(_) => self::plane::normal_at(object_point),
-                Self::Sphere(_) => self::sphere::normal_at(object_point),
+                Self::Plane(_) => plane::normal_at(object_point),
+                Self::Sphere(_) => sphere::normal_at(object_point),
+                Self::Triangle(triangle) => triangle.normal_at(object_point),
 
                 // This function is never called, since an object's normal is used only when shading
                 // this object, accessed through the vector of intersections that `Object::intersect`
@@ -84,6 +89,8 @@ impl Shape {
         match self {
             Self::Cube(bs) | Self::Plane(bs) | Self::Sphere(bs) => &bs.material,
             Self::Cylinder(cylinder) => &cylinder.base_shape.material,
+            Self::Triangle(triangle) => &triangle.base_shape.material,
+
             // Same reason as `Self::normal_at`.
             Self::Group(_) => unreachable!(),
         }
@@ -93,6 +100,8 @@ impl Shape {
         match self {
             Self::Cube(bs) | Self::Plane(bs) | Self::Sphere(bs) => bs.material = material,
             Self::Cylinder(cylinder) => cylinder.base_shape.material = material,
+            Self::Triangle(triangle) => triangle.base_shape.material = material,
+
             // Same reason as `Self::normal_at`.
             Self::Group(_) => unreachable!(),
         }
@@ -102,6 +111,7 @@ impl Shape {
         match self {
             Self::Cube(bs) | Self::Plane(bs) | Self::Sphere(bs) => bs.transform,
             Self::Cylinder(cylinder) => cylinder.base_shape.transform,
+            Self::Triangle(triangle) => triangle.base_shape.transform,
             Self::Group(group) => group.transform,
         }
     }
@@ -110,6 +120,7 @@ impl Shape {
         match self {
             Self::Cube(bs) | Self::Plane(bs) | Self::Sphere(bs) => bs.transform = transform,
             Self::Cylinder(cylinder) => cylinder.base_shape.transform = transform,
+            Self::Triangle(triangle) => triangle.base_shape.transform = transform,
             Self::Group(group) => group.update_transform(transform),
         }
     }
