@@ -4,10 +4,10 @@ use raytracer::{
     camera::Camera,
     color,
     light::PointLight,
-    obj::Parser,
     shape::{BaseShape, Cylinder, Group, Shape, Triangle},
     transform::Transform,
     tuple::{Point, Vector},
+    wavefront::OBJModel,
     world::World,
 };
 
@@ -27,15 +27,14 @@ fn main() {
     );
 
     let obj_file = std::fs::read_to_string("teapot.obj").unwrap();
-    let parser = Parser::parse(&obj_file).unwrap();
+    let parser = OBJModel::parse(&obj_file).unwrap();
 
-    // TODO: Cambiar estos a IntoIterator.
     let world = World {
-        objects: vec![Shape::Group(parser.group)],
+        objects: vec![],
         lights: vec![light],
     };
 
-    let camera = Camera::try_new(9 * 40, 16 * 40, std::f64::consts::FRAC_PI_3)
+    let camera = Camera::try_new(100, 100, std::f64::consts::FRAC_PI_3)
         .unwrap()
         .with_transform(
             Transform::try_view(

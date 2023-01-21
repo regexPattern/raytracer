@@ -47,6 +47,15 @@ impl Group {
         self.children.push(child);
     }
 
+    pub fn extend<T>(&mut self, children: T)
+    where
+        T: IntoIterator<Item = Shape>
+    {
+        for child in children {
+            self.add_child(child);
+        }
+    }
+
     pub(crate) fn intersect(&self, ray: &Ray) -> Vec<Intersection<'_>> {
         let mut intersections: Vec<_> = self
             .children
