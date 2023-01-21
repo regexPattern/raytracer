@@ -6,6 +6,7 @@ use crate::{
     tuple::{Point, Vector},
 };
 
+mod bounding_box;
 mod cube;
 mod cylinder;
 mod group;
@@ -13,6 +14,7 @@ mod plane;
 mod sphere;
 mod triangle;
 
+pub use bounding_box::BoundingBox;
 pub use cylinder::Cylinder;
 pub use group::Group;
 pub use triangle::{CollinearTriangleSidesError, Triangle};
@@ -57,12 +59,12 @@ impl Shape {
         let object_ray = object_ray(ray, self.get_transform());
 
         match self {
-            Self::Cube(_) => cube::intersect(self, object_ray),
-            Self::Cylinder(cylinder) => cylinder.intersect(self, object_ray),
+            Self::Cube(_) => cube::intersect(self, &object_ray, &cube::bounding_box()),
+            Self::Cylinder(cylinder) => cylinder.intersect(self, &object_ray),
             Self::Group(group) => group.intersect(&ray),
-            Self::Plane(_) => plane::intersect(self, object_ray),
-            Self::Sphere(_) => sphere::intersect(self, object_ray),
-            Self::Triangle(triangle) => triangle.intersect(self, object_ray),
+            Self::Plane(_) => plane::intersect(self, &object_ray),
+            Self::Sphere(_) => sphere::intersect(self, &object_ray),
+            Self::Triangle(triangle) => triangle.intersect(self, &object_ray),
         }
     }
 
@@ -83,6 +85,19 @@ impl Shape {
                 Self::Group(_) => unreachable!(),
             }
         })
+    }
+
+    pub fn get_bounding_box(&self) -> BoundingBox {
+        let bbox = match self {
+            Self::Cube(_) => cube::bounding_box(),
+            Self::Cylinder(cylinder) => cylinder.bounding_box(),
+            Self::Plane(_) => plane::bounding_box(),
+            Self::Sphere(_) => sphere::bounding_box(),
+            Self::Triangle(triangle) => triangle.bounding_box(),
+            Self::Group(group) => group.bounding_box(),
+        };
+
+        bbox.transform(self.get_transform())
     }
 
     pub fn get_material(&self) -> &Material {
@@ -241,5 +256,19 @@ mod tests {
         let n = s.normal_at(Point::new(1.7321, 1.1547, -5.5774));
 
         assert_eq!(n, Vector::new(0.2857, 0.42854, -0.85716));
+    }
+
+    #[test]
+    fn querying_a_shapes_s_bounding_box_in_its_parent_s_space() {
+        let s = Shape::Sphere(BaseShape {
+            transform: Transform::translation(1.0, -3.0, 5.0)
+                * Transform::try_scaling(0.5, 2.0, 4.0).unwrap(),
+            ..Default::default()
+        });
+
+        let bbox = s.get_bounding_box();
+
+        assert_eq!(bbox.min, Point::new(0.5, -5.0, 1.0));
+        assert_eq!(bbox.max, Point::new(1.5, -1.0, 9.0));
     }
 }

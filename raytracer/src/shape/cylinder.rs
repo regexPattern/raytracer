@@ -5,21 +5,21 @@ use crate::{
     tuple::{Point, Tuple, Vector},
 };
 
-use super::{BaseShape, Shape};
+use super::{BaseShape, BoundingBox, Shape};
 
 #[derive(Clone, Debug)]
 pub struct Cylinder {
     pub base_shape: BaseShape,
     pub closed: bool,
-    pub minimum: f64,
-    pub maximum: f64,
+    pub min: f64,
+    pub max: f64,
 }
 
 impl PartialEq for Cylinder {
     fn eq(&self, other: &Self) -> bool {
         self.base_shape == other.base_shape
-            && float::approx(self.minimum, other.minimum)
-            && float::approx(self.maximum, other.maximum)
+            && float::approx(self.min, other.min)
+            && float::approx(self.max, other.max)
             && self.closed == other.closed
     }
 }
@@ -28,15 +28,15 @@ impl Default for Cylinder {
     fn default() -> Self {
         Self {
             base_shape: Default::default(),
-            minimum: std::f64::NEG_INFINITY,
-            maximum: std::f64::INFINITY,
+            min: std::f64::NEG_INFINITY,
+            max: std::f64::INFINITY,
             closed: false,
         }
     }
 }
 
 impl Cylinder {
-    pub fn intersect<'a>(&self, object: &'a Shape, ray: Ray) -> Vec<Intersection<'a>> {
+    pub fn intersect<'a>(&self, object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
         let mut xs = vec![];
 
         let a = ray.direction.0.x.powi(2) + ray.direction.0.z.powi(2);
@@ -60,12 +60,12 @@ impl Cylinder {
         let (t0, t1) = if t0 > t1 { (t1, t0) } else { (t0, t1) };
 
         let y0 = ray.origin.0.y + t0 * ray.direction.0.y;
-        if self.minimum < y0 && y0 < self.maximum {
+        if self.min < y0 && y0 < self.max {
             xs.push(Intersection { t: t0, object });
         }
 
         let y1 = ray.origin.0.y + t1 * ray.direction.0.y;
-        if self.minimum < y1 && y1 < self.maximum {
+        if self.min < y1 && y1 < self.max {
             xs.push(Intersection { t: t1, object });
         }
 
@@ -77,9 +77,9 @@ impl Cylinder {
 
         let distance = x.powi(2) + z.powi(2);
 
-        if distance < 1.0 && float::ge(y, self.maximum - float::EPSILON) {
+        if distance < 1.0 && float::ge(y, self.max - float::EPSILON) {
             Vector::new(0.0, 1.0, 0.0)
-        } else if distance < 1.0 && float::le(y, self.minimum + float::EPSILON) {
+        } else if distance < 1.0 && float::le(y, self.min + float::EPSILON) {
             Vector::new(0.0, -1.0, 0.0)
         } else {
             Vector::new(x, 0.0, z)
@@ -96,24 +96,31 @@ impl Cylinder {
     fn intersect_caps<'a>(
         &self,
         object: &'a Shape,
-        ray: Ray,
+        ray: &Ray,
         mut xs: Vec<Intersection<'a>>,
     ) -> Vec<Intersection<'a>> {
         if !self.closed || float::approx(ray.direction.0.y, 0.0) {
             return xs;
         }
 
-        let t = (self.minimum - ray.origin.0.y) / ray.direction.0.y;
+        let t = (self.min - ray.origin.0.y) / ray.direction.0.y;
         if Self::check_cap(&ray, t) {
             xs.push(Intersection { t, object });
         }
 
-        let t = (self.maximum - ray.origin.0.y) / ray.direction.0.y;
+        let t = (self.max - ray.origin.0.y) / ray.direction.0.y;
         if Self::check_cap(&ray, t) {
             xs.push(Intersection { t, object });
         }
 
         xs
+    }
+
+    pub fn bounding_box(&self) -> BoundingBox {
+        BoundingBox {
+            max: Point::new(1.0, self.max, 1.0),
+            min: Point::new(-1.0, self.min, -1.0),
+        }
     }
 }
 
@@ -134,7 +141,7 @@ mod tests {
         assert!(c
             .intersect(
                 &dummy_object(),
-                Ray {
+                &Ray {
                     origin: Point::new(1.0, 0.0, 0.0),
                     direction: Vector::new(0.0, 1.0, 0.0)
                 }
@@ -144,7 +151,7 @@ mod tests {
         assert!(c
             .intersect(
                 &dummy_object(),
-                Ray {
+                &Ray {
                     origin: Point::new(0.0, 0.0, 0.0),
                     direction: Vector::new(0.0, 1.0, 0.0)
                 }
@@ -154,7 +161,7 @@ mod tests {
         assert!(c
             .intersect(
                 &dummy_object(),
-                Ray {
+                &Ray {
                     origin: Point::new(0.0, 0.0, -5.0),
                     direction: Vector::new(1.0, 1.0, 1.0)
                 }
@@ -169,7 +176,7 @@ mod tests {
 
         let xs = c.intersect(
             &o,
-            Ray {
+            &Ray {
                 origin: Point::new(1.0, 0.0, -5.0),
                 direction: Vector::new(0.0, 0.0, 1.0),
             },
@@ -180,7 +187,7 @@ mod tests {
 
         let xs = c.intersect(
             &o,
-            Ray {
+            &Ray {
                 origin: Point::new(0.0, 0.0, -5.0),
                 direction: Vector::new(0.0, 0.0, 1.0),
             },
@@ -191,7 +198,7 @@ mod tests {
 
         let xs = c.intersect(
             &o,
-            Ray {
+            &Ray {
                 origin: Point::new(0.5, 0.0, -5.0),
                 direction: Vector::new(0.1, 1.0, 1.0).normalize().unwrap(),
             },
@@ -230,22 +237,22 @@ mod tests {
     fn the_default_minimum_and_maximum_for_a_cylinder() {
         let c = Cylinder::default();
 
-        assert_eq!(c.minimum, std::f64::NEG_INFINITY);
-        assert_eq!(c.maximum, std::f64::INFINITY);
+        assert_eq!(c.min, std::f64::NEG_INFINITY);
+        assert_eq!(c.max, std::f64::INFINITY);
     }
 
     #[test]
     fn intersecting_a_ray_inside_constrained_cylinder() {
         let c = Cylinder {
-            minimum: 1.0,
-            maximum: 2.0,
+            min: 1.0,
+            max: 2.0,
             ..Default::default()
         };
 
         assert!(c
             .intersect(
                 &dummy_object(),
-                Ray {
+                &Ray {
                     origin: Point::new(0.0, 1.5, 0.0),
                     direction: Vector::new(0.1, 1.0, 0.0)
                 }
@@ -256,15 +263,15 @@ mod tests {
     #[test]
     fn intersecting_a_tangent_ray_above_and_below_to_constrained_cylinders_caps() {
         let c = Cylinder {
-            minimum: 1.0,
-            maximum: 2.0,
+            min: 1.0,
+            max: 2.0,
             ..Default::default()
         };
 
         assert!(c
             .intersect(
                 &dummy_object(),
-                Ray {
+                &Ray {
                     origin: Point::new(0.0, 3.0, -5.0),
                     direction: Vector::new(0.0, 0.0, 1.0)
                 }
@@ -274,7 +281,7 @@ mod tests {
         assert!(c
             .intersect(
                 &dummy_object(),
-                Ray {
+                &Ray {
                     origin: Point::new(0.0, 0.0, -5.0),
                     direction: Vector::new(0.0, 0.0, 1.0)
                 }
@@ -285,15 +292,15 @@ mod tests {
     #[test]
     fn intersecting_a_tangent_ray_exactly_through_a_constrained_cylinders_caps() {
         let c = Cylinder {
-            minimum: 1.0,
-            maximum: 2.0,
+            min: 1.0,
+            max: 2.0,
             ..Default::default()
         };
 
         assert!(c
             .intersect(
                 &dummy_object(),
-                Ray {
+                &Ray {
                     origin: Point::new(0.0, 2.0, -5.0),
                     direction: Vector::new(0.0, 0.0, 1.0)
                 }
@@ -303,7 +310,7 @@ mod tests {
         assert!(c
             .intersect(
                 &dummy_object(),
-                Ray {
+                &Ray {
                     origin: Point::new(0.0, 1.0, -5.0),
                     direction: Vector::new(0.0, 0.0, 1.0)
                 }
@@ -314,15 +321,15 @@ mod tests {
     #[test]
     fn intersecting_a_constrained_cylinder_through_the_middle() {
         let c = Cylinder {
-            minimum: 1.0,
-            maximum: 2.0,
+            min: 1.0,
+            max: 2.0,
             ..Default::default()
         };
 
         assert_eq!(
             c.intersect(
                 &dummy_object(),
-                Ray {
+                &Ray {
                     origin: Point::new(0.0, 1.5, -2.0),
                     direction: Vector::new(0.0, 0.0, 1.0)
                 }
@@ -342,8 +349,8 @@ mod tests {
     #[test]
     fn intersecting_the_caps_of_a_closed_cylinder() {
         let c = Cylinder {
-            minimum: 1.0,
-            maximum: 2.0,
+            min: 1.0,
+            max: 2.0,
             closed: true,
             ..Default::default()
         };
@@ -351,7 +358,7 @@ mod tests {
         assert_eq!(
             c.intersect(
                 &dummy_object(),
-                Ray {
+                &Ray {
                     origin: Point::new(0.0, 3.0, 0.0),
                     direction: Vector::new(0.0, -1.0, 0.0)
                 }
@@ -363,7 +370,7 @@ mod tests {
         assert_eq!(
             c.intersect(
                 &dummy_object(),
-                Ray {
+                &Ray {
                     origin: Point::new(0.0, 3.0, -2.0),
                     direction: Vector::new(0.0, -1.0, 2.0)
                 }
@@ -375,7 +382,7 @@ mod tests {
         assert_eq!(
             c.intersect(
                 &dummy_object(),
-                Ray {
+                &Ray {
                     origin: Point::new(0.0, 0.0, -2.0),
                     direction: Vector::new(0.0, 1.0, 2.0)
                 }
@@ -390,8 +397,8 @@ mod tests {
         let o = dummy_object();
 
         let c = Cylinder {
-            minimum: 1.0,
-            maximum: 2.0,
+            min: 1.0,
+            max: 2.0,
             closed: true,
             ..Default::default()
         };
@@ -399,7 +406,7 @@ mod tests {
         assert_eq!(
             c.intersect(
                 &o,
-                Ray {
+                &Ray {
                     origin: Point::new(0.0, 4.0, -2.0),
                     direction: Vector::new(0.0, -1.0, 1.0)
                 }
@@ -411,7 +418,7 @@ mod tests {
         assert_eq!(
             c.intersect(
                 &o,
-                Ray {
+                &Ray {
                     origin: Point::new(0.0, -1.0, -2.0),
                     direction: Vector::new(0.0, 1.0, 1.0)
                 }
@@ -424,8 +431,8 @@ mod tests {
     #[test]
     fn the_normal_vector_on_a_cylinders_end_caps() {
         let c = Cylinder {
-            minimum: 1.0,
-            maximum: 2.0,
+            min: 1.0,
+            max: 2.0,
             closed: true,
             ..Default::default()
         };
@@ -459,5 +466,29 @@ mod tests {
             c.normal_at(Point::new(0.0, 2.0, 0.5)),
             Vector::new(0.0, 1.0, 0.0)
         );
+    }
+
+    #[test]
+    fn an_unbounde_cylinder_has_a_bounding_box() {
+        let c = Cylinder::default();
+
+        let bbox = c.bounding_box();
+
+        assert_eq!(bbox.max, Point::new(1.0, std::f64::INFINITY, 1.0));
+        assert_eq!(bbox.min, Point::new(-1.0, std::f64::NEG_INFINITY, -1.0));
+    }
+
+    #[test]
+    fn a_bounded_cylinder_has_a_bounding_box() {
+        let c = Cylinder {
+            min: -5.0,
+            max: 3.0,
+            ..Default::default()
+        };
+
+        let bbox = c.bounding_box();
+
+        assert_eq!(bbox.min, Point::new(-1.0, -5.0, -1.0));
+        assert_eq!(bbox.max, Point::new(1.0, 3.0, 1.0));
     }
 }

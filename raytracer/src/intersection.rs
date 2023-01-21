@@ -109,7 +109,7 @@ impl<'a> Intersection<'a> {
         });
     }
 
-    pub fn hit<'b>(intersections: &mut [Intersection<'a>]) -> Option<Intersection<'a>> {
+    pub fn hit(intersections: &mut [Intersection<'a>]) -> Option<Intersection<'a>> {
         Self::sort(intersections);
         intersections.iter().find(|i| i.t > 0.0).copied()
     }

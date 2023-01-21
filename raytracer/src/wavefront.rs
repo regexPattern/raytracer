@@ -58,18 +58,24 @@ impl From<OBJModel> for Group {
     }
 }
 
+impl From<OBJModel> for Shape {
+    fn from(value: OBJModel) -> Self {
+        Shape::Group(Group::from(value))
+    }
+}
+
 fn parse_value<T>(sanitized: Option<&str>) -> Result<T, ParsingErrorKind>
 where
     T: std::str::FromStr,
 {
-    Ok(sanitized
+    sanitized
         .ok_or(ParsingErrorKind::MissingValue)?
         .parse::<T>()
-        .map_err(|_| ParsingErrorKind::InvalidValue)?)
+        .map_err(|_| ParsingErrorKind::InvalidValue)
 }
 
 fn parse_vertex(sanitized: &str) -> Result<Point, ParsingErrorKind> {
-    let mut split = sanitized.split(" ").skip(1);
+    let mut split = sanitized.split(' ').skip(1);
 
     let x = parse_value::<f64>(split.next())?;
     let y = parse_value::<f64>(split.next())?;
@@ -87,7 +93,7 @@ fn parse_face(
     }
 
     let mut polygon_vertices = vec![];
-    let fields = sanitized.split(" ").skip(1);
+    let fields = sanitized.split(' ').skip(1);
 
     for field in fields {
         let index = parse_value::<NonZeroUsize>(Some(field))?.get() - 1;
@@ -96,7 +102,7 @@ fn parse_face(
         }
     }
 
-    Ok(fan_triangulation(&polygon_vertices)?)
+    fan_triangulation(&polygon_vertices)
 }
 
 fn fan_triangulation(defined_vertices: &[Point]) -> Result<Vec<Triangle>, ParsingErrorKind> {
@@ -117,12 +123,11 @@ fn fan_triangulation(defined_vertices: &[Point]) -> Result<Vec<Triangle>, Parsin
 }
 
 fn parse_group(sanitized: &str) -> Result<String, ParsingErrorKind> {
-    Ok(sanitized
-        .split(" ")
-        .skip(1)
-        .next()
+    sanitized
+        .split(' ')
+        .nth(1)
         .map(|name| name.to_string())
-        .ok_or(ParsingErrorKind::MissingValue)?)
+        .ok_or(ParsingErrorKind::MissingValue)
 }
 
 impl OBJModel {
@@ -152,7 +157,7 @@ impl OBJModel {
                 let polygons = parse_face(&sanitized, &defined_vertices)
                     .map_err(wrap_parsing_error)?
                     .into_iter()
-                    .map(|triangle| Shape::Triangle(triangle));
+                    .map(Shape::Triangle);
 
                 // There's always going to be at a group. The __default group is always intialized
                 // above in this same function.

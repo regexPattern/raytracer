@@ -1,10 +1,10 @@
 use crate::{intersection::Intersection, ray::Ray, transform::Transform};
 
-use super::Shape;
+use super::{BoundingBox, Shape};
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Group {
-    pub(crate) children: Vec<Shape>,
+    pub children: Vec<Shape>,
     pub(crate) transform: Transform,
 }
 
@@ -49,7 +49,7 @@ impl Group {
 
     pub fn extend<T>(&mut self, children: T)
     where
-        T: IntoIterator<Item = Shape>
+        T: IntoIterator<Item = Shape>,
     {
         for child in children {
             self.add_child(child);
@@ -57,6 +57,10 @@ impl Group {
     }
 
     pub(crate) fn intersect(&self, ray: &Ray) -> Vec<Intersection<'_>> {
+        if !self.bounding_box().intersect(&ray) {
+            return vec![];
+        }
+
         let mut intersections: Vec<_> = self
             .children
             .iter()
@@ -66,12 +70,23 @@ impl Group {
         Intersection::sort(&mut intersections);
         intersections
     }
+
+    pub fn bounding_box(&self) -> BoundingBox {
+        let mut bbox = BoundingBox::default();
+
+        for child in &self.children {
+            let child_bbox = child.get_bounding_box();
+            bbox.merge(child_bbox);
+        }
+
+        bbox
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::{
-        shape::BaseShape,
+        shape::{BaseShape, Cylinder},
         tuple::{Point, Vector},
     };
 
@@ -168,5 +183,56 @@ mod tests {
             s.get_transform(),
             group_transform * subgroup_transform * sphere_transform
         );
+    }
+
+    #[test]
+    fn a_group_has_a_bounding_box_that_contains_its_children() {
+        let s = Shape::Sphere(BaseShape {
+            transform: Transform::translation(2.0, 5.0, -3.0)
+                * Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
+            ..Default::default()
+        });
+
+        let c = Shape::Cylinder(Cylinder {
+            base_shape: BaseShape {
+                transform: Transform::translation(-4.0, -1.0, 4.0)
+                    * Transform::try_scaling(0.5, 1.0, 0.5).unwrap(),
+                ..Default::default()
+            },
+            min: -2.0,
+            max: 2.0,
+            ..Default::default()
+        });
+
+        let g = Group::new([s, c], Default::default());
+
+        let bbox = g.bounding_box();
+
+        assert_eq!(bbox.min, Point::new(-4.5, -3.0, -5.0));
+        assert_eq!(bbox.max, Point::new(4.0, 7.0, 4.5));
+    }
+
+    #[test]
+    fn a_ray_doesnt_test_a_groups_children_if_its_bounding_box_is_missed() {
+        let g = Group::new([Shape::Sphere(Default::default())], Default::default());
+
+        let r = Ray {
+            origin: Point::new(0.0, 0.0, -5.0),
+            direction: Vector::new(0.0, 1.0, 0.0),
+        };
+
+        assert!(g.intersect(&r).is_empty());
+    }
+
+    #[test]
+    fn a_ray_test_a_groups_children_if_it_hits_its_bounding_box() {
+        let g = Group::new([Shape::Sphere(Default::default())], Default::default());
+
+        let r = Ray {
+            origin: Point::new(0.0, 0.0, -5.0),
+            direction: Vector::new(0.0, 0.0, 1.0),
+        };
+
+        assert!(!g.intersect(&r).is_empty());
     }
 }

@@ -4,9 +4,9 @@ use crate::{
     tuple::{Point, Vector},
 };
 
-use super::Shape;
+use super::{BoundingBox, Shape};
 
-pub fn intersect(object: &Shape, ray: Ray) -> Vec<Intersection<'_>> {
+pub fn intersect<'a>(object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
     let ray_origin_vec = ray.origin - Point::new(0.0, 0.0, 0.0);
 
     let a = ray.direction.dot(ray.direction);
@@ -32,6 +32,13 @@ pub fn normal_at(point: Point) -> Vector {
     point - Point::new(0.0, 0.0, 0.0)
 }
 
+pub fn bounding_box() -> BoundingBox {
+    BoundingBox {
+        min: Point::new(-1.0, -1.0, -1.0),
+        max: Point::new(1.0, 1.0, 1.0),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::assert_approx;
@@ -51,7 +58,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let xs = super::intersect(&o, r);
+        let xs = super::intersect(&o, &r);
 
         assert_eq!(xs.len(), 2);
         assert_approx!(xs[0].t, 4.0);
@@ -67,7 +74,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let xs = super::intersect(&o, r);
+        let xs = super::intersect(&o, &r);
 
         assert_eq!(xs.len(), 2);
         assert_approx!(xs[0].t, 5.0);
@@ -83,7 +90,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let xs = super::intersect(&o, r);
+        let xs = super::intersect(&o, &r);
 
         assert_eq!(xs.len(), 0);
     }
@@ -97,7 +104,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let xs = super::intersect(&o, r);
+        let xs = super::intersect(&o, &r);
 
         assert_eq!(xs.len(), 2);
         assert_approx!(xs[0].t, -1.0);
@@ -113,7 +120,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let xs = super::intersect(&o, r);
+        let xs = super::intersect(&o, &r);
 
         assert_eq!(xs.len(), 2);
         assert_approx!(xs[0].t, -6.0);
@@ -164,5 +171,13 @@ mod tests {
         ));
 
         assert_eq!(n, n.normalize().unwrap());
+    }
+
+    #[test]
+    fn a_sphere_has_a_bounding_box() {
+        let bbox = super::bounding_box();
+
+        assert_eq!(bbox.min, Point::new(-1.0, -1.0, -1.0));
+        assert_eq!(bbox.max, Point::new(1.0, 1.0, 1.0));
     }
 }

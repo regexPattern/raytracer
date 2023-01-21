@@ -6,7 +6,7 @@ use crate::{
     tuple::{Point, Vector},
 };
 
-use super::{BaseShape, Shape};
+use super::{BaseShape, BoundingBox, Shape};
 
 #[derive(Debug, PartialEq)]
 pub struct CollinearTriangleSidesError;
@@ -42,7 +42,7 @@ impl Triangle {
         })
     }
 
-    pub fn intersect<'a>(&self, object: &'a Shape, ray: Ray) -> Vec<Intersection<'a>> {
+    pub fn intersect<'a>(&self, object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
         let dir_cross_e1 = ray.direction.cross(self.e1);
         let det = self.e0.dot(dir_cross_e1);
 
@@ -54,7 +54,7 @@ impl Triangle {
         let p0_to_origin = ray.origin - self.v0;
         let u = f * p0_to_origin.dot(dir_cross_e1);
 
-        if u < 0.0 || u > 1.0 {
+        if !(0.0..=1.0).contains(&u) {
             return vec![];
         }
 
@@ -73,6 +73,10 @@ impl Triangle {
 
     pub fn normal_at(&self, _: Point) -> Vector {
         self.normal
+    }
+
+    pub fn bounding_box(&self) -> BoundingBox {
+        BoundingBox::from([self.v0, self.v1, self.v2])
     }
 }
 
@@ -147,7 +151,7 @@ mod tests {
             direction: Vector::new(0.0, 1.0, 0.0),
         };
 
-        let xs = t.intersect(&o, r);
+        let xs = t.intersect(&o, &r);
 
         assert!(xs.is_empty())
     }
@@ -168,7 +172,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let xs = t.intersect(&o, r);
+        let xs = t.intersect(&o, &r);
 
         assert!(xs.is_empty())
     }
@@ -189,7 +193,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let xs = t.intersect(&o, r);
+        let xs = t.intersect(&o, &r);
 
         assert!(xs.is_empty())
     }
@@ -210,7 +214,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let xs = t.intersect(&o, r);
+        let xs = t.intersect(&o, &r);
 
         assert!(xs.is_empty())
     }
@@ -231,9 +235,23 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let xs = t.intersect(&o, r);
+        let xs = t.intersect(&o, &r);
 
         assert_eq!(xs.len(), 1);
         assert_approx!(xs[0].t, 2.0);
+    }
+
+    #[test]
+    fn a_triangle_has_a_bounding_box() {
+        let v0 = Point::new(-3.0, 7.0, 2.0);
+        let v1 = Point::new(6.0, 2.0, -4.0);
+        let v2 = Point::new(2.0, -1.0, -1.0);
+
+        let t = Triangle::try_new(v0, v1, v2).unwrap();
+
+        let bbox = t.bounding_box();
+
+        assert_eq!(bbox.min, Point::new(-3.0, -1.0, -4.0));
+        assert_eq!(bbox.max, Point::new(6.0, 7.0, 2.0));
     }
 }

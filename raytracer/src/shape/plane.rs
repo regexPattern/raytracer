@@ -5,9 +5,9 @@ use crate::{
     tuple::{Point, Vector},
 };
 
-use super::Shape;
+use super::{BoundingBox, Shape};
 
-pub fn intersect(object: &Shape, ray: Ray) -> Vec<Intersection<'_>> {
+pub fn intersect<'a>(object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
     if !float::approx(ray.direction.0.y, 0.0) {
         let t = -ray.origin.0.y / ray.direction.0.y;
         vec![Intersection { t, object }]
@@ -18,6 +18,13 @@ pub fn intersect(object: &Shape, ray: Ray) -> Vec<Intersection<'_>> {
 
 pub fn normal_at(_: Point) -> Vector {
     Vector::new(0.0, 1.0, 0.0)
+}
+
+pub fn bounding_box() -> BoundingBox {
+    BoundingBox {
+        min: Point::new(std::f64::NEG_INFINITY, 0.0, std::f64::NEG_INFINITY),
+        max: Point::new(std::f64::INFINITY, 0.0, std::f64::INFINITY),
+    }
 }
 
 #[cfg(test)]
@@ -50,7 +57,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let xs = super::intersect(&o, r);
+        let xs = super::intersect(&o, &r);
 
         assert_eq!(xs.len(), 0);
     }
@@ -64,7 +71,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let xs = super::intersect(&o, r);
+        let xs = super::intersect(&o, &r);
 
         assert_eq!(xs.len(), 0);
     }
@@ -78,7 +85,7 @@ mod tests {
             direction: Vector::new(0.0, -1.0, 0.0),
         };
 
-        let xs = super::intersect(&o, r);
+        let xs = super::intersect(&o, &r);
 
         assert_eq!(xs.len(), 1);
         assert_approx!(xs[0].t, 1.0);
@@ -93,9 +100,23 @@ mod tests {
             direction: Vector::new(0.0, 1.0, 0.0),
         };
 
-        let xs = super::intersect(&o, r);
+        let xs = super::intersect(&o, &r);
 
         assert_eq!(xs.len(), 1);
         assert_approx!(xs[0].t, 1.0);
+    }
+
+    #[test]
+    fn a_plane_has_a_bounding_box() {
+        let bbox = super::bounding_box();
+
+        assert_eq!(
+            bbox.min,
+            Point::new(std::f64::NEG_INFINITY, 0.0, std::f64::NEG_INFINITY)
+        );
+        assert_eq!(
+            bbox.max,
+            Point::new(std::f64::INFINITY, 0.0, std::f64::INFINITY)
+        );
     }
 }

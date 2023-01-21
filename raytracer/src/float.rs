@@ -1,7 +1,11 @@
 pub const EPSILON: f64 = 1e-5;
 
 pub fn approx(a: f64, b: f64) -> bool {
-    (a - b).abs() < EPSILON
+    if a.is_infinite() && b.is_infinite() {
+        a == b
+    } else {
+        (a - b).abs() < EPSILON
+    }
 }
 
 pub fn ge(a: f64, b: f64) -> bool {

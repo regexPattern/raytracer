@@ -27,14 +27,14 @@ fn main() {
     );
 
     let obj_file = std::fs::read_to_string("teapot.obj").unwrap();
-    let parser = OBJModel::parse(&obj_file).unwrap();
+    let model = OBJModel::parse(&obj_file).unwrap();
 
     let world = World {
-        objects: vec![],
+        objects: vec![model.into()],
         lights: vec![light],
     };
 
-    let camera = Camera::try_new(100, 100, std::f64::consts::FRAC_PI_3)
+    let camera = Camera::try_new(360, 640, std::f64::consts::FRAC_PI_3)
         .unwrap()
         .with_transform(
             Transform::try_view(
