@@ -40,8 +40,9 @@ impl World {
         self.lights.iter().fold(color::consts::BLACK, |acc, light| {
             let object = comps.intersection.object;
             let in_shadow = self.is_shadowed(comps.over_point, light);
+            let material = object.get_material();
 
-            let surface_color = object.get_material().lighting(
+            let surface_color = material.lighting(
                 object,
                 light,
                 comps.over_point,
@@ -53,10 +54,7 @@ impl World {
             let reflected_color = self.reflected_color(&comps, recursion_depth);
             let refracted_color = self.refracted_color(&comps, recursion_depth);
 
-            let reflectance_color = if (object.get_material().reflectivity
-                * object.get_material().transparency)
-                > 0.0
-            {
+            let reflectance_color = if (material.reflectivity * material.transparency) > 0.0 {
                 let reflectance = comps.schlick();
                 reflected_color * reflectance + refracted_color * (1.0 - reflectance)
             } else {

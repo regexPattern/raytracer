@@ -1,6 +1,7 @@
 use crate::{
     float,
     intersection::Intersection,
+    material::Material,
     ray::Ray,
     tuple::{Point, Vector},
 };
@@ -12,34 +13,29 @@ pub struct CollinearTriangleSidesError;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Triangle {
-    pub(crate) base_shape: BaseShape,
-    p0: Point,
-    p1: Point,
-    p2: Point,
+    pub(crate) material: Material,
+    pub(crate) v0: Point,
+    pub(crate) v1: Point,
+    pub(crate) v2: Point,
     e0: Vector,
     e1: Vector,
     normal: Vector,
 }
 
 impl Triangle {
-    pub fn try_new(
-        base_shape: BaseShape,
-        p0: Point,
-        p1: Point,
-        p2: Point,
-    ) -> Result<Self, CollinearTriangleSidesError> {
-        let e0 = p1 - p0;
-        let e1 = p2 - p0;
+    pub fn try_new(v0: Point, v1: Point, v2: Point) -> Result<Self, CollinearTriangleSidesError> {
+        let e0 = v1 - v0;
+        let e1 = v2 - v0;
         let normal = e1
             .cross(e0)
             .normalize()
             .map_err(|_| CollinearTriangleSidesError)?;
 
         Ok(Self {
-            base_shape,
-            p0,
-            p1,
-            p2,
+            material: Default::default(),
+            v0,
+            v1,
+            v2,
             e0,
             e1,
             normal,
@@ -55,7 +51,7 @@ impl Triangle {
         }
 
         let f = 1.0 / det;
-        let p0_to_origin = ray.origin - self.p0;
+        let p0_to_origin = ray.origin - self.v0;
         let u = f * p0_to_origin.dot(dir_cross_e1);
 
         if u < 0.0 || u > 1.0 {
@@ -92,15 +88,15 @@ mod tests {
 
     #[test]
     fn constructing_a_triangle() {
-        let p0 = Point::new(0.0, 1.0, 0.0);
-        let p1 = Point::new(-1.0, 0.0, 0.0);
-        let p2 = Point::new(1.0, 0.0, 0.0);
+        let v0 = Point::new(0.0, 1.0, 0.0);
+        let v1 = Point::new(-1.0, 0.0, 0.0);
+        let v2 = Point::new(1.0, 0.0, 0.0);
 
-        let t = Triangle::try_new(Default::default(), p0, p1, p2).unwrap();
+        let t = Triangle::try_new(v0, v1, v2).unwrap();
 
-        assert_eq!(t.p0, p0);
-        assert_eq!(t.p1, p1);
-        assert_eq!(t.p2, p2);
+        assert_eq!(t.v0, v0);
+        assert_eq!(t.v1, v1);
+        assert_eq!(t.v2, v2);
         assert_eq!(t.e0, Vector::new(-1.0, -1.0, 0.0));
         assert_eq!(t.e1, Vector::new(1.0, -1.0, 0.0));
         assert_eq!(t.normal, Vector::new(0.0, 0.0, -1.0));
@@ -108,11 +104,11 @@ mod tests {
 
     #[test]
     fn trying_to_construct_a_triangle_with_collinear_sides() {
-        let p0 = Point::new(1.0, 0.0, 0.0);
-        let p1 = Point::new(2.0, 1.0, 0.0);
-        let p2 = p0;
+        let v0 = Point::new(1.0, 0.0, 0.0);
+        let v1 = Point::new(2.0, 1.0, 0.0);
+        let v2 = v0;
 
-        let t = Triangle::try_new(Default::default(), p0, p1, p2);
+        let t = Triangle::try_new(v0, v1, v2);
 
         assert_eq!(t, Err(CollinearTriangleSidesError));
     }
@@ -120,7 +116,6 @@ mod tests {
     #[test]
     fn finding_the_normal_on_a_triangle() {
         let t = Triangle::try_new(
-            Default::default(),
             Point::new(0.0, 1.0, 0.0),
             Point::new(-1.0, 0.0, 0.0),
             Point::new(1.0, 0.0, 0.0),
@@ -141,7 +136,6 @@ mod tests {
         let o = dummy_object();
 
         let t = Triangle::try_new(
-            Default::default(),
             Point::new(0.0, 1.0, 0.0),
             Point::new(-1.0, 0.0, 0.0),
             Point::new(1.0, 0.0, 0.0),
@@ -163,7 +157,6 @@ mod tests {
         let o = dummy_object();
 
         let t = Triangle::try_new(
-            Default::default(),
             Point::new(0.0, 1.0, 0.0),
             Point::new(-1.0, 0.0, 0.0),
             Point::new(1.0, 0.0, 0.0),
@@ -185,7 +178,6 @@ mod tests {
         let o = dummy_object();
 
         let t = Triangle::try_new(
-            Default::default(),
             Point::new(0.0, 1.0, 0.0),
             Point::new(-1.0, 0.0, 0.0),
             Point::new(1.0, 0.0, 0.0),
@@ -207,7 +199,6 @@ mod tests {
         let o = dummy_object();
 
         let t = Triangle::try_new(
-            Default::default(),
             Point::new(0.0, 1.0, 0.0),
             Point::new(-1.0, 0.0, 0.0),
             Point::new(1.0, 0.0, 0.0),
@@ -229,7 +220,6 @@ mod tests {
         let o = dummy_object();
 
         let t = Triangle::try_new(
-            Default::default(),
             Point::new(0.0, 1.0, 0.0),
             Point::new(-1.0, 0.0, 0.0),
             Point::new(1.0, 0.0, 0.0),

@@ -2,8 +2,8 @@ use crate::{
     color::{self, Color},
     float,
     light::PointLight,
-    shape::Shape,
     pattern::Pattern,
+    shape::Shape,
     tuple::{Point, Vector},
 };
 

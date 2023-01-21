@@ -15,7 +15,7 @@ mod triangle;
 
 pub use cylinder::Cylinder;
 pub use group::Group;
-pub use triangle::Triangle;
+pub use triangle::{CollinearTriangleSidesError, Triangle};
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct BaseShape {
@@ -89,10 +89,8 @@ impl Shape {
         match self {
             Self::Cube(bs) | Self::Plane(bs) | Self::Sphere(bs) => &bs.material,
             Self::Cylinder(cylinder) => &cylinder.base_shape.material,
-            Self::Triangle(triangle) => &triangle.base_shape.material,
-
-            // Same reason as `Self::normal_at`.
-            Self::Group(_) => unreachable!(),
+            Self::Triangle(triangle) => &triangle.material,
+            _ => unimplemented!(),
         }
     }
 
@@ -100,10 +98,7 @@ impl Shape {
         match self {
             Self::Cube(bs) | Self::Plane(bs) | Self::Sphere(bs) => bs.material = material,
             Self::Cylinder(cylinder) => cylinder.base_shape.material = material,
-            Self::Triangle(triangle) => triangle.base_shape.material = material,
-
-            // Same reason as `Self::normal_at`.
-            Self::Group(_) => unreachable!(),
+            _ => (),
         }
     }
 
@@ -111,7 +106,7 @@ impl Shape {
         match self {
             Self::Cube(bs) | Self::Plane(bs) | Self::Sphere(bs) => bs.transform,
             Self::Cylinder(cylinder) => cylinder.base_shape.transform,
-            Self::Triangle(triangle) => triangle.base_shape.transform,
+            Self::Triangle(_) => Default::default(),
             Self::Group(group) => group.transform,
         }
     }
@@ -120,7 +115,7 @@ impl Shape {
         match self {
             Self::Cube(bs) | Self::Plane(bs) | Self::Sphere(bs) => bs.transform = transform,
             Self::Cylinder(cylinder) => cylinder.base_shape.transform = transform,
-            Self::Triangle(triangle) => triangle.base_shape.transform = transform,
+            Self::Triangle(_) => (),
             Self::Group(group) => group.update_transform(transform),
         }
     }

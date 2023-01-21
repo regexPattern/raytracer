@@ -9,13 +9,18 @@ pub struct Group {
 }
 
 impl Group {
-    pub fn new<const N: usize>(mut children: [Shape; N], transform: Transform) -> Self {
+    pub fn new<T>(children: T, transform: Transform) -> Self
+    where
+        T: Into<Vec<Shape>>,
+    {
+        let mut children = children.into();
+
         children
             .iter_mut()
             .for_each(|child| Self::apply_transform_to_child(transform, child));
 
         Self {
-            children: children.into(),
+            children,
             transform,
         }
     }
