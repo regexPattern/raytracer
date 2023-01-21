@@ -162,7 +162,7 @@ impl OBJModel {
                 // There's always going to be at a group. The __default group is always intialized
                 // above in this same function.
                 #[allow(clippy::unwrap_used)]
-                groups.last().unwrap().borrow_mut().group.extend(polygons);
+                groups.last().unwrap().borrow_mut().group.add_children(polygons);
             } else if sanitized.starts_with("g ") {
                 let name = parse_group(&sanitized).map_err(wrap_parsing_error)?;
 

@@ -1,5 +1,6 @@
 use crate::{ray::Ray, transform::Transform, tuple::Point};
 
+#[derive(Copy, Clone, Debug)]
 pub struct BoundingBox {
     pub min: Point,
     pub max: Point,
@@ -88,16 +89,16 @@ impl BoundingBox {
     pub fn split(&self) -> (Self, Self) {
         use crate::{float, tuple::Tuple};
 
-        let dim_x = self.min.0.x.abs() + self.max.0.x.abs();
-        let dim_y = self.min.0.y.abs() + self.max.0.y.abs();
-        let dim_z = self.min.0.z.abs() + self.max.0.z.abs();
+        let dx = (self.min.0.x - self.max.0.x).abs();
+        let dy = (self.min.0.y - self.max.0.y).abs();
+        let dz = (self.min.0.z - self.max.0.z).abs();
 
         // There's always going to be a largest_axis, in case all three axis are the same there is
         // still going to be a valid axis. No geometric figure except for planes, has all of it's
         // axis with infinite length. In the case of planes bounding boxes should have infinite
         // length, so infinite would count as a valid largest_axis value.
         #[allow(clippy::unwrap_used)]
-        let largest_axis = [dim_x, dim_y, dim_z]
+        let largest_axis = [dx, dy, dz]
             .into_iter()
             .max_by(|a, b| a.partial_cmp(b).unwrap())
             .unwrap();
@@ -116,16 +117,16 @@ impl BoundingBox {
             ..
         }) = self.max;
 
-        if float::approx(largest_axis, dim_x) {
-            let tmp = x0 + dim_x / 2.0;
+        if float::approx(largest_axis, dx) {
+            let tmp = x0 + dx / 2.0;
             x0 = tmp;
             x1 = tmp;
-        } else if float::approx(largest_axis, dim_y) {
-            let tmp = y0 + dim_y / 2.0;
+        } else if float::approx(largest_axis, dy) {
+            let tmp = y0 + dy / 2.0;
             y0 = tmp;
             y1 = tmp;
         } else {
-            let tmp = z0 + dim_z / 2.0;
+            let tmp = z0 + dz / 2.0;
             z0 = tmp;
             z1 = tmp;
         }

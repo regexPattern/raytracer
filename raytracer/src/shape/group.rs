@@ -47,13 +47,21 @@ impl Group {
         self.children.push(child);
     }
 
-    pub fn extend<T>(&mut self, children: T)
+    pub fn add_children<T>(&mut self, children: T)
     where
         T: IntoIterator<Item = Shape>,
     {
         for child in children {
             self.add_child(child);
         }
+    }
+
+    pub fn add_subgroup<T>(&mut self, subgroup: T)
+    where
+        T: Into<Vec<Shape>>,
+    {
+        let subgroup = Self::new(subgroup, Default::default());
+        self.add_child(Shape::Group(subgroup))
     }
 
     pub(crate) fn intersect(&self, ray: &Ray) -> Vec<Intersection<'_>> {
@@ -81,6 +89,46 @@ impl Group {
 
         bbox
     }
+
+    pub fn partition_children(&mut self) -> (Vec<Shape>, Vec<Shape>) {
+        let (left_bbox, right_bbox) = self.bounding_box().split();
+
+        let mut left_children = vec![];
+        let mut right_children = vec![];
+
+        let mut i = 0;
+        while i < self.children.len() {
+            let child_bbox = self.children[i].get_bounding_box();
+
+            if left_bbox.contains_box(&child_bbox) {
+                left_children.push(self.children.swap_remove(i));
+            } else if right_bbox.contains_box(&child_bbox) {
+                right_children.push(self.children.swap_remove(i));
+            } else {
+                i += 1;
+            }
+        }
+
+        (left_children, right_children)
+    }
+
+    pub fn divide(&mut self, threshold: usize) {
+        if threshold <= self.children.len() {
+            let (left, right) = self.partition_children();
+
+            if !left.is_empty() {
+                self.add_subgroup(left);
+            }
+
+            if !right.is_empty() {
+                self.add_subgroup(right);
+            }
+        }
+
+        for child in &mut self.children {
+            child.divide(threshold)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -94,7 +142,7 @@ mod tests {
 
     fn get_subgroup_child(super_group: &Group) -> &Shape {
         match &super_group.children[0] {
-            Shape::Group(sub_group) => &sub_group.children[0],
+            Shape::Group(subgroup) => &subgroup.children[0],
             _ => unimplemented!(),
         }
     }
@@ -234,5 +282,135 @@ mod tests {
         };
 
         assert!(!g.intersect(&r).is_empty());
+    }
+
+    #[test]
+    fn partitioning_a_groups_children() {
+        let s0 = Shape::Sphere(BaseShape {
+            transform: Transform::translation(-2.0, 0.0, 0.0),
+            ..Default::default()
+        });
+
+        let s1 = Shape::Sphere(BaseShape {
+            transform: Transform::translation(2.0, 0.0, 0.0),
+            ..Default::default()
+        });
+
+        let s2 = Shape::Sphere(Default::default());
+
+        let mut g = Group::new([s0, s1, s2], Default::default());
+
+        let s0 = g.children[0].clone();
+        let s1 = g.children[1].clone();
+        let s2 = g.children[2].clone();
+
+        let (left, right) = g.partition_children();
+
+        assert_eq!(g, Group::new([s2], Default::default()));
+        assert_eq!(left, vec![s0]);
+        assert_eq!(right, vec![s1]);
+    }
+
+    #[test]
+    fn creating_a_subgroup_from_a_list_of_children() {
+        let s0 = Shape::Sphere(Default::default());
+        let s1 = Shape::Cube(Default::default());
+
+        let mut g = Group::default();
+
+        g.add_subgroup([s0.clone(), s1.clone()]);
+
+        assert_eq!(g.children.len(), 1);
+        assert_eq!(
+            g.children[0],
+            Shape::Group(Group::new([s0, s1], Default::default()))
+        );
+    }
+
+    #[test]
+    fn subdividing_a_group_partitions_its_children() {
+        let s0 = Shape::Sphere(BaseShape {
+            transform: Transform::translation(-2.0, -2.0, 0.0),
+            ..Default::default()
+        });
+
+        let s1 = Shape::Sphere(BaseShape {
+            transform: Transform::translation(-2.0, 2.0, 0.0),
+            ..Default::default()
+        });
+
+        let s2 = Shape::Sphere(BaseShape {
+            transform: Transform::try_scaling(4.0, 4.0, 4.0).unwrap(),
+            ..Default::default()
+        });
+
+        let mut g = Group::new([s0, s1, s2], Default::default());
+
+        let s0 = g.children[0].clone();
+        let s1 = g.children[1].clone();
+        let s2 = g.children[2].clone();
+
+        g.divide(1);
+
+        let subgroup = match &g.children[1] {
+            Shape::Group(subgroup) => subgroup,
+            _ => unimplemented!(),
+        };
+
+        assert_eq!(g.children[0], s2);
+        assert_eq!(subgroup.children.len(), 2);
+        assert_eq!(
+            subgroup.children[0],
+            Shape::Group(Group::new([s0], Default::default()))
+        );
+        assert_eq!(
+            subgroup.children[1],
+            Shape::Group(Group::new([s1], Default::default()))
+        );
+    }
+
+    #[test]
+    fn subdividing_a_group_with_too_few_children() {
+        let s0 = Shape::Sphere(BaseShape {
+            transform: Transform::translation(-2.0, 0.0, 0.0),
+            ..Default::default()
+        });
+
+        let s1 = Shape::Sphere(BaseShape {
+            transform: Transform::translation(2.0, 1.0, 0.0),
+            ..Default::default()
+        });
+
+        let s2 = Shape::Sphere(BaseShape {
+            transform: Transform::translation(2.0, -1.0, 0.0),
+            ..Default::default()
+        });
+
+        let subgroup = Shape::Group(Group::new(
+            [s0.clone(), s1.clone(), s2.clone()],
+            Default::default(),
+        ));
+
+        let s3 = Shape::Sphere(Default::default());
+
+        let mut g = Group::new([subgroup.clone(), s3.clone()], Default::default());
+
+        g.divide(3);
+
+        let subgroup = match &g.children[0] {
+            Shape::Group(subgroup) => subgroup,
+            _ => unimplemented!(),
+        };
+
+        assert_eq!(g.children[1], s3);
+        assert_eq!(subgroup.children.len(), 2);
+        assert_eq!(
+            subgroup.children[0],
+            Shape::Group(Group::new([s0], Default::default()))
+        );
+        assert_eq!(
+            subgroup.children[1],
+            Shape::Group(Group::new([s2, s1], Default::default()))
+        );
     }
 }

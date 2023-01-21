@@ -87,6 +87,12 @@ impl Shape {
         })
     }
 
+    pub fn divide(&mut self, threshold: usize) {
+        if let Shape::Group(group) = self {
+            group.divide(threshold);
+        }
+    }
+
     pub fn get_bounding_box(&self) -> BoundingBox {
         let bbox = match self {
             Self::Cube(_) => cube::bounding_box(),
@@ -259,7 +265,7 @@ mod tests {
     }
 
     #[test]
-    fn querying_a_shapes_s_bounding_box_in_its_parent_s_space() {
+    fn querying_a_shapess_bounding_box_in_its_parent_s_space() {
         let s = Shape::Sphere(BaseShape {
             transform: Transform::translation(1.0, -3.0, 5.0)
                 * Transform::try_scaling(0.5, 2.0, 4.0).unwrap(),
@@ -270,5 +276,13 @@ mod tests {
 
         assert_eq!(bbox.min, Point::new(0.5, -5.0, 1.0));
         assert_eq!(bbox.max, Point::new(1.5, -1.0, 9.0));
+    }
+
+    #[test]
+    fn subdividing_a_primitive_does_nothing() {
+        let mut s = Shape::Sphere(Default::default());
+        s.divide(1);
+
+        assert_eq!(s, Shape::Sphere(Default::default()));
     }
 }
