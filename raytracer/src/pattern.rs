@@ -8,9 +8,10 @@ use crate::{
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Schema {
-    pub a: Color,
-    pub b: Color,
+    pub from: Color,
+    pub to: Color,
     pub transform: Transform,
+    pub transform_inverse: Transform,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -22,23 +23,25 @@ pub enum Pattern {
     Checker(Schema),
 }
 
-fn pattern_point(object: &Shape, transform: Transform, point: Point) -> Point {
-    let object_point = object.get_transform().inverse() * point;
-
-    transform.inverse() * object_point
+fn pattern_point(object: &Shape, transform_inverse: Transform, point: Point) -> Point {
+    let object_point = object.as_ref().transform_inverse * point;
+    transform_inverse * object_point
 }
 
 impl Schema {
-    pub fn new(a: Color, b: Color) -> Self {
-        let transform = Transform::default();
-
-        Self { a, b, transform }
+    pub fn new(from: Color, to: Color, transform: Transform) -> Self {
+        Self {
+            from,
+            to,
+            transform,
+            transform_inverse: transform.inverse(),
+        }
     }
 }
 
 impl Pattern {
     pub(crate) fn color_at_object(&self, object: &Shape, point: Point) -> Color {
-        self.color_at(pattern_point(object, self.transform(), point))
+        self.color_at(pattern_point(object, self.transform().inverse(), point))
     }
 
     fn color_at(&self, point: Point) -> Color {
@@ -48,24 +51,24 @@ impl Pattern {
             Self::Solid(c) => c.to_owned(),
             Self::Stripe(s) => {
                 if float::approx(x.floor() % 2.0, 0.0) {
-                    s.a
+                    s.from
                 } else {
-                    s.b
+                    s.to
                 }
             }
-            Self::Gradient(s) => s.a + (s.b - s.a) * (x - x.floor()),
+            Self::Gradient(s) => s.from + (s.to - s.from) * (x - x.floor()),
             Self::Ring(s) => {
                 if float::approx(x.hypot(z).floor() % 2.0, 0.0) {
-                    s.a
+                    s.from
                 } else {
-                    s.b
+                    s.to
                 }
             }
             Self::Checker(s) => {
                 if float::approx((x.floor() + y.floor() + z.floor()) % 2.0, 0.0) {
-                    s.a
+                    s.from
                 } else {
-                    s.b
+                    s.to
                 }
             }
         }
@@ -81,7 +84,10 @@ impl Pattern {
 
 #[cfg(test)]
 mod tests {
-    use crate::{color, shape::BaseShape};
+    use crate::{
+        color,
+        shape::{ShapeProps, Sphere},
+    };
 
     use super::*;
 
@@ -94,17 +100,17 @@ mod tests {
 
     impl Default for TestPattern {
         fn default() -> Self {
-            Self(Schema {
-                a: color::consts::WHITE,
-                b: color::consts::BLACK,
-                transform: Default::default(),
-            })
+            Self(Schema::new(
+                color::consts::WHITE,
+                color::consts::BLACK,
+                Default::default(),
+            ))
         }
     }
 
     impl TestPattern {
         fn color_at_object(&self, object: &Shape, point: Point) -> Color {
-            let pattern_point = pattern_point(object, self.0.transform, point);
+            let pattern_point = pattern_point(object, self.0.transform.inverse(), point);
 
             Color {
                 red: pattern_point.0.x,
@@ -116,10 +122,14 @@ mod tests {
 
     #[test]
     fn creating_a_stripe_pattern() {
-        let p = Pattern::Stripe(Schema::new(color::consts::WHITE, color::consts::BLACK));
+        let p = Pattern::Stripe(Schema::new(
+            color::consts::WHITE,
+            color::consts::BLACK,
+            Default::default(),
+        ));
 
-        assert!(matches!(p, Pattern::Stripe(Schema { a, .. }) if a == color::consts::WHITE));
-        assert!(matches!(p, Pattern::Stripe(Schema { b, .. }) if b == color::consts::BLACK));
+        assert!(matches!(p, Pattern::Stripe(Schema { from, .. }) if from == color::consts::WHITE));
+        assert!(matches!(p, Pattern::Stripe(Schema { to, .. }) if to == color::consts::BLACK));
         assert!(
             matches!(p, Pattern::Stripe(Schema { transform: t, .. }) if t == Default::default())
         );
@@ -127,7 +137,11 @@ mod tests {
 
     #[test]
     fn a_stripe_pattern_is_constant_in_y() {
-        let p = Pattern::Stripe(Schema::new(color::consts::WHITE, color::consts::BLACK));
+        let p = Pattern::Stripe(Schema::new(
+            color::consts::WHITE,
+            color::consts::BLACK,
+            Default::default(),
+        ));
 
         assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), color::consts::WHITE);
         assert_eq!(p.color_at(Point::new(0.0, 1.0, 0.0)), color::consts::WHITE);
@@ -136,7 +150,11 @@ mod tests {
 
     #[test]
     fn a_stripe_pattern_is_constant_in_z() {
-        let p = Pattern::Stripe(Schema::new(color::consts::WHITE, color::consts::BLACK));
+        let p = Pattern::Stripe(Schema::new(
+            color::consts::WHITE,
+            color::consts::BLACK,
+            Default::default(),
+        ));
 
         assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), color::consts::WHITE);
         assert_eq!(p.color_at(Point::new(0.0, 0.0, 1.0)), color::consts::WHITE);
@@ -145,7 +163,11 @@ mod tests {
 
     #[test]
     fn a_stripe_pattern_alternates_in_x() {
-        let p = Pattern::Stripe(Schema::new(color::consts::WHITE, color::consts::BLACK));
+        let p = Pattern::Stripe(Schema::new(
+            color::consts::WHITE,
+            color::consts::BLACK,
+            Default::default(),
+        ));
 
         assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), color::consts::WHITE);
         assert_eq!(p.color_at(Point::new(0.9, 0.0, 0.0)), color::consts::WHITE);
@@ -157,12 +179,16 @@ mod tests {
 
     #[test]
     fn stripes_with_object_transform() {
-        let o = Shape::Sphere(BaseShape {
-            transform: Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
-            ..Default::default()
-        });
+        let o = Shape::Sphere(Sphere::new(
+            Default::default(),
+            Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
+        ));
 
-        let p = Pattern::Stripe(Schema::new(color::consts::WHITE, color::consts::BLACK));
+        let p = Pattern::Stripe(Schema::new(
+            color::consts::WHITE,
+            color::consts::BLACK,
+            Default::default(),
+        ));
 
         let c = p.color_at_object(&o, Point::new(1.5, 0.0, 0.0));
 
@@ -173,11 +199,11 @@ mod tests {
     fn stripes_with_a_pattern_transformation() {
         let o = test_object();
 
-        let p = Pattern::Stripe(Schema {
-            a: color::consts::WHITE,
-            b: color::consts::BLACK,
-            transform: Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
-        });
+        let p = Pattern::Stripe(Schema::new(
+            color::consts::WHITE,
+            color::consts::BLACK,
+            Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
+        ));
 
         let c = p.color_at_object(&o, Point::new(1.5, 0.0, 0.0));
 
@@ -186,16 +212,16 @@ mod tests {
 
     #[test]
     fn stripes_with_both_an_object_and_a_pattern_transformation() {
-        let o = Shape::Sphere(BaseShape {
-            transform: Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
-            ..Default::default()
-        });
+        let o = Shape::Sphere(Sphere::new(
+            Default::default(),
+            Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
+        ));
 
-        let p = Pattern::Stripe(Schema {
-            a: color::consts::WHITE,
-            b: color::consts::BLACK,
-            transform: Transform::translation(0.5, 0.0, 0.0),
-        });
+        let p = Pattern::Stripe(Schema::new(
+            color::consts::WHITE,
+            color::consts::BLACK,
+            Transform::translation(0.5, 0.0, 0.0),
+        ));
 
         let c = p.color_at_object(&o, Point::new(2.5, 0.0, 0.0));
 
@@ -204,10 +230,10 @@ mod tests {
 
     #[test]
     fn a_pattern_with_an_object_transformation() {
-        let o = Shape::Sphere(BaseShape {
-            transform: Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
-            ..Default::default()
-        });
+        let o = Shape::Sphere(Sphere::new(
+            Default::default(),
+            Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
+        ));
 
         let p = TestPattern::default();
 
@@ -227,11 +253,11 @@ mod tests {
     fn a_pattern_with_a_pattern_transformation() {
         let o = test_object();
 
-        let p = TestPattern(Schema {
-            a: color::consts::WHITE,
-            b: color::consts::BLACK,
-            transform: Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
-        });
+        let p = TestPattern(Schema::new(
+            color::consts::WHITE,
+            color::consts::BLACK,
+            Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
+        ));
 
         let c = p.color_at_object(&o, Point::new(2.0, 3.0, 4.0));
 
@@ -247,16 +273,16 @@ mod tests {
 
     #[test]
     fn a_pattern_with_both_an_object_and_a_pattern_transformation() {
-        let o = Shape::Sphere(BaseShape {
-            transform: Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
-            ..Default::default()
-        });
+        let o = Shape::Sphere(Sphere::new(
+            Default::default(),
+            Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
+        ));
 
-        let p = TestPattern(Schema {
-            a: color::consts::WHITE,
-            b: color::consts::BLACK,
-            transform: Transform::translation(0.5, 1.0, 1.5),
-        });
+        let p = TestPattern(Schema::new(
+            color::consts::WHITE,
+            color::consts::BLACK,
+            Transform::translation(0.5, 1.0, 1.5),
+        ));
 
         let c = p.color_at_object(&o, Point::new(2.5, 3.0, 3.5));
 
@@ -272,7 +298,11 @@ mod tests {
 
     #[test]
     fn a_gradient_linearly_interpolates_between_colors() {
-        let p = Pattern::Gradient(Schema::new(color::consts::WHITE, color::consts::BLACK));
+        let p = Pattern::Gradient(Schema::new(
+            color::consts::WHITE,
+            color::consts::BLACK,
+            Default::default(),
+        ));
 
         assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), color::consts::WHITE);
         assert_eq!(
@@ -303,7 +333,11 @@ mod tests {
 
     #[test]
     fn a_ring_should_extend_in_both_x_and_z() {
-        let p = Pattern::Ring(Schema::new(color::consts::WHITE, color::consts::BLACK));
+        let p = Pattern::Ring(Schema::new(
+            color::consts::WHITE,
+            color::consts::BLACK,
+            Default::default(),
+        ));
 
         assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), color::consts::WHITE);
         assert_eq!(p.color_at(Point::new(1.0, 0.0, 0.0)), color::consts::BLACK);
@@ -316,7 +350,11 @@ mod tests {
 
     #[test]
     fn checkers_should_repeat_in_x() {
-        let p = Pattern::Checker(Schema::new(color::consts::WHITE, color::consts::BLACK));
+        let p = Pattern::Checker(Schema::new(
+            color::consts::WHITE,
+            color::consts::BLACK,
+            Default::default(),
+        ));
 
         assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), color::consts::WHITE);
         assert_eq!(p.color_at(Point::new(0.99, 0.0, 0.0)), color::consts::WHITE);
@@ -325,7 +363,11 @@ mod tests {
 
     #[test]
     fn checkers_should_repeat_in_y() {
-        let p = Pattern::Checker(Schema::new(color::consts::WHITE, color::consts::BLACK));
+        let p = Pattern::Checker(Schema::new(
+            color::consts::WHITE,
+            color::consts::BLACK,
+            Default::default(),
+        ));
 
         assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), color::consts::WHITE);
         assert_eq!(p.color_at(Point::new(0.0, 0.99, 0.0)), color::consts::WHITE);
@@ -334,7 +376,11 @@ mod tests {
 
     #[test]
     fn checkers_should_repeat_in_z() {
-        let p = Pattern::Checker(Schema::new(color::consts::WHITE, color::consts::BLACK));
+        let p = Pattern::Checker(Schema::new(
+            color::consts::WHITE,
+            color::consts::BLACK,
+            Default::default(),
+        ));
 
         assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.0)), color::consts::WHITE);
         assert_eq!(p.color_at(Point::new(0.0, 0.0, 0.99)), color::consts::WHITE);

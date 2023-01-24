@@ -4,7 +4,7 @@ use raytracer::{
     camera::Camera,
     color,
     light::PointLight,
-    shape::{BaseShape, Cylinder, Group, Shape, Triangle},
+    shape::{Cylinder, Group, Shape, ShapeProps, Triangle},
     transform::Transform,
     tuple::{Point, Vector},
     wavefront::OBJModel,
@@ -17,15 +17,6 @@ fn main() {
         intensity: color::consts::WHITE,
     };
 
-    let triangle = Shape::Triangle(
-        Triangle::try_new(
-            Point::new(1.0, 0.0, 0.0),
-            Point::new(-1.0, 0.0, 0.0),
-            Point::new(0.0, 2.0, 0.),
-        )
-        .unwrap(),
-    );
-
     let obj_file = std::fs::read_to_string("teapot.obj").unwrap();
     let model = OBJModel::parse(&obj_file).unwrap();
 
@@ -34,16 +25,18 @@ fn main() {
         lights: vec![light],
     };
 
-    let camera = Camera::try_new(360, 640, std::f64::consts::FRAC_PI_3)
-        .unwrap()
-        .with_transform(
-            Transform::try_view(
-                Point::new(0.0, 3.0, 5.0),
-                Point::new(0.0, 0.0, 0.0),
-                Vector::new(0.0, 1.0, 0.0),
-            )
-            .unwrap(),
-        );
+    let camera = Camera::try_new(
+        360,
+        640,
+        std::f64::consts::FRAC_PI_3,
+        Transform::try_view(
+            Point::new(0.0, 3.0, 5.0),
+            Point::new(0.0, 0.0, 0.0),
+            Vector::new(0.0, 1.0, 0.0),
+        )
+        .unwrap(),
+    )
+    .unwrap();
 
     let image = camera
         .render(&world, raytracer::camera::RenderProgress::Enable)

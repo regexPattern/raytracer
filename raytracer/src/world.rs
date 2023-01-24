@@ -40,7 +40,7 @@ impl World {
         self.lights.iter().fold(color::consts::BLACK, |acc, light| {
             let object = comps.intersection.object;
             let in_shadow = self.is_shadowed(comps.over_point, light);
-            let material = object.get_material();
+            let material = &object.as_ref().material;
 
             let surface_color = material.lighting(
                 object,
@@ -87,7 +87,7 @@ impl World {
     }
 
     fn reflected_color(&self, comps: &Computation<'_>, recursion_depth: u8) -> Color {
-        let reflectiveness = comps.intersection.object.get_material().reflectivity;
+        let reflectiveness = comps.intersection.object.as_ref().material.reflectivity;
 
         if float::approx(reflectiveness, 0.0) || recursion_depth == 0 {
             return color::consts::BLACK;
@@ -102,7 +102,7 @@ impl World {
     }
 
     fn refracted_color(&self, comps: &Computation<'_>, recursion_depth: u8) -> Color {
-        let transparency = comps.intersection.object.get_material().transparency;
+        let transparency = comps.intersection.object.as_ref().material.transparency;
 
         // Snell's Law: n1 * sin(oi) = n2 * sin(ot)
         let n_ratio = comps.n1 / comps.n2;
@@ -130,15 +130,20 @@ impl World {
 
 #[cfg(test)]
 pub fn test_world() -> World {
-    use crate::{material::Material, pattern::Pattern, shape::BaseShape, transform::Transform};
+    use crate::{
+        material::Material,
+        pattern::Pattern,
+        shape::{ShapeProps, Sphere},
+        transform::Transform,
+    };
 
     let light = PointLight {
         position: Point::new(-10.0, 10.0, -10.0),
         intensity: color::consts::WHITE,
     };
 
-    let s0 = Shape::Sphere(BaseShape {
-        material: Material {
+    let s0 = Shape::Sphere(Sphere::new(
+        Material {
             pattern: Pattern::Solid(color::Color {
                 red: 0.8,
                 green: 1.0,
@@ -148,13 +153,13 @@ pub fn test_world() -> World {
             specular: 0.2,
             ..Default::default()
         },
-        ..Default::default()
-    });
+        Default::default(),
+    ));
 
-    let s1 = Shape::Sphere(BaseShape {
-        transform: Transform::try_scaling(0.5, 0.5, 0.5).unwrap(),
-        ..Default::default()
-    });
+    let s1 = Shape::Sphere(Sphere::new(
+        Default::default(),
+        Transform::try_scaling(0.5, 0.5, 0.5).unwrap(),
+    ));
 
     World {
         objects: vec![s0, s1],
@@ -165,8 +170,13 @@ pub fn test_world() -> World {
 #[cfg(test)]
 mod tests {
     use crate::{
-        assert_approx, intersection::Intersection, material::Material, pattern::Pattern,
-        shape::BaseShape, transform::Transform, tuple::Vector,
+        assert_approx,
+        intersection::Intersection,
+        material::Material,
+        pattern::Pattern,
+        shape::{Plane, ShapeProps, Sphere},
+        transform::Transform,
+        tuple::Vector,
     };
 
     use super::{test_world, *};
@@ -322,16 +332,16 @@ mod tests {
         let mut w = test_world();
 
         let outer = &mut w.objects[0];
-        outer.set_material(Material {
+        outer.as_mut().material = Material {
             ambient: 1.0,
-            ..outer.get_material().clone()
-        });
+            ..outer.as_ref().material.clone()
+        };
 
         let inner = &mut w.objects[1];
-        inner.set_material(Material {
+        inner.as_mut().material = Material {
             ambient: 1.0,
-            ..inner.get_material().clone()
-        });
+            ..inner.as_ref().material.clone()
+        };
 
         let r = Ray {
             origin: Point::new(0.0, 0.0, 0.75),
@@ -341,7 +351,7 @@ mod tests {
         let c = w.color_at(&r, RECURSION_DEPTH);
         let inner = &w.objects[1];
 
-        assert_eq!(Pattern::Solid(c), inner.get_material().pattern);
+        assert_eq!(Pattern::Solid(c), inner.as_ref().material.pattern);
     }
 
     #[test]
@@ -401,10 +411,10 @@ mod tests {
     fn shade_hit_is_given_an_intersection_in_shadow() {
         let s0 = Shape::Sphere(Default::default());
 
-        let s1 = Shape::Sphere(BaseShape {
-            transform: Transform::translation(0.0, 0.0, 10.0),
-            ..Default::default()
-        });
+        let s1 = Shape::Sphere(Sphere::new(
+            Default::default(),
+            Transform::translation(0.0, 0.0, 10.0),
+        ));
 
         let light = PointLight {
             position: Point::new(0.0, 0.0, -10.0),
@@ -450,10 +460,10 @@ mod tests {
         };
 
         let s = &mut w.objects[1];
-        s.set_material(Material {
+        s.as_mut().material = Material {
             ambient: 1.0,
-            ..s.get_material().clone()
-        });
+            ..s.as_ref().material.clone()
+        };
 
         let i = Intersection {
             t: 1.0,
@@ -471,13 +481,13 @@ mod tests {
     fn the_reflected_color_for_a_reflective_material() {
         let w = test_world();
 
-        let o = Shape::Plane(BaseShape {
-            material: Material {
+        let o = Shape::Plane(Plane::new(
+            Material {
                 reflectivity: 0.5,
                 ..Default::default()
             },
-            transform: Transform::translation(0.0, -1.0, 0.0),
-        });
+            Transform::translation(0.0, -1.0, 0.0),
+        ));
 
         let r = Ray {
             origin: Point::new(0.0, 0.0, -3.0),
@@ -507,13 +517,13 @@ mod tests {
     fn shade_hit_with_a_reflective_material() {
         let w = test_world();
 
-        let s = Shape::Plane(BaseShape {
-            material: Material {
+        let s = Shape::Plane(Plane::new(
+            Material {
                 reflectivity: 0.5,
                 ..Default::default()
             },
-            transform: Transform::translation(0.0, -1.0, 0.0),
-        });
+            Transform::translation(0.0, -1.0, 0.0),
+        ));
 
         let r = Ray {
             origin: Point::new(0.0, 0.0, -3.0),
@@ -541,18 +551,18 @@ mod tests {
 
     #[test]
     fn color_at_with_mutually_reflective_surfaces() {
-        let lower = Shape::Sphere(BaseShape {
-            material: Material {
+        let lower = Shape::Sphere(Sphere::new(
+            Material {
                 reflectivity: 1.0,
                 ..Default::default()
             },
-            transform: Transform::translation(0.0, -1.0, 0.0),
-        });
+            Transform::translation(0.0, -1.0, 0.0),
+        ));
 
-        let upper = Shape::Sphere(BaseShape {
-            material: lower.get_material().clone(),
-            transform: Transform::translation(0.0, 1.0, 0.0),
-        });
+        let upper = Shape::Sphere(Sphere::new(
+            lower.as_ref().material.clone(),
+            Transform::translation(0.0, 1.0, 0.0),
+        ));
 
         let light = PointLight {
             position: Point::new(0.0, 0.0, 0.0),
@@ -575,13 +585,13 @@ mod tests {
 
     #[test]
     fn the_reflected_color_at_the_maximum_recursive_depth() {
-        let s = Shape::Sphere(BaseShape {
-            material: Material {
+        let s = Shape::Sphere(Sphere::new(
+            Material {
                 reflectivity: 0.5,
                 ..Default::default()
             },
-            transform: Transform::translation(0.0, -1.0, 0.0),
-        });
+            Transform::translation(0.0, -1.0, 0.0),
+        ));
 
         let mut w = test_world();
         w.objects.push(s);
@@ -635,11 +645,11 @@ mod tests {
         let mut w = test_world();
 
         let s = &mut w.objects[0];
-        s.set_material(Material {
+        s.as_mut().material = Material {
             index_of_refraction: 1.5,
             transparency: 1.0,
-            ..s.get_material().clone()
-        });
+            ..s.as_ref().material.clone()
+        };
 
         let r = Ray {
             origin: Point::new(0.0, 0.0, -5.0),
@@ -669,11 +679,11 @@ mod tests {
         let mut w = test_world();
 
         let s = &mut w.objects[0];
-        s.set_material(Material {
+        s.as_mut().material = Material {
             index_of_refraction: 1.5,
             transparency: 1.0,
-            ..s.get_material().clone()
-        });
+            ..s.as_ref().material.clone()
+        };
 
         let r = Ray {
             origin: Point::new(0.0, 0.0, 2_f64.sqrt() / 2.0),
@@ -702,23 +712,23 @@ mod tests {
     fn shade_hit_with_a_transparent_material() {
         let mut w = test_world();
 
-        let floor = Shape::Plane(BaseShape {
-            material: Material {
+        let floor = Shape::Plane(Plane::new(
+            Material {
                 index_of_refraction: 1.5,
                 transparency: 0.5,
                 ..Default::default()
             },
-            transform: Transform::translation(0.0, -1.0, 0.0),
-        });
+            Transform::translation(0.0, -1.0, 0.0),
+        ));
 
-        let ball = Shape::Sphere(BaseShape {
-            material: Material {
+        let ball = Shape::Sphere(Sphere::new(
+            Material {
                 ambient: 0.5,
                 pattern: Pattern::Solid(color::consts::RED),
                 ..Default::default()
             },
-            transform: Transform::translation(0.0, -3.5, -0.5),
-        });
+            Transform::translation(0.0, -3.5, -0.5),
+        ));
 
         w.objects.push(floor);
         w.objects.push(ball);
@@ -756,24 +766,24 @@ mod tests {
             direction: Vector::new(0.0, -2_f64.sqrt() / 2.0, 2_f64.sqrt() / 2.0),
         };
 
-        let floor = Shape::Plane(BaseShape {
-            material: Material {
+        let floor = Shape::Plane(Plane::new(
+            Material {
                 index_of_refraction: 1.5,
                 reflectivity: 0.5,
                 transparency: 0.5,
                 ..Default::default()
             },
-            transform: Transform::translation(0.0, -1.0, 0.0),
-        });
+            Transform::translation(0.0, -1.0, 0.0),
+        ));
 
-        let ball = Shape::Sphere(BaseShape {
-            material: Material {
+        let ball = Shape::Sphere(Sphere::new(
+            Material {
                 ambient: 0.5,
                 pattern: Pattern::Solid(color::consts::RED),
                 ..Default::default()
             },
-            transform: Transform::translation(0.0, -3.5, -0.5),
-        });
+            Transform::translation(0.0, -3.5, -0.5),
+        ));
 
         w.objects.push(floor);
         w.objects.push(ball);

@@ -294,11 +294,11 @@ mod tests {
         let (o, _, _) = test_object_material_point();
 
         let m = Material {
-            pattern: Pattern::Stripe(Schema {
-                a: color::consts::WHITE,
-                b: color::consts::BLACK,
-                transform: Default::default(),
-            }),
+            pattern: Pattern::Stripe(Schema::new(
+                color::consts::WHITE,
+                color::consts::BLACK,
+                Default::default(),
+            )),
             ambient: 1.0,
             diffuse: 0.0,
             specular: 0.0,

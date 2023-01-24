@@ -6,7 +6,7 @@ use crate::{
     tuple::{Point, Vector},
 };
 
-mod bounding_box;
+mod bounds;
 mod cube;
 mod cylinder;
 mod group;
@@ -14,132 +14,106 @@ mod plane;
 mod sphere;
 mod triangle;
 
-pub use bounding_box::BoundingBox;
-pub use cylinder::Cylinder;
-pub use group::Group;
-pub use triangle::{CollinearTriangleSidesError, Triangle};
+pub use self::bounds::Bounds;
+pub use self::cube::Cube;
+pub use self::cylinder::Cylinder;
+pub use self::group::Group;
+pub use self::plane::Plane;
+pub use self::sphere::Sphere;
+pub use self::triangle::{CollinearTriangleSidesError, Triangle};
 
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct BaseShape {
+#[derive(Clone, Debug, PartialEq)]
+pub struct ShapeProps {
     pub material: Material,
     pub transform: Transform,
+    pub transform_inverse: Transform,
+    pub local_bounds: Bounds,
+    pub world_bounds: Bounds,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Shape {
-    Cube(BaseShape),
+    Cube(Cube),
     Cylinder(Cylinder),
     Group(Group),
-    Plane(BaseShape),
-    Sphere(BaseShape),
+    Plane(Plane),
+    Sphere(Sphere),
     Triangle(Triangle),
 }
 
-fn object_ray(ray: &Ray, transform: Transform) -> Ray {
-    ray.transform(transform.inverse())
+impl AsRef<ShapeProps> for Shape {
+    fn as_ref(&self) -> &ShapeProps {
+        match self {
+            Self::Cube(inner_cube) => &inner_cube.0,
+            Self::Cylinder(inner_cylinder) => &inner_cylinder.props,
+            Self::Plane(inner_plane) => &inner_plane.0,
+            Self::Sphere(inner_sphere) => &inner_sphere.0,
+            Self::Triangle(inner_triangle) => &inner_triangle.props,
+            Self::Group(inner_group) => &inner_group.props,
+        }
+    }
 }
 
-fn world_normal<F>(point: Point, transform: Transform, local_normal_at: F) -> Vector
+impl AsMut<ShapeProps> for Shape {
+    fn as_mut(&mut self) -> &mut ShapeProps {
+        match self {
+            Self::Cube(inner_cube) => &mut inner_cube.0,
+            Self::Cylinder(inner_cylinder) => &mut inner_cylinder.props,
+            Self::Plane(inner_plane) => &mut inner_plane.0,
+            Self::Sphere(inner_sphere) => &mut inner_sphere.0,
+            Self::Triangle(inner_triangle) => &mut inner_triangle.props,
+            Self::Group(inner_group) => &mut inner_group.props,
+        }
+    }
+}
+
+impl Shape {
+    pub fn intersect(&self, ray: &Ray) -> Vec<Intersection<'_>> {
+        let object_ray = object_ray(ray, self.as_ref().transform_inverse);
+
+        match self {
+            Self::Cube(inner_cube) => inner_cube.intersect(self, &object_ray),
+            Self::Cylinder(inner_cylinder) => inner_cylinder.intersect(self, &object_ray),
+            Self::Group(inner_group) => inner_group.intersect(&ray),
+            Self::Plane(inner_plane) => inner_plane.intersect(self, &object_ray),
+            Self::Sphere(inner_sphere) => inner_sphere.intersect(self, &object_ray),
+            Self::Triangle(inner_triangle) => inner_triangle.intersect(self, &object_ray),
+        }
+    }
+
+    pub fn normal_at(&self, point: Point) -> Vector {
+        world_normal(
+            point,
+            self.as_ref().transform_inverse,
+            |object_point| match &self {
+                Self::Cube(inner_cube) => inner_cube.normal_at(object_point),
+                Self::Cylinder(inner_cylinder) => inner_cylinder.normal_at(object_point),
+                Self::Plane(inner_plane) => inner_plane.normal_at(object_point),
+                Self::Sphere(inner_sphere) => inner_sphere.normal_at(object_point),
+                Self::Triangle(inner_triangle) => inner_triangle.normal_at(object_point),
+                Self::Group(_) => unreachable!(),
+            },
+        )
+    }
+}
+
+fn object_ray(ray: &Ray, transform_inverse: Transform) -> Ray {
+    ray.transform(transform_inverse)
+}
+
+fn world_normal<F>(point: Point, transform_inverse: Transform, local_normal_at: F) -> Vector
 where
     F: Fn(Point) -> Vector,
 {
-    let object_point = transform.inverse() * point;
+    let object_point = transform_inverse * point;
     let object_normal = local_normal_at(object_point);
-    let mut world_normal = transform.inverse().transpose() * object_normal;
+    let mut world_normal = transform_inverse.transpose() * object_normal;
     world_normal.0.w = 0.0;
 
     // The point is ensured to always be on the object surface so a non-null normal always exists
     // for any object type.
     #[allow(clippy::unwrap_used)]
     world_normal.normalize().unwrap()
-}
-
-impl Shape {
-    pub fn intersect(&self, ray: &Ray) -> Vec<Intersection<'_>> {
-        let object_ray = object_ray(ray, self.get_transform());
-
-        match self {
-            Self::Cube(_) => cube::intersect(self, &object_ray, &cube::bounding_box()),
-            Self::Cylinder(cylinder) => cylinder.intersect(self, &object_ray),
-            Self::Group(group) => group.intersect(&ray),
-            Self::Plane(_) => plane::intersect(self, &object_ray),
-            Self::Sphere(_) => sphere::intersect(self, &object_ray),
-            Self::Triangle(triangle) => triangle.intersect(self, &object_ray),
-        }
-    }
-
-    pub fn normal_at(&self, point: Point) -> Vector {
-        world_normal(point, self.get_transform(), |object_point| {
-            match &self {
-                Self::Cube(_) => cube::normal_at(object_point),
-                Self::Cylinder(cylinder) => cylinder.normal_at(object_point),
-                Self::Plane(_) => plane::normal_at(object_point),
-                Self::Sphere(_) => sphere::normal_at(object_point),
-                Self::Triangle(triangle) => triangle.normal_at(object_point),
-
-                // This function is never called, since an object's normal is used only when shading
-                // this object, accessed through the vector of intersections that `Object::intersect`
-                // returns. In the case of a `Group`, these intersections never have another `Group`
-                // inside because of the recursive implementation and flattening happening in
-                // `group::local_intersect`.
-                Self::Group(_) => unreachable!(),
-            }
-        })
-    }
-
-    pub fn divide(&mut self, threshold: usize) {
-        if let Shape::Group(group) = self {
-            group.divide(threshold);
-        }
-    }
-
-    pub fn get_bounding_box(&self) -> BoundingBox {
-        let bbox = match self {
-            Self::Cube(_) => cube::bounding_box(),
-            Self::Cylinder(cylinder) => cylinder.bounding_box(),
-            Self::Plane(_) => plane::bounding_box(),
-            Self::Sphere(_) => sphere::bounding_box(),
-            Self::Triangle(triangle) => triangle.bounding_box(),
-            Self::Group(group) => group.bounding_box(),
-        };
-
-        bbox.transform(self.get_transform())
-    }
-
-    pub fn get_material(&self) -> &Material {
-        match self {
-            Self::Cube(bs) | Self::Plane(bs) | Self::Sphere(bs) => &bs.material,
-            Self::Cylinder(cylinder) => &cylinder.base_shape.material,
-            Self::Triangle(triangle) => &triangle.material,
-            _ => unimplemented!(),
-        }
-    }
-
-    pub fn set_material(&mut self, material: Material) {
-        match self {
-            Self::Cube(bs) | Self::Plane(bs) | Self::Sphere(bs) => bs.material = material,
-            Self::Cylinder(cylinder) => cylinder.base_shape.material = material,
-            _ => (),
-        }
-    }
-
-    pub fn get_transform(&self) -> Transform {
-        match self {
-            Self::Cube(bs) | Self::Plane(bs) | Self::Sphere(bs) => bs.transform,
-            Self::Cylinder(cylinder) => cylinder.base_shape.transform,
-            Self::Triangle(_) => Default::default(),
-            Self::Group(group) => group.transform,
-        }
-    }
-
-    pub fn set_transform(&mut self, transform: Transform) {
-        match self {
-            Self::Cube(bs) | Self::Plane(bs) | Self::Sphere(bs) => bs.transform = transform,
-            Self::Cylinder(cylinder) => cylinder.base_shape.transform = transform,
-            Self::Triangle(_) => (),
-            Self::Group(group) => group.update_transform(transform),
-        }
-    }
 }
 
 #[cfg(test)]
@@ -154,12 +128,12 @@ mod tests {
 
     impl TestObject {
         fn intersect(&mut self, ray: &Ray) -> Vec<f64> {
-            self.saved_ray = Some(object_ray(ray, self.transform));
+            self.saved_ray = Some(object_ray(ray, self.transform.inverse()));
             vec![]
         }
 
         fn normal_at(&self, point: Point) -> Vector {
-            world_normal(point, self.transform, |object_point| {
+            world_normal(point, self.transform.inverse(), |object_point| {
                 Vector::new(object_point.0.x, object_point.0.y, object_point.0.z)
             })
         }
@@ -245,19 +219,19 @@ mod tests {
 
     #[test]
     fn finding_the_normal_on_a_child_object() {
-        let s = Shape::Sphere(BaseShape {
-            transform: Transform::translation(5.0, 0.0, 0.0),
-            ..Default::default()
-        });
+        let s = Shape::Sphere(Sphere::new(
+            Default::default(),
+            Transform::translation(5.0, 0.0, 0.0),
+        ));
 
-        let g2 = Group::new([s], Transform::try_scaling(1.0, 2.0, 3.0).unwrap());
+        let g1 = Group::new([s], Transform::try_scaling(1.0, 2.0, 3.0).unwrap());
 
-        let g1 = Group::new(
-            [Shape::Group(g2)],
+        let g0 = Group::new(
+            [Shape::Group(g1)],
             Transform::rotation_y(std::f64::consts::FRAC_PI_2),
         );
 
-        let s = get_subgroup_child(&g1);
+        let s = get_subgroup_child(&g0);
 
         let n = s.normal_at(Point::new(1.7321, 1.1547, -5.5774));
 
@@ -265,24 +239,15 @@ mod tests {
     }
 
     #[test]
-    fn querying_a_shapess_bounding_box_in_its_parent_s_space() {
-        let s = Shape::Sphere(BaseShape {
-            transform: Transform::translation(1.0, -3.0, 5.0)
-                * Transform::try_scaling(0.5, 2.0, 4.0).unwrap(),
-            ..Default::default()
-        });
+    fn querying_a_shapess_bounding_box_in_its_parents_space() {
+        let s = Shape::Sphere(Sphere::new(
+            Default::default(),
+            Transform::translation(1.0, -3.0, 5.0) * Transform::try_scaling(0.5, 2.0, 4.0).unwrap(),
+        ));
 
-        let bbox = s.get_bounding_box();
+        let bounds = s.as_ref().world_bounds;
 
-        assert_eq!(bbox.min, Point::new(0.5, -5.0, 1.0));
-        assert_eq!(bbox.max, Point::new(1.5, -1.0, 9.0));
-    }
-
-    #[test]
-    fn subdividing_a_primitive_does_nothing() {
-        let mut s = Shape::Sphere(Default::default());
-        s.divide(1);
-
-        assert_eq!(s, Shape::Sphere(Default::default()));
+        assert_eq!(bounds.min, Point::new(0.5, -5.0, 1.0));
+        assert_eq!(bounds.max, Point::new(1.5, -1.0, 9.0));
     }
 }

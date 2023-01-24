@@ -45,16 +45,13 @@ impl From<CollinearTriangleSidesError> for ParsingErrorKind {
 
 impl From<OBJModel> for Group {
     fn from(value: OBJModel) -> Self {
-        let children = value
+        let children: Vec<_> = value
             .groups
             .into_iter()
             .map(|group| Shape::Group(group.group))
             .collect();
 
-        Self {
-            children,
-            ..Default::default()
-        }
+        Self::new(children, Default::default())
     }
 }
 
@@ -110,9 +107,13 @@ fn fan_triangulation(defined_vertices: &[Point]) -> Result<Vec<Triangle>, Parsin
 
     for i in 2..defined_vertices.len() {
         let triangle = Triangle::try_new(
-            defined_vertices[0],
-            defined_vertices[i - 1],
-            defined_vertices[i],
+            Default::default(),
+            Default::default(),
+            [
+                defined_vertices[0],
+                defined_vertices[i - 1],
+                defined_vertices[i],
+            ],
         )
         .map_err(|_| ParsingErrorKind::InvalidPolygon)?;
 
@@ -122,7 +123,7 @@ fn fan_triangulation(defined_vertices: &[Point]) -> Result<Vec<Triangle>, Parsin
     Ok(triangles)
 }
 
-fn parse_group(sanitized: &str) -> Result<String, ParsingErrorKind> {
+fn parse_group_name(sanitized: &str) -> Result<String, ParsingErrorKind> {
     sanitized
         .split(' ')
         .nth(1)
@@ -140,7 +141,6 @@ impl OBJModel {
         let mut defined_vertices = vec![];
 
         for (i, line) in text.lines().enumerate() {
-            // Sanitize input so that fields are separated by one one whitespace.
             let sanitized = line.replace("  ", " ");
 
             let wrap_parsing_error = |kind| ParsingError {
@@ -162,10 +162,14 @@ impl OBJModel {
                 // There's always going to be at a group. The __default group is always intialized
                 // above in this same function.
                 #[allow(clippy::unwrap_used)]
-                groups.last().unwrap().borrow_mut().group.add_children(polygons);
+                groups
+                    .last()
+                    .unwrap()
+                    .borrow_mut()
+                    .group
+                    .add_children(polygons);
             } else if sanitized.starts_with("g ") {
-                let name = parse_group(&sanitized).map_err(wrap_parsing_error)?;
-
+                let name = parse_group_name(&sanitized).map_err(wrap_parsing_error)?;
                 groups.push(RefCell::new(PolygonsGroup {
                     name,
                     group: Default::default(),
@@ -259,9 +263,13 @@ v 1 1 0";
         assert_eq!(
             polygon[0],
             Triangle::try_new(
-                defined_vertices[0],
-                defined_vertices[1],
-                defined_vertices[2]
+                Default::default(),
+                Default::default(),
+                [
+                    defined_vertices[0],
+                    defined_vertices[1],
+                    defined_vertices[2]
+                ]
             )
             .unwrap()
         );
@@ -286,11 +294,21 @@ f 1 3 4";
         let t1 = &g.group.children[1];
 
         let expected_t0 = Shape::Triangle(
-            Triangle::try_new(model.vertices[0], model.vertices[1], model.vertices[2]).unwrap(),
+            Triangle::try_new(
+                Default::default(),
+                Default::default(),
+                [model.vertices[0], model.vertices[1], model.vertices[2]],
+            )
+            .unwrap(),
         );
 
         let expected_t1 = Shape::Triangle(
-            Triangle::try_new(model.vertices[0], model.vertices[2], model.vertices[3]).unwrap(),
+            Triangle::try_new(
+                Default::default(),
+                Default::default(),
+                [model.vertices[0], model.vertices[2], model.vertices[3]],
+            )
+            .unwrap(),
         );
 
         assert!(matches!(t0, expected_t0));
@@ -341,15 +359,30 @@ f 1 2 3 4 5";
         let t2 = &g.group.children[2];
 
         let expected_t0 = Shape::Triangle(
-            Triangle::try_new(model.vertices[0], model.vertices[1], model.vertices[2]).unwrap(),
+            Triangle::try_new(
+                Default::default(),
+                Default::default(),
+                [model.vertices[0], model.vertices[1], model.vertices[2]],
+            )
+            .unwrap(),
         );
 
         let expected_t1 = Shape::Triangle(
-            Triangle::try_new(model.vertices[0], model.vertices[2], model.vertices[3]).unwrap(),
+            Triangle::try_new(
+                Default::default(),
+                Default::default(),
+                [model.vertices[0], model.vertices[2], model.vertices[3]],
+            )
+            .unwrap(),
         );
 
         let expected_t2 = Shape::Triangle(
-            Triangle::try_new(model.vertices[0], model.vertices[3], model.vertices[4]).unwrap(),
+            Triangle::try_new(
+                Default::default(),
+                Default::default(),
+                [model.vertices[0], model.vertices[3], model.vertices[4]],
+            )
+            .unwrap(),
         );
 
         assert_eq!(t0, &expected_t0);
@@ -389,7 +422,10 @@ f 1 2 4";
             &PolygonsGroup {
                 name: "__default".to_string(),
                 group: Group::new(
-                    [Shape::Triangle(Triangle::try_new(v3, v0, v1).unwrap())],
+                    [Shape::Triangle(
+                        Triangle::try_new(Default::default(), Default::default(), [v3, v0, v1])
+                            .unwrap()
+                    )],
                     Default::default()
                 )
             }
@@ -400,7 +436,10 @@ f 1 2 4";
             &PolygonsGroup {
                 name: "FirstGroup".to_string(),
                 group: Group::new(
-                    [Shape::Triangle(Triangle::try_new(v2, v1, v0).unwrap()),],
+                    [Shape::Triangle(
+                        Triangle::try_new(Default::default(), Default::default(), [v2, v1, v0])
+                            .unwrap()
+                    ),],
                     Default::default()
                 )
             }
@@ -411,7 +450,10 @@ f 1 2 4";
             &PolygonsGroup {
                 name: "SecondGroup".to_string(),
                 group: Group::new(
-                    [Shape::Triangle(Triangle::try_new(v0, v1, v3).unwrap()),],
+                    [Shape::Triangle(
+                        Triangle::try_new(Default::default(), Default::default(), [v0, v1, v3])
+                            .unwrap()
+                    ),],
                     Default::default()
                 )
             }

@@ -1,23 +1,25 @@
 use crate::{
     float,
     intersection::Intersection,
+    material::Material,
     ray::Ray,
+    transform::Transform,
     tuple::{Point, Tuple, Vector},
 };
 
-use super::{BaseShape, BoundingBox, Shape};
+use super::{Bounds, Shape, ShapeProps};
 
 #[derive(Clone, Debug)]
 pub struct Cylinder {
-    pub base_shape: BaseShape,
-    pub closed: bool,
+    pub props: ShapeProps,
     pub min: f64,
     pub max: f64,
+    pub closed: bool,
 }
 
 impl PartialEq for Cylinder {
     fn eq(&self, other: &Self) -> bool {
-        self.base_shape == other.base_shape
+        self.props == other.props
             && float::approx(self.min, other.min)
             && float::approx(self.max, other.max)
             && self.closed == other.closed
@@ -26,16 +28,37 @@ impl PartialEq for Cylinder {
 
 impl Default for Cylinder {
     fn default() -> Self {
-        Self {
-            base_shape: Default::default(),
-            min: std::f64::NEG_INFINITY,
-            max: std::f64::INFINITY,
-            closed: false,
-        }
+        Self::new(
+            Default::default(),
+            Default::default(),
+            std::f64::NEG_INFINITY,
+            std::f64::INFINITY,
+            false,
+        )
     }
 }
 
 impl Cylinder {
+    pub fn new(material: Material, transform: Transform, min: f64, max: f64, closed: bool) -> Self {
+        let local_bounds = Bounds {
+            min: Point::new(-1.0, min, -1.0),
+            max: Point::new(1.0, max, 1.0),
+        };
+
+        Self {
+            props: ShapeProps {
+                material,
+                transform,
+                transform_inverse: transform.inverse(),
+                local_bounds,
+                world_bounds: local_bounds.transform(transform),
+            },
+            min,
+            max,
+            closed,
+        }
+    }
+
     pub fn intersect<'a>(&self, object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
         let mut xs = vec![];
 
@@ -86,13 +109,6 @@ impl Cylinder {
         }
     }
 
-    fn check_cap(ray: &Ray, t: f64) -> bool {
-        let x = ray.origin.0.x + t * ray.direction.0.x;
-        let z = ray.origin.0.z + t * ray.direction.0.z;
-
-        float::le(x.powi(2) + z.powi(2), 1.0)
-    }
-
     fn intersect_caps<'a>(
         &self,
         object: &'a Shape,
@@ -104,24 +120,24 @@ impl Cylinder {
         }
 
         let t = (self.min - ray.origin.0.y) / ray.direction.0.y;
-        if Self::check_cap(&ray, t) {
+        if check_cap(&ray, t) {
             xs.push(Intersection { t, object });
         }
 
         let t = (self.max - ray.origin.0.y) / ray.direction.0.y;
-        if Self::check_cap(&ray, t) {
+        if check_cap(&ray, t) {
             xs.push(Intersection { t, object });
         }
 
         xs
     }
+}
 
-    pub fn bounding_box(&self) -> BoundingBox {
-        BoundingBox {
-            max: Point::new(1.0, self.max, 1.0),
-            min: Point::new(-1.0, self.min, -1.0),
-        }
-    }
+fn check_cap(ray: &Ray, t: f64) -> bool {
+    let x = ray.origin.0.x + t * ray.direction.0.x;
+    let z = ray.origin.0.z + t * ray.direction.0.z;
+
+    float::le(x.powi(2) + z.powi(2), 1.0)
 }
 
 #[cfg(test)]
@@ -472,23 +488,19 @@ mod tests {
     fn an_unbounde_cylinder_has_a_bounding_box() {
         let c = Cylinder::default();
 
-        let bbox = c.bounding_box();
+        let bounds = c.props.local_bounds;
 
-        assert_eq!(bbox.max, Point::new(1.0, std::f64::INFINITY, 1.0));
-        assert_eq!(bbox.min, Point::new(-1.0, std::f64::NEG_INFINITY, -1.0));
+        assert_eq!(bounds.max, Point::new(1.0, std::f64::INFINITY, 1.0));
+        assert_eq!(bounds.min, Point::new(-1.0, std::f64::NEG_INFINITY, -1.0));
     }
 
     #[test]
     fn a_bounded_cylinder_has_a_bounding_box() {
-        let c = Cylinder {
-            min: -5.0,
-            max: 3.0,
-            ..Default::default()
-        };
+        let c = Cylinder::new(Default::default(), Default::default(), -5.0, 3.0, false);
 
-        let bbox = c.bounding_box();
+        let bounds = c.props.local_bounds;
 
-        assert_eq!(bbox.min, Point::new(-1.0, -5.0, -1.0));
-        assert_eq!(bbox.max, Point::new(1.0, 3.0, 1.0));
+        assert_eq!(bounds.min, Point::new(-1.0, -5.0, -1.0));
+        assert_eq!(bounds.max, Point::new(1.0, 3.0, 1.0));
     }
 }

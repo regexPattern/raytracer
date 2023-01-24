@@ -1,12 +1,12 @@
 use crate::{ray::Ray, transform::Transform, tuple::Point};
 
-#[derive(Copy, Clone, Debug)]
-pub struct BoundingBox {
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct Bounds {
     pub min: Point,
     pub max: Point,
 }
 
-impl Default for BoundingBox {
+impl Default for Bounds {
     fn default() -> Self {
         Self {
             min: Point::new(std::f64::INFINITY, std::f64::INFINITY, std::f64::INFINITY),
@@ -19,7 +19,7 @@ impl Default for BoundingBox {
     }
 }
 
-impl<T> From<T> for BoundingBox
+impl<T> From<T> for Bounds
 where
     T: IntoIterator<Item = Point>,
 {
@@ -38,7 +38,7 @@ fn is_between_range(x: f64, lower: f64, greater: f64) -> bool {
     crate::float::ge(x, lower) && crate::float::le(x, greater)
 }
 
-impl BoundingBox {
+impl Bounds {
     pub fn add(&mut self, point: Point) {
         self.min.0.x = f64::min(point.0.x, self.min.0.x);
         self.min.0.y = f64::min(point.0.y, self.min.0.y);
@@ -60,7 +60,7 @@ impl BoundingBox {
             && is_between_range(point.0.z, self.min.0.z, self.max.0.z)
     }
 
-    pub fn contains_box(&self, other: &BoundingBox) -> bool {
+    pub fn contains_box(&self, other: &Bounds) -> bool {
         self.contains_point(other.min) && self.contains_point(other.max)
     }
 
@@ -78,12 +78,12 @@ impl BoundingBox {
         .into_iter()
         .map(|point| transform * point);
 
-        BoundingBox::from(corners)
+        Bounds::from(corners)
     }
 
     pub fn intersect(&self, ray: &Ray) -> bool {
         use crate::shape::{cube, Shape};
-        !cube::intersect(&Shape::Cube(Default::default()), ray, self).is_empty()
+        !cube::intersect_box_with_bounds(&Shape::Cube(Default::default()), ray, self).is_empty()
     }
 
     pub fn split(&self) -> (Self, Self) {
@@ -131,12 +131,12 @@ impl BoundingBox {
             z1 = tmp;
         }
 
-        let left = BoundingBox {
+        let left = Bounds {
             min: self.min,
             max: Point::new(x1, y1, z1),
         };
 
-        let right = BoundingBox {
+        let right = Bounds {
             min: Point::new(x0, y0, z0),
             max: self.max,
         };
@@ -153,76 +153,76 @@ mod tests {
 
     #[test]
     fn adding_points_to_an_empty_bounding_box() {
-        let mut bbox = BoundingBox::default();
-        let p1 = Point::new(-5.0, 2.0, 0.0);
-        let p2 = Point::new(7.0, 0.0, -3.0);
+        let mut bounds = Bounds::default();
+        let p0 = Point::new(-5.0, 2.0, 0.0);
+        let p1 = Point::new(7.0, 0.0, -3.0);
 
-        bbox.add(p1);
-        bbox.add(p2);
+        bounds.add(p0);
+        bounds.add(p1);
 
-        assert_eq!(bbox.min, Point::new(-5.0, 0.0, -3.0));
-        assert_eq!(bbox.max, Point::new(7.0, 2.0, 0.0));
+        assert_eq!(bounds.min, Point::new(-5.0, 0.0, -3.0));
+        assert_eq!(bounds.max, Point::new(7.0, 2.0, 0.0));
     }
 
     #[test]
     fn adding_one_bouding_box_to_another() {
-        let mut bbox0 = BoundingBox {
+        let mut bounds = Bounds {
             min: Point::new(-5.0, -2.0, 0.0),
             max: Point::new(7.0, 4.0, 4.0),
         };
 
-        let bbox1 = BoundingBox {
+        let bounds1 = Bounds {
             min: Point::new(8.0, -7.0, -2.0),
             max: Point::new(14.0, 2.0, 8.0),
         };
 
-        bbox0.merge(bbox1);
+        bounds.merge(bounds1);
 
-        assert_eq!(bbox0.min, Point::new(-5.0, -7.0, -2.0));
-        assert_eq!(bbox0.max, Point::new(14.0, 4.0, 8.0));
+        assert_eq!(bounds.min, Point::new(-5.0, -7.0, -2.0));
+        assert_eq!(bounds.max, Point::new(14.0, 4.0, 8.0));
     }
 
     #[test]
     fn checking_to_see_if_a_box_contains_a_given_point() {
-        let bbox = BoundingBox {
+        let bounds = Bounds {
             min: Point::new(5.0, -2.0, 0.0),
             max: Point::new(11.0, 4.0, 7.0),
         };
 
-        assert!(bbox.contains_point(Point::new(5.0, -2.0, 0.0)));
-        assert!(bbox.contains_point(Point::new(11.0, 4.0, 7.0)));
-        assert!(bbox.contains_point(Point::new(8.0, 1.0, 3.0)));
-        assert!(!bbox.contains_point(Point::new(3.0, 0.0, 3.0)));
-        assert!(!bbox.contains_point(Point::new(8.0, -4.0, 3.0)));
-        assert!(!bbox.contains_point(Point::new(8.0, 1.0, -1.0)));
-        assert!(!bbox.contains_point(Point::new(13.0, 1.0, 3.0)));
-        assert!(!bbox.contains_point(Point::new(8.0, 5.0, 3.0)));
-        assert!(!bbox.contains_point(Point::new(8.0, 1.0, 8.0)));
+        assert!(bounds.contains_point(Point::new(5.0, -2.0, 0.0)));
+        assert!(bounds.contains_point(Point::new(11.0, 4.0, 7.0)));
+        assert!(bounds.contains_point(Point::new(8.0, 1.0, 3.0)));
+        assert!(!bounds.contains_point(Point::new(3.0, 0.0, 3.0)));
+        assert!(!bounds.contains_point(Point::new(8.0, -4.0, 3.0)));
+        assert!(!bounds.contains_point(Point::new(8.0, 1.0, -1.0)));
+        assert!(!bounds.contains_point(Point::new(13.0, 1.0, 3.0)));
+        assert!(!bounds.contains_point(Point::new(8.0, 5.0, 3.0)));
+        assert!(!bounds.contains_point(Point::new(8.0, 1.0, 8.0)));
     }
 
     #[test]
     fn checking_to_see_if_a_box_contains_another_box() {
-        let bbox = BoundingBox {
+        let bounds = Bounds {
             min: Point::new(5.0, -2.0, 0.0),
             max: Point::new(11.0, 4.0, 7.0),
         };
 
-        assert!(bbox.contains_box(&BoundingBox {
+        assert!(bounds.contains_box(&Bounds {
             min: Point::new(5.0, -2.0, 0.0),
             max: Point::new(11.0, 4.0, 7.0)
         }));
 
-        assert!(bbox.contains_box(&BoundingBox {
+        assert!(bounds.contains_box(&Bounds {
             min: Point::new(6.0, -1.0, 1.0),
             max: Point::new(10.0, 3.0, 6.0)
         }));
 
-        assert!(!bbox.contains_box(&BoundingBox {
+        assert!(!bounds.contains_box(&Bounds {
             min: Point::new(4.0, -3.0, -1.0),
             max: Point::new(10.0, 3.0, 6.0)
         }));
 
-        assert!(!bbox.contains_box(&BoundingBox {
+        assert!(!bounds.contains_box(&Bounds {
             min: Point::new(6.0, -1.0, 1.0),
             max: Point::new(12.0, 5.0, 8.0)
         }));
@@ -230,7 +230,7 @@ mod tests {
 
     #[test]
     fn transforming_a_bounding_box() {
-        let bbox0 = BoundingBox {
+        let bounds0 = Bounds {
             min: Point::new(-1.0, -1.0, -1.0),
             max: Point::new(1.0, 1.0, 1.0),
         };
@@ -238,80 +238,80 @@ mod tests {
         let t = Transform::rotation_x(std::f64::consts::FRAC_PI_4)
             * Transform::rotation_y(std::f64::consts::FRAC_PI_4);
 
-        let bbox1 = bbox0.transform(t);
+        let bounds1 = bounds0.transform(t);
 
-        assert_eq!(bbox1.min, Point::new(-1.41421, -1.7071, -1.7071));
-        assert_eq!(bbox1.max, Point::new(1.41421, 1.7071, 1.7071));
+        assert_eq!(bounds1.min, Point::new(-1.41421, -1.7071, -1.7071));
+        assert_eq!(bounds1.max, Point::new(1.41421, 1.7071, 1.7071));
     }
 
     #[test]
     fn intersecting_a_ray_with_a_bouding_box_at_the_origin() {
-        let bbox = BoundingBox {
+        let bounds = Bounds {
             min: Point::new(-1.0, -1.0, -1.0),
             max: Point::new(1.0, 1.0, 1.0),
         };
 
-        assert!(bbox.intersect(&Ray {
+        assert!(bounds.intersect(&Ray {
             origin: Point::new(5.0, 0.5, 0.0),
             direction: Vector::new(-1.0, 0.0, 0.0),
         }));
 
-        assert!(bbox.intersect(&Ray {
+        assert!(bounds.intersect(&Ray {
             origin: Point::new(-5.0, 0.5, 0.0),
             direction: Vector::new(1.0, 0.0, 0.0),
         }));
 
-        assert!(bbox.intersect(&Ray {
+        assert!(bounds.intersect(&Ray {
             origin: Point::new(0.5, 5.0, 0.0),
             direction: Vector::new(0.0, -1.0, 0.0)
         }));
 
-        assert!(bbox.intersect(&Ray {
+        assert!(bounds.intersect(&Ray {
             origin: Point::new(0.5, -5.0, 0.0),
             direction: Vector::new(0.0, 1.0, 0.0)
         }));
 
-        assert!(bbox.intersect(&Ray {
+        assert!(bounds.intersect(&Ray {
             origin: Point::new(0.5, 0.0, 5.0),
             direction: Vector::new(0.0, 0.0, -1.0)
         }));
 
-        assert!(bbox.intersect(&Ray {
+        assert!(bounds.intersect(&Ray {
             origin: Point::new(0.5, 0.0, -5.0),
             direction: Vector::new(0.0, 0.0, 1.0)
         }));
 
-        assert!(bbox.intersect(&Ray {
+        assert!(bounds.intersect(&Ray {
             origin: Point::new(0.0, 0.5, 0.0),
             direction: Vector::new(0.0, 0.0, 1.0)
         }));
 
-        assert!(!bbox.intersect(&Ray {
+        assert!(!bounds.intersect(&Ray {
             origin: Point::new(-2.0, 0.0, 0.0),
             direction: Vector::new(2.0, 4.0, 6.0)
         }));
 
-        assert!(!bbox.intersect(&Ray {
+        assert!(!bounds.intersect(&Ray {
             origin: Point::new(0.0, -2.0, 0.0),
             direction: Vector::new(6.0, 2.0, 4.0)
         }));
 
-        assert!(!bbox.intersect(&Ray {
+        assert!(!bounds.intersect(&Ray {
             origin: Point::new(0.0, 0.0, -2.0),
             direction: Vector::new(4.0, 6.0, 2.0)
         }));
 
-        assert!(!bbox.intersect(&Ray {
+        assert!(!bounds.intersect(&Ray {
             origin: Point::new(2.0, 0.0, 2.0),
             direction: Vector::new(0.0, 0.0, -1.0)
         }));
 
-        assert!(!bbox.intersect(&Ray {
+        assert!(!bounds.intersect(&Ray {
             origin: Point::new(0.0, 2.0, 2.0),
             direction: Vector::new(0.0, -1.0, 0.0)
         }));
 
-        assert!(!bbox.intersect(&Ray {
+        assert!(!bounds.intersect(&Ray {
             origin: Point::new(2.0, 2.0, 0.0),
             direction: Vector::new(-1.0, 0.0, 0.0)
         }));
@@ -319,72 +319,72 @@ mod tests {
 
     #[test]
     fn intersecting_a_ray_with_a_non_cubic_bounding_box() {
-        let bbox = BoundingBox {
+        let bounds = Bounds {
             min: Point::new(5.0, -2.0, 0.0),
             max: Point::new(11.0, 4.0, 7.0),
         };
 
-        assert!(bbox.intersect(&Ray {
+        assert!(bounds.intersect(&Ray {
             origin: Point::new(5.0, 1.0, 2.0),
             direction: Vector::new(1.0, 0.0, 0.0)
         }));
 
-        assert!(bbox.intersect(&Ray {
+        assert!(bounds.intersect(&Ray {
             origin: Point::new(-5.0, -1.0, 4.0),
             direction: Vector::new(1.0, 0.0, 0.0)
         }));
 
-        assert!(bbox.intersect(&Ray {
+        assert!(bounds.intersect(&Ray {
             origin: Point::new(7.0, 6.0, 5.0),
             direction: Vector::new(0.0, -1.0, 0.0)
         }));
 
-        assert!(bbox.intersect(&Ray {
+        assert!(bounds.intersect(&Ray {
             origin: Point::new(9.0, -5.0, 6.0),
             direction: Vector::new(0.0, 1.0, 0.0)
         }));
 
-        assert!(bbox.intersect(&Ray {
+        assert!(bounds.intersect(&Ray {
             origin: Point::new(8.0, 2.0, 12.0),
             direction: Vector::new(0.0, 0.0, -1.0)
         }));
 
-        assert!(bbox.intersect(&Ray {
+        assert!(bounds.intersect(&Ray {
             origin: Point::new(6.0, 0.0, -5.0),
             direction: Vector::new(0.0, 0.0, 1.0)
         }));
 
-        assert!(bbox.intersect(&Ray {
+        assert!(bounds.intersect(&Ray {
             origin: Point::new(8.0, 1.0, 3.5),
             direction: Vector::new(0.0, 0.0, 1.0)
         }));
 
-        assert!(!bbox.intersect(&Ray {
+        assert!(!bounds.intersect(&Ray {
             origin: Point::new(9.0, -1.0, -8.0),
             direction: Vector::new(2.0, 4.0, 6.0)
         }));
 
-        assert!(!bbox.intersect(&Ray {
+        assert!(!bounds.intersect(&Ray {
             origin: Point::new(8.0, 3.0, -4.0),
             direction: Vector::new(6.0, 2.0, 4.0)
         }));
 
-        assert!(!bbox.intersect(&Ray {
+        assert!(!bounds.intersect(&Ray {
             origin: Point::new(9.0, -1.0, -2.0),
             direction: Vector::new(4.0, 6.0, 2.0)
         }));
 
-        assert!(!bbox.intersect(&Ray {
+        assert!(!bounds.intersect(&Ray {
             origin: Point::new(4.0, 0.0, 9.0),
             direction: Vector::new(0.0, 0.0, -1.0)
         }));
 
-        assert!(!bbox.intersect(&Ray {
+        assert!(!bounds.intersect(&Ray {
             origin: Point::new(8.0, 6.0, -1.0),
             direction: Vector::new(0.0, -1.0, 0.0)
         }));
 
-        assert!(!bbox.intersect(&Ray {
+        assert!(!bounds.intersect(&Ray {
             origin: Point::new(12.0, 5.0, 4.0),
             direction: Vector::new(-1.0, 0.0, 0.0)
         }));
@@ -392,12 +392,12 @@ mod tests {
 
     #[test]
     fn splitting_a_perfect_cube() {
-        let bbox = BoundingBox {
+        let bounds = Bounds {
             min: Point::new(-1.0, -4.0, -5.0),
             max: Point::new(9.0, 6.0, 5.0),
         };
 
-        let (left, right) = bbox.split();
+        let (left, right) = bounds.split();
 
         assert_eq!(left.min, Point::new(-1.0, -4.0, -5.0));
         assert_eq!(left.max, Point::new(4.0, 6.0, 5.0));
@@ -408,12 +408,12 @@ mod tests {
 
     #[test]
     fn splitting_an_x_wide_bounding_box() {
-        let bbox = BoundingBox {
+        let bounds = Bounds {
             min: Point::new(-1.0, -2.0, -3.0),
             max: Point::new(9.0, 5.5, 3.0),
         };
 
-        let (left, right) = bbox.split();
+        let (left, right) = bounds.split();
 
         assert_eq!(left.min, Point::new(-1.0, -2.0, -3.0));
         assert_eq!(left.max, Point::new(4.0, 5.5, 3.0));
@@ -424,12 +424,12 @@ mod tests {
 
     #[test]
     fn splitting_an_y_wide_bounding_box() {
-        let bbox = BoundingBox {
+        let bounds = Bounds {
             min: Point::new(-1.0, -2.0, -3.0),
             max: Point::new(5.0, 8.0, 3.0),
         };
 
-        let (left, right) = bbox.split();
+        let (left, right) = bounds.split();
 
         assert_eq!(left.min, Point::new(-1.0, -2.0, -3.0));
         assert_eq!(left.max, Point::new(5.0, 3.0, 3.0));
@@ -440,12 +440,12 @@ mod tests {
 
     #[test]
     fn splitting_an_z_wide_bounding_box() {
-        let bbox = BoundingBox {
+        let bounds = Bounds {
             min: Point::new(-1.0, -2.0, -3.0),
             max: Point::new(5.0, 3.0, 7.0),
         };
 
-        let (left, right) = bbox.split();
+        let (left, right) = bounds.split();
 
         assert_eq!(left.min, Point::new(-1.0, -2.0, -3.0));
         assert_eq!(left.max, Point::new(5.0, 3.0, 2.0));
