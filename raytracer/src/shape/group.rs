@@ -4,9 +4,8 @@ use super::{Bounds, Shape, ShapeProps};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Group {
-    pub children: Vec<Shape>,
-    pub(crate) transform: Transform,
-    pub props: ShapeProps,
+    pub(crate) children: Vec<Shape>,
+    pub(crate) props: ShapeProps,
 }
 
 impl Default for Group {
@@ -33,7 +32,6 @@ impl Group {
 
         Self {
             children,
-            transform,
             props: ShapeProps {
                 material: Default::default(),
                 transform,
@@ -44,8 +42,8 @@ impl Group {
         }
     }
 
-    pub fn intersect(&self, ray: &Ray) -> Vec<Intersection<'_>> {
-        if !self.props.world_bounds.intersect(&ray) {
+    pub(crate) fn intersect(&self, ray: &Ray) -> Vec<Intersection<'_>> {
+        if !self.props.world_bounds.intersect(ray) {
             return vec![];
         }
 
@@ -59,8 +57,8 @@ impl Group {
         intersections
     }
 
-    pub(crate) fn update_transform(&mut self, transform: Transform) {
-        self.transform = transform;
+    pub fn update_transform(&mut self, transform: Transform) {
+        self.props.transform = transform;
         for child in &mut self.children {
             transform_recursive(child, transform * child.as_ref().transform);
         }
@@ -75,11 +73,11 @@ impl Group {
         }
 
         self.props.local_bounds = local_bounds;
-        self.props.world_bounds = local_bounds.transform(self.transform);
+        self.props.world_bounds = local_bounds.transform(self.props.transform);
     }
 
     pub fn add_child(&mut self, mut child: Shape) {
-        transform_recursive(&mut child, self.transform);
+        transform_recursive(&mut child, self.props.transform);
         self.children.push(child);
         self.adjust_bounds();
     }
@@ -160,7 +158,7 @@ fn transform_recursive(object: &mut Shape, transform: Transform) {
 #[cfg(test)]
 mod tests {
     use crate::{
-        shape::{Cylinder, ShapeProps, Sphere},
+        shape::{Cylinder, Sphere},
         tuple::{Point, Vector},
     };
 

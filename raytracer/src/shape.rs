@@ -26,9 +26,9 @@ pub use self::triangle::{CollinearTriangleSidesError, Triangle};
 pub struct ShapeProps {
     pub material: Material,
     pub transform: Transform,
-    pub transform_inverse: Transform,
-    pub local_bounds: Bounds,
-    pub world_bounds: Bounds,
+    pub(crate) transform_inverse: Transform,
+    pub(crate) local_bounds: Bounds,
+    pub(crate) world_bounds: Bounds,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -74,7 +74,7 @@ impl Shape {
         match self {
             Self::Cube(inner_cube) => inner_cube.intersect(self, &object_ray),
             Self::Cylinder(inner_cylinder) => inner_cylinder.intersect(self, &object_ray),
-            Self::Group(inner_group) => inner_group.intersect(&ray),
+            Self::Group(inner_group) => inner_group.intersect(ray),
             Self::Plane(inner_plane) => inner_plane.intersect(self, &object_ray),
             Self::Sphere(inner_sphere) => inner_sphere.intersect(self, &object_ray),
             Self::Triangle(inner_triangle) => inner_triangle.intersect(self, &object_ray),

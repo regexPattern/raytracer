@@ -14,10 +14,10 @@ pub struct CollinearTriangleSidesError;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Triangle {
-    pub props: ShapeProps,
-    pub v0: Point,
-    pub v1: Point,
-    pub v2: Point,
+    pub(crate) props: ShapeProps,
+    pub(crate) v0: Point,
+    pub(crate) v1: Point,
+    pub(crate) v2: Point,
     e0: Vector,
     e1: Vector,
     normal: Vector,
@@ -57,7 +57,7 @@ impl Triangle {
         })
     }
 
-    pub fn intersect<'a>(&self, object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
+    pub(crate) fn intersect<'a>(&self, object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
         let dir_cross_e1 = ray.direction.cross(self.e1);
         let det = self.e0.dot(dir_cross_e1);
 
@@ -86,7 +86,7 @@ impl Triangle {
         }]
     }
 
-    pub fn normal_at(&self, _: Point) -> Vector {
+    pub(crate) fn normal_at(&self, _: Point) -> Vector {
         self.normal
     }
 }

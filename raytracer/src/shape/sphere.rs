@@ -9,7 +9,7 @@ use crate::{
 use super::{Bounds, ShapeProps, Shape};
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Sphere(pub ShapeProps);
+pub struct Sphere(pub(crate) ShapeProps);
 
 impl Default for Sphere {
     fn default() -> Self {
@@ -33,7 +33,7 @@ impl Sphere {
         })
     }
 
-    pub fn intersect<'a>(&self, object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
+    pub(crate) fn intersect<'a>(&self, object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
         let ray_origin_vec = ray.origin - Point::new(0.0, 0.0, 0.0);
 
         let a = ray.direction.dot(ray.direction);
@@ -55,7 +55,7 @@ impl Sphere {
         ]
     }
 
-    pub fn normal_at(&self, point: Point) -> Vector {
+    pub(crate) fn normal_at(&self, point: Point) -> Vector {
         point - Point::new(0.0, 0.0, 0.0)
     }
 }

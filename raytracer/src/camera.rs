@@ -22,6 +22,7 @@ pub struct Camera {
     half_height: f64,
     half_width: f64,
     transform: Transform,
+    transform_inverse: Transform,
 }
 
 #[derive(Debug)]
@@ -39,6 +40,7 @@ impl PartialEq for Camera {
             && float::approx(self.half_width, other.half_width)
             && float::approx(self.half_height, other.half_height)
             && self.transform == other.transform
+            && self.transform_inverse == other.transform_inverse
     }
 }
 
@@ -76,25 +78,8 @@ impl Camera {
             half_height,
             half_width,
             transform,
+            transform_inverse: transform.inverse(),
         })
-    }
-
-    fn ray_for_pixel(&self, x: u32, y: u32) -> Ray {
-        let xoffset = (f64::from(x) + 0.5) * self.pixel_size;
-        let yoffset = (f64::from(y) + 0.5) * self.pixel_size;
-
-        let world_x = self.half_width - xoffset;
-        let world_y = self.half_height - yoffset;
-
-        let pixel = self.transform.inverse() * Point::new(world_x, world_y, -1.0);
-        let origin = self.transform.inverse() * Point::new(0.0, 0.0, 0.0);
-
-        // The transformation is isomorphic, therefore `pixel` and `origin` are always going to be
-        // different points because `Point::new(... -1)` is always different to `Point::new(... 0)`.
-        #[allow(clippy::unwrap_used)]
-        let direction = (pixel - origin).normalize().unwrap();
-
-        Ray { origin, direction }
     }
 
     pub fn render(&self, world: &World, progress: RenderProgress) -> Canvas {
@@ -144,6 +129,24 @@ impl Camera {
         });
 
         image
+    }
+
+    fn ray_for_pixel(&self, x: u32, y: u32) -> Ray {
+        let xoffset = (f64::from(x) + 0.5) * self.pixel_size;
+        let yoffset = (f64::from(y) + 0.5) * self.pixel_size;
+
+        let world_x = self.half_width - xoffset;
+        let world_y = self.half_height - yoffset;
+
+        let pixel = self.transform_inverse * Point::new(world_x, world_y, -1.0);
+        let origin = self.transform_inverse * Point::new(0.0, 0.0, 0.0);
+
+        // The transformation is isomorphic, therefore `pixel` and `origin` are always going to be
+        // different points because `Point::new(... -1)` is always different to `Point::new(... 0)`.
+        #[allow(clippy::unwrap_used)]
+        let direction = (pixel - origin).normalize().unwrap();
+
+        Ray { origin, direction }
     }
 }
 

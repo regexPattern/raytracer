@@ -10,7 +10,7 @@ use crate::{
 use super::{Bounds, ShapeProps, Shape};
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Cube(pub ShapeProps);
+pub struct Cube(pub(crate) ShapeProps);
 
 impl Default for Cube {
     fn default() -> Self {
@@ -34,11 +34,11 @@ impl Cube {
         })
     }
 
-    pub fn intersect<'a>(&self, object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
+    pub(crate) fn intersect<'a>(&self, object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
         intersect_box_with_bounds(object, ray, &self.0.local_bounds)
     }
 
-    pub fn normal_at(&self, point: Point) -> Vector {
+    pub(crate) fn normal_at(&self, point: Point) -> Vector {
         let Point(Tuple { x, y, z, .. }) = point;
 
         let max_coord = [x.abs(), y.abs(), z.abs()]

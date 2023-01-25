@@ -11,10 +11,10 @@ use super::{Bounds, Shape, ShapeProps};
 
 #[derive(Clone, Debug)]
 pub struct Cylinder {
-    pub props: ShapeProps,
-    pub min: f64,
-    pub max: f64,
-    pub closed: bool,
+    pub(crate) props: ShapeProps,
+    pub(crate) min: f64,
+    pub(crate) max: f64,
+    pub(crate) closed: bool,
 }
 
 impl PartialEq for Cylinder {
@@ -59,7 +59,7 @@ impl Cylinder {
         }
     }
 
-    pub fn intersect<'a>(&self, object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
+    pub(crate) fn intersect<'a>(&self, object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
         let mut xs = vec![];
 
         let a = ray.direction.0.x.powi(2) + ray.direction.0.z.powi(2);
@@ -95,7 +95,7 @@ impl Cylinder {
         self.intersect_caps(object, ray, xs)
     }
 
-    pub fn normal_at(&self, point: Point) -> Vector {
+    pub(crate) fn normal_at(&self, point: Point) -> Vector {
         let Point(Tuple { x, y, z, .. }) = point;
 
         let distance = x.powi(2) + z.powi(2);
@@ -120,12 +120,12 @@ impl Cylinder {
         }
 
         let t = (self.min - ray.origin.0.y) / ray.direction.0.y;
-        if check_cap(&ray, t) {
+        if check_cap(ray, t) {
             xs.push(Intersection { t, object });
         }
 
         let t = (self.max - ray.origin.0.y) / ray.direction.0.y;
-        if check_cap(&ray, t) {
+        if check_cap(ray, t) {
             xs.push(Intersection { t, object });
         }
 

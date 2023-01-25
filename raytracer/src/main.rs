@@ -7,7 +7,7 @@ use raytracer::{
     shape::{Cylinder, Group, Shape, ShapeProps, Triangle},
     transform::Transform,
     tuple::{Point, Vector},
-    wavefront::OBJModel,
+    obj_model::OBJModel,
     world::World,
 };
 
@@ -18,10 +18,12 @@ fn main() {
     };
 
     let obj_file = std::fs::read_to_string("teapot.obj").unwrap();
-    let model = OBJModel::parse(&obj_file).unwrap();
+    let model = OBJModel::import(&obj_file).unwrap();
+    let mut group = Group::from(model);
+    group.divide(300);
 
     let world = World {
-        objects: vec![model.into()],
+        objects: vec![Shape::Group(group)],
         lights: vec![light],
     };
 

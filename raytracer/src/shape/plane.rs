@@ -9,7 +9,7 @@ use crate::{
 use super::{Bounds, ShapeProps, Shape};
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Plane(pub ShapeProps);
+pub struct Plane(pub(crate) ShapeProps);
 
 impl Default for Plane {
     fn default() -> Self {
@@ -33,7 +33,7 @@ impl Plane {
         })
     }
 
-    pub fn intersect<'a>(&self, object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
+    pub(crate) fn intersect<'a>(&self, object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
         if !float::approx(ray.direction.0.y, 0.0) {
             let t = -ray.origin.0.y / ray.direction.0.y;
             vec![Intersection { t, object }]
@@ -42,7 +42,7 @@ impl Plane {
         }
     }
 
-    pub fn normal_at(&self, _: Point) -> Vector {
+    pub(crate) fn normal_at(&self, _: Point) -> Vector {
         Vector::new(0.0, 1.0, 0.0)
     }
 }
