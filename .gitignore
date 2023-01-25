@@ -1,5 +1,7 @@
 target
 
+*.obj
+
 *.bmp
 *.jpeg
 *.png
