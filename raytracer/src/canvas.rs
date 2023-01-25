@@ -78,27 +78,27 @@ mod tests {
     fn creating_an_image_buffer_from_a_canvas_pixels() {
         let mut c = Canvas::new(5, 3);
 
-        let c1 = Color {
+        let c0 = Color {
             red: 1.5,
             green: 0.0,
             blue: 0.0,
         };
 
-        let c2 = Color {
+        let c1 = Color {
             red: 0.0,
             green: 0.5,
             blue: 0.0,
         };
 
-        let c3 = Color {
+        let c2 = Color {
             red: -0.5,
             green: 0.0,
             blue: 1.0,
         };
 
-        c.write_pixel(0, 0, c1);
-        c.write_pixel(2, 1, c2);
-        c.write_pixel(4, 2, c3);
+        c.write_pixel(0, 0, c0);
+        c.write_pixel(2, 1, c1);
+        c.write_pixel(4, 2, c2);
 
         let img = c.to_image();
 

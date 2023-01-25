@@ -130,12 +130,7 @@ impl World {
 
 #[cfg(test)]
 pub fn test_world() -> World {
-    use crate::{
-        material::Material,
-        pattern::Pattern,
-        shape::{ShapeProps, Sphere},
-        transform::Transform,
-    };
+    use crate::{material::Material, pattern::Pattern, shape::Sphere, transform::Transform};
 
     let light = PointLight {
         position: Point::new(-10.0, 10.0, -10.0),
@@ -174,7 +169,7 @@ mod tests {
         intersection::Intersection,
         material::Material,
         pattern::Pattern,
-        shape::{Plane, ShapeProps, Sphere},
+        shape::{Plane, Sphere},
         transform::Transform,
         tuple::Vector,
     };
@@ -218,6 +213,8 @@ mod tests {
         let i = Intersection {
             t: 4.0,
             object: &w.objects[0],
+            u: None,
+            v: None,
         };
 
         let comps = i.prepare_computation(&r, [i]);
@@ -252,6 +249,8 @@ mod tests {
         let i = Intersection {
             t: 0.5,
             object: &w.objects[1],
+            u: None,
+            v: None,
         };
 
         let comps = i.prepare_computation(&r, [i]);
@@ -283,6 +282,8 @@ mod tests {
         let i = Intersection {
             t: 0.5,
             object: &w.objects[1],
+            u: None,
+            v: None,
         };
 
         let comps = i.prepare_computation(&r, [i]);
@@ -434,6 +435,8 @@ mod tests {
         let i = Intersection {
             t: 4.0,
             object: &s1,
+            u: None,
+            v: None,
         };
 
         let comps = i.prepare_computation(&r, [i]);
@@ -468,6 +471,8 @@ mod tests {
         let i = Intersection {
             t: 1.0,
             object: &w.objects[1],
+            u: None,
+            v: None,
         };
 
         let comps = i.prepare_computation(&r, [i]);
@@ -497,6 +502,8 @@ mod tests {
         let i = Intersection {
             t: 2_f64.sqrt(),
             object: &o,
+            u: None,
+            v: None,
         };
 
         let comps = i.prepare_computation(&r, [i]);
@@ -533,6 +540,8 @@ mod tests {
         let i = Intersection {
             t: 2_f64.sqrt(),
             object: &s,
+            u: None,
+            v: None,
         };
 
         let comps = i.prepare_computation(&r, [i]);
@@ -604,6 +613,8 @@ mod tests {
         let i = Intersection {
             t: 2_f64.sqrt(),
             object: &w.objects[2],
+            u: None,
+            v: None,
         };
 
         let comps = i.prepare_computation(&r, [i]);
@@ -626,10 +637,14 @@ mod tests {
             Intersection {
                 t: 4.0,
                 object: &w.objects[0],
+                u: None,
+                v: None,
             },
             Intersection {
                 t: 6.0,
                 object: &w.objects[0],
+                u: None,
+                v: None,
             },
         ];
 
@@ -660,10 +675,14 @@ mod tests {
             Intersection {
                 t: 4.0,
                 object: &w.objects[0],
+                u: None,
+                v: None,
             },
             Intersection {
                 t: 6.0,
                 object: &w.objects[0],
+                u: None,
+                v: None,
             },
         ];
 
@@ -694,10 +713,14 @@ mod tests {
             Intersection {
                 t: -2_f64.sqrt() / 2.0,
                 object: &w.objects[0],
+                u: None,
+                v: None,
             },
             Intersection {
                 t: 2_f64.sqrt() / 2.0,
                 object: &w.objects[0],
+                u: None,
+                v: None,
             },
         ];
 
@@ -741,6 +764,8 @@ mod tests {
         let xs = [Intersection {
             t: 2_f64.sqrt(),
             object: &w.objects[2],
+            u: None,
+            v: None,
         }];
 
         let comps = xs[0].prepare_computation(&r, xs);
@@ -791,6 +816,8 @@ mod tests {
         let xs = [Intersection {
             t: 2_f64.sqrt(),
             object: &w.objects[2],
+            u: None,
+            v: None,
         }];
 
         let comps = xs[0].prepare_computation(&r, xs);

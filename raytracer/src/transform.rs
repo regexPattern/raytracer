@@ -404,30 +404,30 @@ mod tests {
 
     #[test]
     fn individual_transformations_are_applied_in_sequence() {
-        let p1 = Point::new(1.0, 0.0, 1.0);
+        let p0 = Point::new(1.0, 0.0, 1.0);
 
-        let t1 = Transform::rotation_x(std::f64::consts::FRAC_PI_2);
-        let t2 = Transform::try_scaling(5.0, 5.0, 5.0).unwrap();
-        let t3 = Transform::translation(10.0, 5.0, 7.0);
+        let t0 = Transform::rotation_x(std::f64::consts::FRAC_PI_2);
+        let t1 = Transform::try_scaling(5.0, 5.0, 5.0).unwrap();
+        let t2 = Transform::translation(10.0, 5.0, 7.0);
 
+        let p1 = t0 * p0;
         let p2 = t1 * p1;
         let p3 = t2 * p2;
-        let p4 = t3 * p3;
 
-        assert_eq!(p2, Point::new(1.0, -1.0, 0.0));
-        assert_eq!(p3, Point::new(5.0, -5.0, 0.0));
-        assert_eq!(p4, Point::new(15.0, 0.0, 7.0));
+        assert_eq!(p1, Point::new(1.0, -1.0, 0.0));
+        assert_eq!(p2, Point::new(5.0, -5.0, 0.0));
+        assert_eq!(p3, Point::new(15.0, 0.0, 7.0));
     }
 
     #[test]
     fn chained_transformations_must_be_applied_in_reverse_order() {
         let p = Point::new(1.0, 0.0, 1.0);
 
-        let t1 = Transform::rotation_x(std::f64::consts::FRAC_PI_2);
-        let t2 = Transform::try_scaling(5.0, 5.0, 5.0).unwrap();
-        let t3 = Transform::translation(10.0, 5.0, 7.0);
+        let t0 = Transform::rotation_x(std::f64::consts::FRAC_PI_2);
+        let t1 = Transform::try_scaling(5.0, 5.0, 5.0).unwrap();
+        let t2 = Transform::translation(10.0, 5.0, 7.0);
 
-        let t = t3 * t2 * t1;
+        let t = t2 * t1 * t0;
 
         assert_eq!(t * p, Point::new(15.0, 0.0, 7.0));
     }

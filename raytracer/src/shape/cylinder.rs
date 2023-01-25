@@ -84,12 +84,22 @@ impl Cylinder {
 
         let y0 = ray.origin.0.y + t0 * ray.direction.0.y;
         if self.min < y0 && y0 < self.max {
-            xs.push(Intersection { t: t0, object });
+            xs.push(Intersection {
+                t: t0,
+                object,
+                u: None,
+                v: None,
+            });
         }
 
         let y1 = ray.origin.0.y + t1 * ray.direction.0.y;
         if self.min < y1 && y1 < self.max {
-            xs.push(Intersection { t: t1, object });
+            xs.push(Intersection {
+                t: t1,
+                object,
+                u: None,
+                v: None,
+            });
         }
 
         self.intersect_caps(object, ray, xs)
@@ -121,12 +131,22 @@ impl Cylinder {
 
         let t = (self.min - ray.origin.0.y) / ray.direction.0.y;
         if check_cap(ray, t) {
-            xs.push(Intersection { t, object });
+            xs.push(Intersection {
+                t,
+                object,
+                u: None,
+                v: None,
+            });
         }
 
         let t = (self.max - ray.origin.0.y) / ray.direction.0.y;
         if check_cap(ray, t) {
-            xs.push(Intersection { t, object });
+            xs.push(Intersection {
+                t,
+                object,
+                u: None,
+                v: None,
+            });
         }
 
         xs
@@ -146,17 +166,14 @@ mod tests {
 
     use super::*;
 
-    fn dummy_object() -> Shape {
-        Shape::Cylinder(Default::default())
-    }
-
     #[test]
     fn a_ray_misses_a_cylinder() {
         let c = Cylinder::default();
+        let o = Shape::Cylinder(Default::default());
 
         assert!(c
             .intersect(
-                &dummy_object(),
+                &o,
                 &Ray {
                     origin: Point::new(1.0, 0.0, 0.0),
                     direction: Vector::new(0.0, 1.0, 0.0)
@@ -166,7 +183,7 @@ mod tests {
 
         assert!(c
             .intersect(
-                &dummy_object(),
+                &o,
                 &Ray {
                     origin: Point::new(0.0, 0.0, 0.0),
                     direction: Vector::new(0.0, 1.0, 0.0)
@@ -176,7 +193,7 @@ mod tests {
 
         assert!(c
             .intersect(
-                &dummy_object(),
+                &o,
                 &Ray {
                     origin: Point::new(0.0, 0.0, -5.0),
                     direction: Vector::new(1.0, 1.0, 1.0)
@@ -187,8 +204,8 @@ mod tests {
 
     #[test]
     fn a_ray_strikes_a_cylinder() {
-        let o = dummy_object();
         let c = Cylinder::default();
+        let o = Shape::Cylinder(Default::default());
 
         let xs = c.intersect(
             &o,
@@ -264,10 +281,11 @@ mod tests {
             max: 2.0,
             ..Default::default()
         };
+        let o = Shape::Cylinder(Default::default());
 
         assert!(c
             .intersect(
-                &dummy_object(),
+                &o,
                 &Ray {
                     origin: Point::new(0.0, 1.5, 0.0),
                     direction: Vector::new(0.1, 1.0, 0.0)
@@ -283,10 +301,11 @@ mod tests {
             max: 2.0,
             ..Default::default()
         };
+        let o = Shape::Cylinder(Default::default());
 
         assert!(c
             .intersect(
-                &dummy_object(),
+                &o,
                 &Ray {
                     origin: Point::new(0.0, 3.0, -5.0),
                     direction: Vector::new(0.0, 0.0, 1.0)
@@ -296,7 +315,7 @@ mod tests {
 
         assert!(c
             .intersect(
-                &dummy_object(),
+                &o,
                 &Ray {
                     origin: Point::new(0.0, 0.0, -5.0),
                     direction: Vector::new(0.0, 0.0, 1.0)
@@ -312,10 +331,11 @@ mod tests {
             max: 2.0,
             ..Default::default()
         };
+        let o = Shape::Cylinder(Default::default());
 
         assert!(c
             .intersect(
-                &dummy_object(),
+                &o,
                 &Ray {
                     origin: Point::new(0.0, 2.0, -5.0),
                     direction: Vector::new(0.0, 0.0, 1.0)
@@ -325,7 +345,7 @@ mod tests {
 
         assert!(c
             .intersect(
-                &dummy_object(),
+                &o,
                 &Ray {
                     origin: Point::new(0.0, 1.0, -5.0),
                     direction: Vector::new(0.0, 0.0, 1.0)
@@ -341,10 +361,11 @@ mod tests {
             max: 2.0,
             ..Default::default()
         };
+        let o = Shape::Cylinder(Default::default());
 
         assert_eq!(
             c.intersect(
-                &dummy_object(),
+                &o,
                 &Ray {
                     origin: Point::new(0.0, 1.5, -2.0),
                     direction: Vector::new(0.0, 0.0, 1.0)
@@ -370,10 +391,11 @@ mod tests {
             closed: true,
             ..Default::default()
         };
+        let o = Shape::Cylinder(Default::default());
 
         assert_eq!(
             c.intersect(
-                &dummy_object(),
+                &o,
                 &Ray {
                     origin: Point::new(0.0, 3.0, 0.0),
                     direction: Vector::new(0.0, -1.0, 0.0)
@@ -385,7 +407,7 @@ mod tests {
 
         assert_eq!(
             c.intersect(
-                &dummy_object(),
+                &o,
                 &Ray {
                     origin: Point::new(0.0, 3.0, -2.0),
                     direction: Vector::new(0.0, -1.0, 2.0)
@@ -397,7 +419,7 @@ mod tests {
 
         assert_eq!(
             c.intersect(
-                &dummy_object(),
+                &o,
                 &Ray {
                     origin: Point::new(0.0, 0.0, -2.0),
                     direction: Vector::new(0.0, 1.0, 2.0)
@@ -410,14 +432,13 @@ mod tests {
 
     #[test]
     fn intersecting_the_border_of_the_caps_of_a_closed_cylinder() {
-        let o = dummy_object();
-
         let c = Cylinder {
             min: 1.0,
             max: 2.0,
             closed: true,
             ..Default::default()
         };
+        let o = Shape::Cylinder(Default::default());
 
         assert_eq!(
             c.intersect(

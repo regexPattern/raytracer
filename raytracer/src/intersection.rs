@@ -9,6 +9,8 @@ use crate::{
 pub struct Intersection<'a> {
     pub t: f64,
     pub object: &'a Shape,
+    pub u: Option<f64>,
+    pub v: Option<f64>,
 }
 
 #[derive(Debug)]
@@ -27,7 +29,10 @@ pub struct Computation<'a> {
 
 impl PartialEq for Intersection<'_> {
     fn eq(&self, other: &Self) -> bool {
-        float::approx(self.t, other.t) && self.object == other.object
+        float::approx(self.t, other.t)
+            && self.object == other.object
+            && float::approx_some(self.u, other.u)
+            && float::approx_some(self.v, other.v)
     }
 }
 
@@ -39,7 +44,7 @@ impl<'a> Intersection<'a> {
         let point = ray.position(self.t);
         let eyev = -ray.direction;
 
-        let normalv = self.object.normal_at(point);
+        let normalv = self.object.normal_at(point, &self);
         let inside = normalv.dot(eyev) < 0.0;
         let normalv = if inside { -normalv } else { normalv };
         let reflectv = ray.direction.reflect(normalv);
@@ -138,12 +143,7 @@ impl<'a> Computation<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        assert_approx,
-        material::Material,
-        shape::{ShapeProps, Sphere},
-        transform::Transform,
-    };
+    use crate::{assert_approx, material::Material, shape::Sphere, transform::Transform};
 
     use super::*;
 
@@ -163,7 +163,12 @@ mod tests {
     fn an_intersection_encapsulates_t_and_object() {
         let o = glass_sphere();
 
-        let i = Intersection { t: 3.5, object: &o };
+        let i = Intersection {
+            t: 3.5,
+            object: &o,
+            u: None,
+            v: None,
+        };
 
         assert_approx!(i.t, 3.5);
         assert_eq!(i.object, &o);
@@ -173,8 +178,18 @@ mod tests {
     fn aggregating_intersections() {
         let o = glass_sphere();
 
-        let i0 = Intersection { t: 1.0, object: &o };
-        let i1 = Intersection { t: 2.0, object: &o };
+        let i0 = Intersection {
+            t: 1.0,
+            object: &o,
+            u: None,
+            v: None,
+        };
+        let i1 = Intersection {
+            t: 2.0,
+            object: &o,
+            u: None,
+            v: None,
+        };
 
         let xs = vec![&i0, &i1];
 
@@ -187,8 +202,18 @@ mod tests {
     fn the_hit_when_all_intersections_have_positive_t() {
         let o = glass_sphere();
 
-        let i0 = Intersection { t: 1.0, object: &o };
-        let i1 = Intersection { t: 2.0, object: &o };
+        let i0 = Intersection {
+            t: 1.0,
+            object: &o,
+            u: None,
+            v: None,
+        };
+        let i1 = Intersection {
+            t: 2.0,
+            object: &o,
+            u: None,
+            v: None,
+        };
 
         let mut xs = [i0, i1];
 
@@ -202,8 +227,15 @@ mod tests {
         let i0 = Intersection {
             t: -1.0,
             object: &o,
+            u: None,
+            v: None,
         };
-        let i1 = Intersection { t: 1.0, object: &o };
+        let i1 = Intersection {
+            t: 1.0,
+            object: &o,
+            u: None,
+            v: None,
+        };
 
         let mut xs = [i0, i1];
 
@@ -217,10 +249,14 @@ mod tests {
         let i0 = Intersection {
             t: -2.0,
             object: &o,
+            u: None,
+            v: None,
         };
         let i1 = Intersection {
             t: -1.0,
             object: &o,
+            u: None,
+            v: None,
         };
 
         let mut xs = [i0, i1];
@@ -232,13 +268,30 @@ mod tests {
     fn sorting_a_vector_of_intersections() {
         let o = glass_sphere();
 
-        let i0 = Intersection { t: 5.0, object: &o };
-        let i1 = Intersection { t: 7.0, object: &o };
+        let i0 = Intersection {
+            t: 5.0,
+            object: &o,
+            u: None,
+            v: None,
+        };
+        let i1 = Intersection {
+            t: 7.0,
+            object: &o,
+            u: None,
+            v: None,
+        };
         let i2 = Intersection {
             t: -3.0,
             object: &o,
+            u: None,
+            v: None,
         };
-        let i3 = Intersection { t: 2.0, object: &o };
+        let i3 = Intersection {
+            t: 2.0,
+            object: &o,
+            u: None,
+            v: None,
+        };
 
         let mut xs = [i0, i1, i2, i3];
 
@@ -254,13 +307,30 @@ mod tests {
     fn the_hit_is_always_the_lowest_non_negative_intersection() {
         let o = glass_sphere();
 
-        let i0 = Intersection { t: 5.0, object: &o };
-        let i1 = Intersection { t: 7.0, object: &o };
+        let i0 = Intersection {
+            t: 5.0,
+            object: &o,
+            u: None,
+            v: None,
+        };
+        let i1 = Intersection {
+            t: 7.0,
+            object: &o,
+            u: None,
+            v: None,
+        };
         let i2 = Intersection {
             t: -3.0,
             object: &o,
+            u: None,
+            v: None,
         };
-        let i3 = Intersection { t: 2.0, object: &o };
+        let i3 = Intersection {
+            t: 2.0,
+            object: &o,
+            u: None,
+            v: None,
+        };
 
         let mut xs = [i0, i1, i2, i3];
 
@@ -276,7 +346,12 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let i = Intersection { t: 4.0, object: &o };
+        let i = Intersection {
+            t: 4.0,
+            object: &o,
+            u: None,
+            v: None,
+        };
 
         let comps = i.prepare_computation(&r, [i]);
 
@@ -296,7 +371,12 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let i = Intersection { t: 4.0, object: &o };
+        let i = Intersection {
+            t: 4.0,
+            object: &o,
+            u: None,
+            v: None,
+        };
 
         let comps = i.prepare_computation(&r, [i]);
 
@@ -312,7 +392,12 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let i = Intersection { t: 1.0, object: &o };
+        let i = Intersection {
+            t: 1.0,
+            object: &o,
+            u: None,
+            v: None,
+        };
 
         let comps = i.prepare_computation(&r, [i]);
 
@@ -334,7 +419,12 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let i = Intersection { t: 5.0, object: &o };
+        let i = Intersection {
+            t: 5.0,
+            object: &o,
+            u: None,
+            v: None,
+        };
 
         let comps = i.prepare_computation(&r, [i]);
 
@@ -354,6 +444,8 @@ mod tests {
         let i = Intersection {
             t: 2_f64.sqrt(),
             object: &o,
+            u: None,
+            v: None,
         };
 
         let comps = i.prepare_computation(&r, [i]);
@@ -390,24 +482,42 @@ mod tests {
             Transform::translation(0.0, 0.0, 0.25),
         ));
 
-        let i0 = Intersection { t: 2.0, object: &a };
+        let i0 = Intersection {
+            t: 2.0,
+            object: &a,
+            u: None,
+            v: None,
+        };
         let i1 = Intersection {
             t: 2.75,
             object: &b,
+            u: None,
+            v: None,
         };
         let i2 = Intersection {
             t: 3.25,
             object: &c,
+            u: None,
+            v: None,
         };
         let i3 = Intersection {
             t: 4.75,
             object: &b,
+            u: None,
+            v: None,
         };
         let i4 = Intersection {
             t: 5.25,
             object: &c,
+            u: None,
+            v: None,
         };
-        let i5 = Intersection { t: 6.0, object: &a };
+        let i5 = Intersection {
+            t: 6.0,
+            object: &a,
+            u: None,
+            v: None,
+        };
 
         let xs = [i0, i1, i2, i3, i4, i5];
 
@@ -448,7 +558,12 @@ mod tests {
             Transform::translation(0.0, 0.0, 1.0),
         ));
 
-        let i = Intersection { t: 5.0, object: &o };
+        let i = Intersection {
+            t: 5.0,
+            object: &o,
+            u: None,
+            v: None,
+        };
 
         let comps = i.prepare_computation(&r, [i]);
 
@@ -469,10 +584,14 @@ mod tests {
             Intersection {
                 t: -2_f64.sqrt() / 2.0,
                 object: &o,
+                u: None,
+                v: None,
             },
             Intersection {
                 t: 2_f64.sqrt() / 2.0,
                 object: &o,
+                u: None,
+                v: None,
             },
         ];
 
@@ -496,8 +615,15 @@ mod tests {
             Intersection {
                 t: -1.0,
                 object: &s,
+                u: None,
+                v: None,
             },
-            Intersection { t: 1.0, object: &s },
+            Intersection {
+                t: 1.0,
+                object: &s,
+                u: None,
+                v: None,
+            },
         ];
 
         let comps = xs[1].prepare_computation(&r, xs);
@@ -519,6 +645,8 @@ mod tests {
         let xs = [Intersection {
             t: 1.8589,
             object: &s,
+            u: None,
+            v: None,
         }];
 
         let comps = xs[0].prepare_computation(&r, xs);

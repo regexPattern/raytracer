@@ -140,20 +140,20 @@ mod tests {
 
     #[test]
     fn adding_colors() {
-        let c1 = Color {
+        let c0 = Color {
             red: 0.9,
             green: 0.6,
             blue: 0.75,
         };
 
-        let c2 = Color {
+        let c1 = Color {
             red: 0.7,
             green: 0.1,
             blue: 0.25,
         };
 
         assert_eq!(
-            c1 + c2,
+            c0 + c1,
             Color {
                 red: 1.6,
                 green: 0.7,
@@ -164,20 +164,20 @@ mod tests {
 
     #[test]
     fn subtracting_colors() {
-        let c1 = Color {
+        let c0 = Color {
             red: 0.9,
             green: 0.6,
             blue: 0.75,
         };
 
-        let c2 = Color {
+        let c1 = Color {
             red: 0.7,
             green: 0.1,
             blue: 0.25,
         };
 
         assert_eq!(
-            c1 - c2,
+            c0 - c1,
             Color {
                 red: 0.2,
                 green: 0.5,
@@ -207,26 +207,26 @@ mod tests {
 
     #[test]
     fn multiplying_two_colors() {
-        let c1 = Color {
+        let c0 = Color {
             red: 1.0,
             green: 0.2,
             blue: 0.4,
         };
 
-        let c2 = Color {
+        let c1 = Color {
             red: 0.9,
             green: 1.0,
             blue: 0.1,
         };
 
         assert_eq!(
-            c1 * c2,
+            c0 * c1,
             Color {
                 red: 0.9,
                 green: 0.2,
                 blue: 0.04,
             }
         );
-        assert_eq!(c1 * c2, c2 * c1);
+        assert_eq!(c0 * c1, c1 * c0);
     }
 }

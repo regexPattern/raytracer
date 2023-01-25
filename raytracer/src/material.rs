@@ -312,10 +312,10 @@ mod tests {
             intensity: color::consts::WHITE,
         };
 
-        let c1 = m.lighting(&o, &light, Point::new(0.9, 0.0, 0.0), eyev, normalv, false);
-        let c2 = m.lighting(&o, &light, Point::new(1.1, 0.0, 0.0), eyev, normalv, false);
+        let c0 = m.lighting(&o, &light, Point::new(0.9, 0.0, 0.0), eyev, normalv, false);
+        let c1 = m.lighting(&o, &light, Point::new(1.1, 0.0, 0.0), eyev, normalv, false);
 
-        assert_eq!(c1, color::consts::WHITE);
-        assert_eq!(c2, color::consts::BLACK);
+        assert_eq!(c0, color::consts::WHITE);
+        assert_eq!(c1, color::consts::BLACK);
     }
 }

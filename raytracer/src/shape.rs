@@ -11,6 +11,7 @@ mod cube;
 mod cylinder;
 mod group;
 mod plane;
+mod smooth_triangle;
 mod sphere;
 mod triangle;
 
@@ -19,6 +20,7 @@ pub use self::cube::Cube;
 pub use self::cylinder::Cylinder;
 pub use self::group::Group;
 pub use self::plane::Plane;
+pub use self::smooth_triangle::SmoothTriangle;
 pub use self::sphere::Sphere;
 pub use self::triangle::{CollinearTriangleSidesError, Triangle};
 
@@ -39,6 +41,7 @@ pub enum Shape {
     Plane(Plane),
     Sphere(Sphere),
     Triangle(Triangle),
+    SmoothTriangle(SmoothTriangle),
 }
 
 impl AsRef<ShapeProps> for Shape {
@@ -46,10 +49,11 @@ impl AsRef<ShapeProps> for Shape {
         match self {
             Self::Cube(inner_cube) => &inner_cube.0,
             Self::Cylinder(inner_cylinder) => &inner_cylinder.props,
+            Self::Group(inner_group) => &inner_group.props,
             Self::Plane(inner_plane) => &inner_plane.0,
+            Self::SmoothTriangle(inner_triangle) => &inner_triangle.triangle.props,
             Self::Sphere(inner_sphere) => &inner_sphere.0,
             Self::Triangle(inner_triangle) => &inner_triangle.props,
-            Self::Group(inner_group) => &inner_group.props,
         }
     }
 }
@@ -63,6 +67,7 @@ impl AsMut<ShapeProps> for Shape {
             Self::Sphere(inner_sphere) => &mut inner_sphere.0,
             Self::Triangle(inner_triangle) => &mut inner_triangle.props,
             Self::Group(inner_group) => &mut inner_group.props,
+            Self::SmoothTriangle(inner_triangle) => &mut inner_triangle.triangle.props,
         }
     }
 }
@@ -74,14 +79,16 @@ impl Shape {
         match self {
             Self::Cube(inner_cube) => inner_cube.intersect(self, &object_ray),
             Self::Cylinder(inner_cylinder) => inner_cylinder.intersect(self, &object_ray),
-            Self::Group(inner_group) => inner_group.intersect(ray),
             Self::Plane(inner_plane) => inner_plane.intersect(self, &object_ray),
+            Self::SmoothTriangle(inner_triangle) => inner_triangle.intersect(self, &object_ray),
             Self::Sphere(inner_sphere) => inner_sphere.intersect(self, &object_ray),
             Self::Triangle(inner_triangle) => inner_triangle.intersect(self, &object_ray),
+            // TODO: comments
+            Self::Group(inner_group) => inner_group.intersect(ray),
         }
     }
 
-    pub fn normal_at(&self, point: Point) -> Vector {
+    pub fn normal_at(&self, point: Point, hit: &Intersection<'_>) -> Vector {
         world_normal(
             point,
             self.as_ref().transform_inverse,
@@ -89,8 +96,10 @@ impl Shape {
                 Self::Cube(inner_cube) => inner_cube.normal_at(object_point),
                 Self::Cylinder(inner_cylinder) => inner_cylinder.normal_at(object_point),
                 Self::Plane(inner_plane) => inner_plane.normal_at(object_point),
+                Self::SmoothTriangle(inner_triangle) => inner_triangle.normal_at(object_point, hit),
                 Self::Sphere(inner_sphere) => inner_sphere.normal_at(object_point),
                 Self::Triangle(inner_triangle) => inner_triangle.normal_at(object_point),
+                // TODO: comments
                 Self::Group(_) => unreachable!(),
             },
         )
@@ -233,7 +242,15 @@ mod tests {
 
         let s = get_subgroup_child(&g0);
 
-        let n = s.normal_at(Point::new(1.7321, 1.1547, -5.5774));
+        let n = s.normal_at(
+            Point::new(1.7321, 1.1547, -5.5774),
+            &Intersection {
+                t: 0.0,
+                object: &s,
+                u: None,
+                v: None,
+            },
+        );
 
         assert_eq!(n, Vector::new(0.2857, 0.42854, -0.85716));
     }

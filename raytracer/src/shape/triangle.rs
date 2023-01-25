@@ -83,6 +83,8 @@ impl Triangle {
         vec![Intersection {
             t: f * self.e1.dot(origin_cross_e0),
             object,
+            u: Some(u),
+            v: Some(v),
         }]
     }
 
@@ -96,10 +98,6 @@ mod tests {
     use crate::assert_approx;
 
     use super::*;
-
-    fn dummy_object() -> Shape {
-        Shape::Cylinder(Default::default())
-    }
 
     #[test]
     fn constructing_a_triangle() {
@@ -152,7 +150,7 @@ mod tests {
 
     #[test]
     fn intersecting_a_ray_parallel_to_the_triangle() {
-        let o = dummy_object();
+        let o = Shape::Sphere(Default::default());
 
         let t = Triangle::try_new(
             Default::default(),
@@ -177,7 +175,7 @@ mod tests {
 
     #[test]
     fn a_ray_misses_the_p0_p2_edge() {
-        let o = dummy_object();
+        let o = Shape::Sphere(Default::default());
 
         let t = Triangle::try_new(
             Default::default(),
@@ -202,7 +200,7 @@ mod tests {
 
     #[test]
     fn a_ray_misses_the_p0_p1_edge() {
-        let o = dummy_object();
+        let o = Shape::Sphere(Default::default());
 
         let t = Triangle::try_new(
             Default::default(),
@@ -227,7 +225,7 @@ mod tests {
 
     #[test]
     fn a_ray_misses_the_p1_p2_edge() {
-        let o = dummy_object();
+        let o = Shape::Sphere(Default::default());
 
         let t = Triangle::try_new(
             Default::default(),
@@ -252,7 +250,7 @@ mod tests {
 
     #[test]
     fn a_ray_strikes_a_triangle() {
-        let o = dummy_object();
+        let o = Shape::Sphere(Default::default());
 
         let t = Triangle::try_new(
             Default::default(),

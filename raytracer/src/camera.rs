@@ -206,7 +206,7 @@ mod tests {
 
     #[test]
     fn constructing_a_ray_when_the_camera_is_transformed() {
-        let mut c = Camera::try_new(
+        let c = Camera::try_new(
             201,
             101,
             std::f64::consts::FRAC_PI_2,

@@ -8,6 +8,14 @@ pub fn approx(a: f64, b: f64) -> bool {
     }
 }
 
+pub fn approx_some(a: Option<f64>, b: Option<f64>) -> bool {
+    match (a, b) {
+        (Some(a), Some(b)) => approx(a, b),
+        (None, None) => true,
+        _ => false,
+    }
+}
+
 pub fn ge(a: f64, b: f64) -> bool {
     approx(a, b) || a > b
 }

@@ -7,7 +7,7 @@ use crate::{
     tuple::{Point, Tuple, Vector},
 };
 
-use super::{Bounds, ShapeProps, Shape};
+use super::{Bounds, Shape, ShapeProps};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Cube(pub(crate) ShapeProps);
@@ -101,8 +101,18 @@ pub fn intersect_box_with_bounds<'a>(
         vec![]
     } else {
         vec![
-            Intersection { t: tmin, object },
-            Intersection { t: tmax, object },
+            Intersection {
+                t: tmin,
+                object,
+                u: None,
+                v: None,
+            },
+            Intersection {
+                t: tmax,
+                object,
+                u: None,
+                v: None,
+            },
         ]
     }
 }
@@ -132,10 +142,6 @@ mod tests {
     use crate::assert_approx;
 
     use super::*;
-
-    fn dummy_object() -> Shape {
-        Shape::Cube(Default::default())
-    }
 
     #[test]
     fn a_ray_intersects_a_cube_from_the_x_axis() {
@@ -240,10 +246,11 @@ mod tests {
     #[test]
     fn a_ray_misses_a_cube() {
         let c = Cube::default();
+        let o = Shape::Cube(Default::default());
 
         assert!(c
             .intersect(
-                &dummy_object(),
+                &o,
                 &Ray {
                     origin: Point::new(-2.0, 0.0, 0.0),
                     direction: Vector::new(0.2673, 0.5345, 0.8018),
@@ -253,7 +260,7 @@ mod tests {
 
         assert!(c
             .intersect(
-                &dummy_object(),
+                &o,
                 &Ray {
                     origin: Point::new(0.0, -2.0, 0.0),
                     direction: Vector::new(0.8018, 0.2673, 0.5345),
@@ -263,7 +270,7 @@ mod tests {
 
         assert!(c
             .intersect(
-                &dummy_object(),
+                &o,
                 &Ray {
                     origin: Point::new(0.0, 0.0, -2.0),
                     direction: Vector::new(0.5345, 0.8018, 0.2673),
@@ -273,7 +280,7 @@ mod tests {
 
         assert!(c
             .intersect(
-                &dummy_object(),
+                &o,
                 &Ray {
                     origin: Point::new(2.0, 0.0, 2.0),
                     direction: Vector::new(0.0, 0.0, -1.0)
@@ -283,7 +290,7 @@ mod tests {
 
         assert_eq!(
             c.intersect(
-                &dummy_object(),
+                &o,
                 &Ray {
                     origin: Point::new(0.0, 2.0, 2.0),
                     direction: Vector::new(0.0, -1.0, 0.0)
@@ -295,7 +302,7 @@ mod tests {
 
         assert_eq!(
             c.intersect(
-                &dummy_object(),
+                &o,
                 &Ray {
                     origin: Point::new(2.0, 2.0, 0.0),
                     direction: Vector::new(-1.0, 0.0, 0.0)

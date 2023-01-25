@@ -84,16 +84,9 @@ impl Pattern {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        color,
-        shape::{ShapeProps, Sphere},
-    };
+    use crate::{color, shape::Sphere};
 
     use super::*;
-
-    fn test_object() -> Shape {
-        Shape::Sphere(Default::default())
-    }
 
     #[derive(Debug)]
     struct TestPattern(Schema);
@@ -197,7 +190,7 @@ mod tests {
 
     #[test]
     fn stripes_with_a_pattern_transformation() {
-        let o = test_object();
+        let o = Shape::Sphere(Default::default());
 
         let p = Pattern::Stripe(Schema::new(
             color::consts::WHITE,
@@ -251,7 +244,7 @@ mod tests {
 
     #[test]
     fn a_pattern_with_a_pattern_transformation() {
-        let o = test_object();
+        let o = Shape::Sphere(Default::default());
 
         let p = TestPattern(Schema::new(
             color::consts::WHITE,

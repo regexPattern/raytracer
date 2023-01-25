@@ -1,12 +1,13 @@
 use crate::{
     float,
     intersection::Intersection,
+    material::Material,
     ray::Ray,
     transform::Transform,
-    tuple::{Point, Vector}, material::Material,
+    tuple::{Point, Vector},
 };
 
-use super::{Bounds, ShapeProps, Shape};
+use super::{Bounds, Shape, ShapeProps};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Plane(pub(crate) ShapeProps);
@@ -36,7 +37,12 @@ impl Plane {
     pub(crate) fn intersect<'a>(&self, object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
         if !float::approx(ray.direction.0.y, 0.0) {
             let t = -ray.origin.0.y / ray.direction.0.y;
-            vec![Intersection { t, object }]
+            vec![Intersection {
+                t,
+                object,
+                u: None,
+                v: None,
+            }]
         } else {
             vec![]
         }

@@ -238,6 +238,13 @@ mod tests {
 
     #[test]
     fn comparing_tuples() {
+        let t0 = Tuple {
+            x: 1.0,
+            y: 2.0,
+            z: 3.0,
+            w: 4.0,
+        };
+
         let t1 = Tuple {
             x: 1.0,
             y: 2.0,
@@ -246,21 +253,14 @@ mod tests {
         };
 
         let t2 = Tuple {
-            x: 1.0,
-            y: 2.0,
-            z: 3.0,
-            w: 4.0,
-        };
-
-        let t3 = Tuple {
             x: 4.0,
             y: 3.0,
             z: 2.0,
             w: 1.0,
         };
 
-        assert_eq!(t1, t2);
-        assert_ne!(t1, t3);
+        assert_eq!(t0, t1);
+        assert_ne!(t0, t2);
     }
 
     #[test]
@@ -295,14 +295,14 @@ mod tests {
 
     #[test]
     fn adding_two_tuples() {
-        let t1 = Tuple {
+        let t0 = Tuple {
             x: -3.0,
             y: -2.0,
             z: 5.0,
             w: 7.0,
         };
 
-        let t2 = Tuple {
+        let t1 = Tuple {
             x: -2.0,
             y: 3.0,
             z: 1.0,
@@ -310,7 +310,7 @@ mod tests {
         };
 
         assert_eq!(
-            t1 + t2,
+            t0 + t1,
             Tuple {
                 x: -5.0,
                 y: 1.0,
@@ -318,7 +318,7 @@ mod tests {
                 w: 3.0,
             }
         );
-        assert_eq!(t1 + t2, t2 + t1);
+        assert_eq!(t0 + t1, t1 + t0);
     }
 
     #[test]
@@ -332,23 +332,23 @@ mod tests {
 
     #[test]
     fn adding_two_vectors() {
-        let v1 = Vector::new(-3.0, -2.0, 5.0);
-        let v2 = Vector::new(-2.0, 3.0, 1.0);
+        let v0 = Vector::new(-3.0, -2.0, 5.0);
+        let v1 = Vector::new(-2.0, 3.0, 1.0);
 
-        assert_eq!(v1 + v2, Vector::new(-5.0, 1.0, 6.0));
-        assert_eq!(v1 + v2, v2 + v1);
+        assert_eq!(v0 + v1, Vector::new(-5.0, 1.0, 6.0));
+        assert_eq!(v0 + v1, v1 + v0);
     }
 
     #[test]
     fn subtracting_two_tuples() {
-        let t1 = Tuple {
+        let t0 = Tuple {
             x: -3.0,
             y: -2.0,
             z: 5.0,
             w: 7.0,
         };
 
-        let t2 = Tuple {
+        let t1 = Tuple {
             x: -2.0,
             y: 3.0,
             z: 1.0,
@@ -356,7 +356,7 @@ mod tests {
         };
 
         assert_eq!(
-            t1 - t2,
+            t0 - t1,
             Tuple {
                 x: -1.0,
                 y: -5.0,
@@ -368,10 +368,10 @@ mod tests {
 
     #[test]
     fn subtracting_two_points() {
-        let p1 = Point::new(3.0, 2.0, 1.0);
-        let p2 = Point::new(5.0, 6.0, 7.0);
+        let p0 = Point::new(3.0, 2.0, 1.0);
+        let p1 = Point::new(5.0, 6.0, 7.0);
 
-        assert_eq!(p1 - p2, Vector::new(-2.0, -4.0, -6.0));
+        assert_eq!(p0 - p1, Vector::new(-2.0, -4.0, -6.0));
     }
 
     #[test]
@@ -384,10 +384,10 @@ mod tests {
 
     #[test]
     fn subtracting_two_vectors() {
-        let v1 = Vector::new(3.0, 2.0, 1.0);
-        let v2 = Vector::new(5.0, 6.0, 7.0);
+        let v0 = Vector::new(3.0, 2.0, 1.0);
+        let v1 = Vector::new(5.0, 6.0, 7.0);
 
-        assert_eq!(v1 - v2, Vector::new(-2.0, -4.0, -6.0));
+        assert_eq!(v0 - v1, Vector::new(-2.0, -4.0, -6.0));
     }
 
     #[test]
@@ -449,19 +449,19 @@ mod tests {
 
     #[test]
     fn normalizing_non_null_vectors() {
-        let v1 = Vector::new(4.0, 0.0, 0.0);
-        let v2 = Vector::new(1.0, 2.0, 3.0);
+        let v0 = Vector::new(4.0, 0.0, 0.0);
+        let v1 = Vector::new(1.0, 2.0, 3.0);
 
-        assert_eq!(v1.normalize(), Ok(Vector::new(1.0, 0.0, 0.0)));
+        assert_eq!(v0.normalize(), Ok(Vector::new(1.0, 0.0, 0.0)));
         assert_eq!(
-            v2.normalize(),
+            v1.normalize(),
             Ok(Vector::new(
                 1.0 / 14_f64.sqrt(),
                 2.0 / 14_f64.sqrt(),
                 3.0 / 14_f64.sqrt()
             ))
         );
-        assert_approx!(v2.normalize().unwrap().magnitude(), 1.0);
+        assert_approx!(v1.normalize().unwrap().magnitude(), 1.0);
     }
 
     #[test]
@@ -473,23 +473,23 @@ mod tests {
 
     #[test]
     fn the_dot_product_of_two_vectors() {
-        let v1 = Vector::new(1.0, 2.0, 3.0);
-        let v2 = Vector::new(2.0, 3.0, 4.0);
+        let v0 = Vector::new(1.0, 2.0, 3.0);
+        let v1 = Vector::new(2.0, 3.0, 4.0);
 
-        assert_approx!(v1.dot(v2), 20.0);
-        assert_approx!(v1.dot(v2), v2.dot(v1));
+        assert_approx!(v0.dot(v1), 20.0);
+        assert_approx!(v0.dot(v1), v1.dot(v0));
     }
 
     #[test]
     fn the_cross_product_of_two_vectors() {
-        let v1 = Vector::new(1.0, 2.0, 3.0);
-        let v2 = Vector::new(2.0, 3.0, 4.0);
+        let v0 = Vector::new(1.0, 2.0, 3.0);
+        let v1 = Vector::new(2.0, 3.0, 4.0);
         let null = Vector::new(0.0, 0.0, 0.0);
 
-        assert_eq!(v1.cross(v2), Vector::new(-1.0, 2.0, -1.0));
-        assert_eq!(v2.cross(v1), -v1.cross(v2));
-        assert_eq!(v1.cross(v1), null);
-        assert_eq!(v1.cross(null), null);
+        assert_eq!(v0.cross(v1), Vector::new(-1.0, 2.0, -1.0));
+        assert_eq!(v1.cross(v0), -v0.cross(v1));
+        assert_eq!(v0.cross(v0), null);
+        assert_eq!(v0.cross(null), null);
     }
 
     #[test]

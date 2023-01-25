@@ -13,11 +13,11 @@ use raytracer::{
 
 fn main() {
     let light = PointLight {
-        position: Point::new(10.0, 10.0, 10.0),
+        position: Point::new(-30.0, 10.0, 10.0),
         intensity: color::consts::WHITE,
     };
 
-    let obj_file = std::fs::read_to_string("teapot.obj").unwrap();
+    let obj_file = std::fs::read_to_string("cessna.obj").unwrap();
     let model = OBJModel::import(&obj_file).unwrap();
     let mut group = Group::from(model);
     group.divide(300);
@@ -28,11 +28,11 @@ fn main() {
     };
 
     let camera = Camera::try_new(
-        360,
-        640,
+        16 * 30,
+        9 * 30,
         std::f64::consts::FRAC_PI_3,
         Transform::try_view(
-            Point::new(0.0, 3.0, 5.0),
+            Point::new(-40.0, 0.0, 40.0),
             Point::new(0.0, 0.0, 0.0),
             Vector::new(0.0, 1.0, 0.0),
         )

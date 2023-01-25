@@ -1,20 +1,33 @@
 use std::{cell::RefCell, num::NonZeroUsize};
 
 use crate::{
-    shape::{CollinearTriangleSidesError, Group, Shape, Triangle},
-    tuple::Point,
+    shape::{CollinearTriangleSidesError, Group, Shape, SmoothTriangle, Triangle},
+    tuple::{Point, Vector},
 };
-
-#[derive(Debug, PartialEq)]
-pub struct LineInfo<'a> {
-    number: usize,
-    raw_data: &'a str,
-}
 
 #[derive(Debug, PartialEq)]
 pub struct ParsingError<'a> {
     kind: ParsingErrorKind,
     line: LineInfo<'a>,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct OBJModel {
+    groups: Vec<PolygonsGroup>,
+    vertices: Vec<Point>,
+    normals: Vec<Vector>,
+}
+
+#[derive(Debug, PartialEq)]
+struct PolygonsGroup {
+    name: String,
+    group: Group,
+}
+
+#[derive(Copy, Clone, Debug)]
+struct FaceVertex {
+    vertex: Point,
+    normal: Option<Vector>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -26,15 +39,9 @@ pub enum ParsingErrorKind {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct OBJModel {
-    groups: Vec<PolygonsGroup>,
-    vertices: Vec<Point>,
-}
-
-#[derive(Debug, PartialEq)]
-struct PolygonsGroup {
-    name: String,
-    group: Group,
+pub struct LineInfo<'a> {
+    number: usize,
+    raw_data: &'a str,
 }
 
 impl From<CollinearTriangleSidesError> for ParsingErrorKind {
@@ -62,9 +69,11 @@ impl OBJModel {
             group: Default::default(),
         })];
 
-        let mut defined_vertices = vec![];
+        let mut declared_vertices = vec![];
+        let mut declared_normals = vec![];
 
         for (i, line) in text.lines().enumerate() {
+            // Some OBJ files use two spaces for indentation between fields.
             let sanitized = line.replace("  ", " ");
 
             let wrap_parsing_error = |kind| ParsingError {
@@ -76,28 +85,31 @@ impl OBJModel {
             };
 
             if sanitized.starts_with("v ") {
-                defined_vertices.push(parse_vertex(&sanitized).map_err(wrap_parsing_error)?);
+                let (x, y, z) = parse_coordinate(&sanitized).map_err(wrap_parsing_error)?;
+                declared_vertices.push(Point::new(x, y, z));
             } else if sanitized.starts_with("f ") {
-                let polygons = parse_face(&sanitized, &defined_vertices)
-                    .map_err(wrap_parsing_error)?
-                    .into_iter()
-                    .map(Shape::Triangle);
-
-                // There's always going to be at a group. The __default group is always intialized
-                // above in this same function.
-                #[allow(clippy::unwrap_used)]
-                groups
-                    .last()
-                    .unwrap()
-                    .borrow_mut()
-                    .group
-                    .add_children(polygons);
+                // Skip triangles with collinear sides. This issue is usually encountered in file
+                // with polygons with four or more sides.
+                if let Ok(triangles) = parse_face(&sanitized, &declared_vertices, &declared_normals)
+                {
+                    // There's always an available group, starting with the __default one.
+                    #[allow(clippy::unwrap_used)]
+                    groups
+                        .last()
+                        .unwrap()
+                        .borrow_mut()
+                        .group
+                        .add_children(triangles);
+                }
             } else if sanitized.starts_with("g ") {
                 let name = parse_group_name(&sanitized).map_err(wrap_parsing_error)?;
                 groups.push(RefCell::new(PolygonsGroup {
                     name,
                     group: Default::default(),
                 }));
+            } else if sanitized.starts_with("vn") {
+                let (x, y, z) = parse_coordinate(&sanitized).map_err(wrap_parsing_error)?;
+                declared_normals.push(Vector::new(x, y, z));
             }
         }
 
@@ -105,7 +117,8 @@ impl OBJModel {
 
         Ok(Self {
             groups,
-            vertices: defined_vertices,
+            vertices: declared_vertices,
+            normals: declared_normals,
         })
     }
 
@@ -124,53 +137,82 @@ where
         .map_err(|_| ParsingErrorKind::InvalidValue)
 }
 
-fn parse_vertex(sanitized: &str) -> Result<Point, ParsingErrorKind> {
+fn parse_coordinate(sanitized: &str) -> Result<(f64, f64, f64), ParsingErrorKind> {
     let mut split = sanitized.split(' ').skip(1);
 
     let x = parse_value::<f64>(split.next())?;
     let y = parse_value::<f64>(split.next())?;
     let z = parse_value::<f64>(split.next())?;
 
-    Ok(Point::new(x, y, z))
+    Ok((x, y, z))
 }
 
 fn parse_face(
     sanitized: &str,
-    defined_vertices: &[Point],
-) -> Result<Vec<Triangle>, ParsingErrorKind> {
-    if defined_vertices.len() < 3 {
+    declared_vertices: &[Point],
+    declared_normals: &[Vector],
+) -> Result<Vec<Shape>, ParsingErrorKind> {
+    if declared_vertices.len() < 3 {
         return Err(ParsingErrorKind::InsufficientVertices);
     }
 
-    let mut polygon_vertices = vec![];
+    let mut face_vertices = vec![];
     let fields = sanitized.split(' ').skip(1);
 
     for field in fields {
-        let index = parse_value::<NonZeroUsize>(Some(field))?.get() - 1;
-        if let Some(vertex) = defined_vertices.get(index).copied() {
-            polygon_vertices.push(vertex);
+        let mut vertex_data = field.split('/');
+
+        let vertex_index = parse_value::<NonZeroUsize>(vertex_data.nth(0))?.get() - 1;
+        let normal_index = parse_value::<NonZeroUsize>(vertex_data.nth(1))
+            .map(|index| index.get() - 1)
+            .ok();
+
+        if let Some(vertex) = declared_vertices.get(vertex_index).copied() {
+            let normal = match normal_index {
+                Some(index) => declared_normals.get(index).copied(),
+                None => None,
+            };
+
+            face_vertices.push(FaceVertex { vertex, normal });
         }
     }
 
-    fan_triangulation(&polygon_vertices)
+    fan_triangulation(&face_vertices)
 }
 
-fn fan_triangulation(defined_vertices: &[Point]) -> Result<Vec<Triangle>, ParsingErrorKind> {
+fn fan_triangulation(face_vertices: &[FaceVertex]) -> Result<Vec<Shape>, ParsingErrorKind> {
     let mut triangles = vec![];
 
-    for i in 2..defined_vertices.len() {
+    for i in 2..face_vertices.len() {
+        let face_vertices = [face_vertices[0], face_vertices[i - 1], face_vertices[i]];
+        let vertices = (
+            face_vertices[0].vertex,
+            face_vertices[1].vertex,
+            face_vertices[2].vertex,
+        );
+        let normals = [
+            face_vertices[0].normal,
+            face_vertices[1].normal,
+            face_vertices[2].normal,
+        ];
+
         let triangle = Triangle::try_new(
             Default::default(),
             Default::default(),
-            [
-                defined_vertices[0],
-                defined_vertices[i - 1],
-                defined_vertices[i],
-            ],
+            [vertices.0, vertices.1, vertices.2],
         )
         .map_err(|_| ParsingErrorKind::InvalidPolygon)?;
 
-        triangles.push(triangle);
+        if normals.iter().all(|vertex| vertex.is_some()) {
+            triangles.push(Shape::SmoothTriangle(SmoothTriangle {
+                triangle,
+                n0: normals[0].unwrap(),
+                n1: normals[1].unwrap(),
+                n2: normals[2].unwrap(),
+            }));
+        } else {
+            triangles.push(Shape::Triangle(triangle));
+        }
     }
 
     Ok(triangles)
@@ -186,7 +228,7 @@ fn parse_group_name(sanitized: &str) -> Result<String, ParsingErrorKind> {
 
 #[cfg(test)]
 mod tests {
-    use crate::assert_approx;
+    use crate::{assert_approx, shape::SmoothTriangle};
 
     use super::*;
 
@@ -214,12 +256,14 @@ mod tests {
     }
 
     #[test]
-    fn parsing_a_point() {
-        let point = super::parse_vertex("v 10.5 -1 0").unwrap();
-        let invalid_value = super::parse_vertex("v 1 @ 3");
-        let missing_value = super::parse_vertex("v 1 2");
+    fn parsing_a_coordinate() {
+        let point = super::parse_coordinate("v 10.5 -1 0").unwrap();
+        let invalid_value = super::parse_coordinate("v 1 @ 3");
+        let missing_value = super::parse_coordinate("v 1 2");
 
+        let point = Point::new(point.0, point.1, point.2);
         assert_eq!(point, Point::new(10.5, -1.0, 0.0));
+
         assert_eq!(invalid_value, Err(ParsingErrorKind::InvalidValue));
         assert_eq!(missing_value, Err(ParsingErrorKind::MissingValue));
     }
@@ -256,20 +300,22 @@ v 1 1 0";
             Point::new(-1.0, -2.0, 3.0),
         ];
 
-        let polygon = super::parse_face("f 1 2 3", &defined_vertices).unwrap();
+        let polygon = super::parse_face("f 1 2 3", &defined_vertices, &[]).unwrap();
 
         assert_eq!(
             polygon[0],
-            Triangle::try_new(
-                Default::default(),
-                Default::default(),
-                [
-                    defined_vertices[0],
-                    defined_vertices[1],
-                    defined_vertices[2]
-                ]
+            Shape::Triangle(
+                Triangle::try_new(
+                    Default::default(),
+                    Default::default(),
+                    [
+                        defined_vertices[0],
+                        defined_vertices[1],
+                        defined_vertices[2]
+                    ]
+                )
+                .unwrap()
             )
-            .unwrap()
         );
     }
 
@@ -325,7 +371,7 @@ f 1 3 4";
         ];
 
         assert_eq!(
-            super::parse_face("f 1 2 3", &defined_vertices),
+            super::parse_face("f 1 2 3", &defined_vertices, &[]),
             Err(ParsingErrorKind::InvalidPolygon)
         );
     }
@@ -335,7 +381,7 @@ f 1 3 4";
         let defined_vertices = [Point::new(1.0, 1.0, 1.0), Point::new(2.0, 2.0, 2.0)];
 
         assert_eq!(
-            super::parse_face("f 1 2 3", &defined_vertices),
+            super::parse_face("f 1 2 3", &defined_vertices, &[]),
             Err(ParsingErrorKind::InsufficientVertices)
         );
     }
@@ -484,5 +530,57 @@ f 1 2 4";
 
         assert!(g.children.contains(&first_group));
         assert!(g.children.contains(&second_group));
+    }
+
+    #[test]
+    fn vertex_normal_records() {
+        let input = r"\
+vn 0 0 1
+vn 0.707 0 -0.707
+vn 1 2 3";
+
+        let model = OBJModel::import(&input).unwrap();
+
+        assert_eq!(model.normals[0], Vector::new(0.0, 0.0, 1.0));
+        assert_eq!(model.normals[1], Vector::new(0.707, 0.0, -0.707));
+        assert_eq!(model.normals[2], Vector::new(1.0, 2.0, 3.0));
+    }
+
+    #[test]
+    fn faces_with_normals() {
+        let input = r"\
+v 0 1 0
+v -1 0 0
+v 1 0 0
+
+vn -1 0 0
+vn 1 0 0
+vn 0 1 0
+
+f 1//3 2//1 3//2
+f 1/0/3 2/102/1 3/14/2";
+
+        let model = OBJModel::import(&input).unwrap();
+
+        let default_group = &model.groups[0];
+        let t0 = &default_group.group.children[0];
+        let t1 = &default_group.group.children[1];
+
+        assert_eq!(
+            t0,
+            &Shape::SmoothTriangle(SmoothTriangle {
+                triangle: Triangle::try_new(
+                    Default::default(),
+                    Default::default(),
+                    [model.vertices[0], model.vertices[1], model.vertices[2],]
+                )
+                .unwrap(),
+                n0: model.normals[2],
+                n1: model.normals[0],
+                n2: model.normals[1],
+            })
+        );
+
+        assert_eq!(t1, t0);
     }
 }
