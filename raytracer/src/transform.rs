@@ -10,7 +10,7 @@ use crate::{
 };
 
 #[derive(Copy, Clone, Debug, PartialEq, Deserialize)]
-#[serde(try_from = "Deserializer")]
+#[serde(try_from = "TransformDeserializer")]
 pub struct Transform(Matrix<4, 4>);
 
 #[derive(Debug, PartialEq, Error)]
@@ -49,7 +49,7 @@ pub enum AntiIsomorphicTransformError {
 #[derive(Debug, PartialEq, Deserialize)]
 #[serde(rename_all(deserialize = "snake_case"))]
 #[serde(tag = "type")]
-enum Deserializer {
+enum TransformDeserializer {
     Translation {
         x: f64,
         y: f64,
@@ -90,17 +90,17 @@ enum Deserializer {
     },
 }
 
-impl TryFrom<Deserializer> for Transform {
+impl TryFrom<TransformDeserializer> for Transform {
     type Error = AntiIsomorphicTransformError;
 
-    fn try_from(value: Deserializer) -> Result<Self, Self::Error> {
+    fn try_from(value: TransformDeserializer) -> Result<Self, Self::Error> {
         Ok(match value {
-            Deserializer::Translation { x, y, z } => Self::translation(x, y, z),
-            Deserializer::Scaling { x, y, z } => Self::scaling(x, y, z)?,
-            Deserializer::RotationX { degrees } => Self::rotation_x(degrees.to_radians()),
-            Deserializer::RotationY { degrees } => Self::rotation_y(degrees.to_radians()),
-            Deserializer::RotationZ { degrees } => Self::rotation_z(degrees.to_radians()),
-            Deserializer::Shearing {
+            TransformDeserializer::Translation { x, y, z } => Self::translation(x, y, z),
+            TransformDeserializer::Scaling { x, y, z } => Self::scaling(x, y, z)?,
+            TransformDeserializer::RotationX { degrees } => Self::rotation_x(degrees.to_radians()),
+            TransformDeserializer::RotationY { degrees } => Self::rotation_y(degrees.to_radians()),
+            TransformDeserializer::RotationZ { degrees } => Self::rotation_z(degrees.to_radians()),
+            TransformDeserializer::Shearing {
                 xy,
                 xz,
                 yx,
@@ -108,7 +108,7 @@ impl TryFrom<Deserializer> for Transform {
                 zx,
                 zy,
             } => Self::shearing(xy, xz, yx, yz, zx, zy)?,
-            Deserializer::View { from, to, up } => Self::view(from, to, up)?,
+            TransformDeserializer::View { from, to, up } => Self::view(from, to, up)?,
         })
     }
 }
@@ -628,7 +628,7 @@ mod tests {
     fn deserializing_a_translation_transformation() {
         let tokens = [
             Token::Struct {
-                name: "Deserializer",
+                name: "TransformDeserializer",
                 len: 4,
             },
             Token::Str("type"),
@@ -643,7 +643,7 @@ mod tests {
         ];
 
         assert_de_tokens(
-            &Deserializer::Translation {
+            &TransformDeserializer::Translation {
                 x: 1.0,
                 y: -3.0,
                 z: 0.25,
@@ -658,7 +658,7 @@ mod tests {
     fn deserializing_a_scaling_transformation() {
         let tokens = [
             Token::Struct {
-                name: "Deserializer",
+                name: "TransformDeserializer",
                 len: 4,
             },
             Token::Str("type"),
@@ -673,7 +673,7 @@ mod tests {
         ];
 
         assert_de_tokens(
-            &Deserializer::Scaling {
+            &TransformDeserializer::Scaling {
                 x: 1.0,
                 y: -3.0,
                 z: 0.25,
@@ -689,7 +689,7 @@ mod tests {
         assert_de_tokens_error::<Transform>(
             &[
                 Token::Struct {
-                    name: "Deserializer",
+                    name: "TransformDeserializer",
                     len: 4,
                 },
                 Token::Str("type"),
@@ -710,7 +710,7 @@ mod tests {
     fn deserializing_a_rotation_x_transformation() {
         let tokens = [
             Token::Struct {
-                name: "Deserializer",
+                name: "TransformDeserializer",
                 len: 2,
             },
             Token::Str("type"),
@@ -720,7 +720,7 @@ mod tests {
             Token::StructEnd,
         ];
 
-        assert_de_tokens(&Deserializer::RotationX { degrees: 60.0 }, &tokens);
+        assert_de_tokens(&TransformDeserializer::RotationX { degrees: 60.0 }, &tokens);
         assert_de_tokens(&Transform::rotation_x(std::f64::consts::FRAC_PI_3), &tokens);
     }
 
@@ -728,7 +728,7 @@ mod tests {
     fn deserializing_a_rotation_y_transformation() {
         let tokens = [
             Token::Struct {
-                name: "Deserializer",
+                name: "TransformDeserializer",
                 len: 2,
             },
             Token::Str("type"),
@@ -738,7 +738,10 @@ mod tests {
             Token::StructEnd,
         ];
 
-        assert_de_tokens(&Deserializer::RotationY { degrees: 120.0 }, &tokens);
+        assert_de_tokens(
+            &TransformDeserializer::RotationY { degrees: 120.0 },
+            &tokens,
+        );
         assert_de_tokens(&Transform::rotation_y(120_f64.to_radians()), &tokens);
     }
 
@@ -746,7 +749,7 @@ mod tests {
     fn deserializing_a_rotation_z_transformation() {
         let tokens = [
             Token::Struct {
-                name: "Deserializer",
+                name: "TransformDeserializer",
                 len: 2,
             },
             Token::Str("type"),
@@ -756,7 +759,10 @@ mod tests {
             Token::StructEnd,
         ];
 
-        assert_de_tokens(&Deserializer::RotationZ { degrees: 720.0 }, &tokens);
+        assert_de_tokens(
+            &TransformDeserializer::RotationZ { degrees: 720.0 },
+            &tokens,
+        );
         assert_de_tokens(&Transform::rotation_z(720_f64.to_radians()), &tokens);
     }
 
@@ -764,7 +770,7 @@ mod tests {
     fn deserializing_a_shearing_transformation() {
         let tokens = [
             Token::Struct {
-                name: "Deserializer",
+                name: "TransformDeserializer",
                 len: 7,
             },
             Token::Str("type"),
@@ -785,7 +791,7 @@ mod tests {
         ];
 
         assert_de_tokens(
-            &Deserializer::Shearing {
+            &TransformDeserializer::Shearing {
                 xy: 1.0,
                 xz: -4.25,
                 yx: 0.0,
@@ -812,7 +818,7 @@ mod tests {
         assert_de_tokens_error::<Transform>(
             &[
                 Token::Struct {
-                    name: "Deserializer",
+                    name: "TransformDeserializer",
                     len: 7,
                 },
                 Token::Str("type"),
@@ -843,7 +849,7 @@ mod tests {
 
         let tokens = [
             Token::Struct {
-                name: "Deserializer",
+                name: "TransformDeserializer",
                 len: 4,
             },
             Token::Str("type"),
@@ -890,7 +896,7 @@ mod tests {
             Token::StructEnd,
         ];
 
-        assert_de_tokens(&Deserializer::View { from, to, up }, &tokens);
+        assert_de_tokens(&TransformDeserializer::View { from, to, up }, &tokens);
         assert_de_tokens(&Transform::view(from, to, up).unwrap(), &tokens);
     }
 
@@ -903,7 +909,7 @@ mod tests {
         assert_de_tokens_error::<Transform>(
             &[
                 Token::Struct {
-                    name: "Deserializer",
+                    name: "TransformDeserializer",
                     len: 4,
                 },
                 Token::Str("type"),

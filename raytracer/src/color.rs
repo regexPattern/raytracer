@@ -1,5 +1,7 @@
 use std::ops::{Add, Mul, Sub};
 
+use serde::Deserialize;
+
 use crate::float;
 
 pub mod consts {
@@ -48,11 +50,19 @@ pub mod consts {
     };
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Deserialize)]
+#[serde(from = "ColorDeserializer")]
 pub struct Color {
     pub red: f64,
     pub green: f64,
     pub blue: f64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ColorDeserializer {
+    red: u8,
+    green: u8,
+    blue: u8,
 }
 
 impl PartialEq for Color {
@@ -60,6 +70,16 @@ impl PartialEq for Color {
         float::approx(self.red, other.red)
             && float::approx(self.green, other.green)
             && float::approx(self.blue, other.blue)
+    }
+}
+
+impl From<ColorDeserializer> for Color {
+    fn from(value: ColorDeserializer) -> Self {
+        let red = f64::from(value.red) / 255.0;
+        let green = f64::from(value.green) / 255.0;
+        let blue = f64::from(value.blue) / 255.0;
+
+        Self { red, green, blue }
     }
 }
 
@@ -121,6 +141,8 @@ impl Mul for Color {
 
 #[cfg(test)]
 mod tests {
+    use serde_test::{assert_de_tokens, Token};
+
     use super::*;
 
     use crate::assert_approx;
@@ -228,5 +250,29 @@ mod tests {
             }
         );
         assert_eq!(c0 * c1, c1 * c0);
+    }
+
+    #[test]
+    fn deserializing_a_color() {
+        assert_de_tokens(
+            &Color {
+                red: 0.0,
+                green: 0.49803,
+                blue: 1.0,
+            },
+            &[
+                Token::Struct {
+                    name: "ColorDeserializer",
+                    len: 3,
+                },
+                Token::Str("red"),
+                Token::U8(0),
+                Token::Str("green"),
+                Token::U8(127),
+                Token::Str("blue"),
+                Token::U8(255),
+                Token::StructEnd,
+            ],
+        );
     }
 }

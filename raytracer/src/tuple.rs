@@ -17,11 +17,11 @@ pub struct Tuple {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Deserialize)]
-#[serde(from = "Deserializer")]
+#[serde(from = "CoordinateDeserializer")]
 pub struct Point(pub Tuple);
 
 #[derive(Copy, Clone, Debug, PartialEq, Deserialize)]
-#[serde(from = "Deserializer")]
+#[serde(from = "CoordinateDeserializer")]
 pub struct Vector(pub Tuple);
 
 #[derive(Debug, PartialEq, Eq, Error)]
@@ -36,20 +36,20 @@ pub struct DivisionByZeroError;
 // Note that `PartialEq` is being used here. I don't really care about comparing this type beyoond
 // the tests, so floating point comparission doesn't matter here. #[derive(Debug, PartialEq)]
 #[derive(Debug, PartialEq, Deserialize)]
-struct Deserializer {
+struct CoordinateDeserializer {
     x: f64,
     y: f64,
     z: f64,
 }
 
-impl From<Deserializer> for Point {
-    fn from(value: Deserializer) -> Self {
+impl From<CoordinateDeserializer> for Point {
+    fn from(value: CoordinateDeserializer) -> Self {
         Point::new(value.x, value.y, value.z)
     }
 }
 
-impl From<Deserializer> for Vector {
-    fn from(value: Deserializer) -> Self {
+impl From<CoordinateDeserializer> for Vector {
+    fn from(value: CoordinateDeserializer) -> Self {
         Vector::new(value.x, value.y, value.z)
     }
 }
@@ -545,39 +545,41 @@ mod tests {
 
     #[test]
     fn deserializing_a_point() {
-        let tokens = [
-            Token::Struct {
-                name: "Deserializer",
-                len: 3,
-            },
-            Token::Str("x"),
-            Token::F64(1.0),
-            Token::Str("y"),
-            Token::F64(-4.25),
-            Token::Str("z"),
-            Token::F64(0.001),
-            Token::StructEnd,
-        ];
-
-        assert_de_tokens(&Point::new(1.0, -4.25, 0.001), &tokens);
+        assert_de_tokens(
+            &Point::new(1.0, -4.25, 0.001),
+            &[
+                Token::Struct {
+                    name: "CoordinateDeserializer",
+                    len: 3,
+                },
+                Token::Str("x"),
+                Token::F64(1.0),
+                Token::Str("y"),
+                Token::F64(-4.25),
+                Token::Str("z"),
+                Token::F64(0.001),
+                Token::StructEnd,
+            ],
+        );
     }
 
     #[test]
     fn deserializing_a_vector() {
-        let tokens = [
-            Token::Struct {
-                name: "Deserializer",
-                len: 3,
-            },
-            Token::Str("x"),
-            Token::F64(1.0),
-            Token::Str("y"),
-            Token::F64(-4.25),
-            Token::Str("z"),
-            Token::F64(0.001),
-            Token::StructEnd,
-        ];
-
-        assert_de_tokens(&Vector::new(1.0, -4.25, 0.001), &tokens);
+        assert_de_tokens(
+            &Vector::new(1.0, -4.25, 0.001),
+            &[
+                Token::Struct {
+                    name: "CoordinateDeserializer",
+                    len: 3,
+                },
+                Token::Str("x"),
+                Token::F64(1.0),
+                Token::Str("y"),
+                Token::F64(-4.25),
+                Token::Str("z"),
+                Token::F64(0.001),
+                Token::StructEnd,
+            ],
+        );
     }
 }
