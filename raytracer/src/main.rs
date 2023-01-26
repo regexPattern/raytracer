@@ -1,47 +1,45 @@
 #![allow(unused, dead_code)]
 
+use std::str::FromStr;
+
 use raytracer::{
-    camera::Camera,
+    camera::{Camera, RenderProgress},
     color,
     light::PointLight,
-    shape::{Cylinder, Group, Shape, ShapeProps, Triangle},
-    transform::Transform,
-    tuple::{Point, Vector},
     obj_model::OBJModel,
+    shape::{Group, Shape},
+    transform::Transform,
+    tuple::Point,
     world::World,
 };
 
 fn main() {
+    let content = std::fs::read_to_string("dragon.obj").unwrap();
+    let model = OBJModel::from_str(&content).unwrap();
+    let mut group = Group::from(model);
+
+    group.divide(500);
+
+    let group = Shape::Group(group);
+
     let light = PointLight {
-        position: Point::new(-30.0, 10.0, 10.0),
+        position: Point::new(10.0, 10.0, 10.0),
         intensity: color::consts::WHITE,
     };
 
-    let obj_file = std::fs::read_to_string("cessna.obj").unwrap();
-    let model = OBJModel::import(&obj_file).unwrap();
-    let mut group = Group::from(model);
-    group.divide(300);
-
     let world = World {
-        objects: vec![Shape::Group(group)],
+        objects: vec![group],
         lights: vec![light],
     };
 
     let camera = Camera::try_new(
-        16 * 30,
-        9 * 30,
+        500,
+        500,
         std::f64::consts::FRAC_PI_3,
-        Transform::try_view(
-            Point::new(-40.0, 0.0, 40.0),
-            Point::new(0.0, 0.0, 0.0),
-            Vector::new(0.0, 1.0, 0.0),
-        )
-        .unwrap(),
+        Transform::translation(0.0, 0.0, -20.0),
     )
     .unwrap();
 
-    let image = camera
-        .render(&world, raytracer::camera::RenderProgress::Enable)
-        .to_image();
+    let image = camera.render(&world, RenderProgress::Enable).to_image();
     image.save("image.png").unwrap();
 }

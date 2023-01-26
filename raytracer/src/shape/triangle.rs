@@ -57,6 +57,10 @@ impl Triangle {
         })
     }
 
+    pub fn try_default(vertices: [Point; 3]) -> Result<Self, CollinearTriangleSidesError> {
+        Self::try_new(Default::default(), Default::default(), vertices)
+    }
+
     pub(crate) fn intersect<'a>(&self, object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
         let dir_cross_e1 = ray.direction.cross(self.e1);
         let det = self.e0.dot(dir_cross_e1);
