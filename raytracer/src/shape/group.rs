@@ -57,14 +57,6 @@ impl Group {
         intersections
     }
 
-    pub fn update_transform(&mut self, transform: Transform) {
-        self.props.transform = transform;
-        for child in &mut self.children {
-            transform_recursive(child, transform * child.as_ref().transform);
-        }
-        self.adjust_bounds();
-    }
-
     fn adjust_bounds(&mut self) {
         let mut local_bounds = Bounds::default();
         for child in &self.children {
@@ -76,27 +68,24 @@ impl Group {
         self.props.world_bounds = local_bounds.transform(self.props.transform);
     }
 
-    pub fn add_child(&mut self, mut child: Shape) {
+    pub fn push(&mut self, mut child: Shape) {
         transform_recursive(&mut child, self.props.transform);
         self.children.push(child);
         self.adjust_bounds();
     }
 
-    pub fn add_children<T>(&mut self, children: T)
+    pub fn extend<T>(&mut self, children: T)
     where
         T: IntoIterator<Item = Shape>,
     {
-        for child in children {
-            self.add_child(child);
+        // This doesn't call `push()` internally because the bounds doesn't need to be recomputed
+        // after pushing each individual child. It's more efficient to adjust them after all new
+        // childs have been added.
+        for mut child in children {
+            transform_recursive(&mut child, self.props.transform);
+            self.children.push(child);
         }
-    }
-
-    pub fn add_subgroup<T>(&mut self, subgroup: T)
-    where
-        T: Into<Vec<Shape>>,
-    {
-        let subgroup = Self::new(subgroup, Default::default());
-        self.add_child(Shape::Group(subgroup))
+        self.adjust_bounds();
     }
 
     pub fn partition_children(&mut self) -> (Vec<Shape>, Vec<Shape>) {
@@ -127,11 +116,11 @@ impl Group {
             let (left, right) = self.partition_children();
 
             if !left.is_empty() {
-                self.add_subgroup(left);
+                self.push(Shape::Group(Group::new(left, Default::default())));
             }
 
             if !right.is_empty() {
-                self.add_subgroup(right);
+                self.push(Shape::Group(Group::new(right, Default::default())));
             }
         }
 
@@ -222,7 +211,7 @@ mod tests {
             Transform::translation(5.0, 0.0, 0.0),
         ));
 
-        let g = Group::new([s], Transform::try_scaling(2.0, 2.0, 2.0).unwrap());
+        let g = Group::new([s], Transform::scaling(2.0, 2.0, 2.0).unwrap());
 
         let r = Ray {
             origin: Point::new(10.0, 0.0, -10.0),
@@ -238,7 +227,7 @@ mod tests {
     fn a_group_applies_its_transformation_to_its_children() {
         let sphere_transform = Transform::translation(2.0, 2.0, 2.0);
         let subgroup_transform = Transform::rotation_y(std::f64::consts::FRAC_PI_3);
-        let group_transform = Transform::try_scaling(4.0, 4.0, 4.0).unwrap();
+        let group_transform = Transform::scaling(4.0, 4.0, 4.0).unwrap();
 
         let s = Shape::Sphere(Sphere::new(Default::default(), sphere_transform));
 
@@ -258,13 +247,12 @@ mod tests {
     fn a_group_has_a_bounding_box_that_contains_its_children() {
         let s = Shape::Sphere(Sphere::new(
             Default::default(),
-            Transform::translation(2.0, 5.0, -3.0) * Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
+            Transform::translation(2.0, 5.0, -3.0) * Transform::scaling(2.0, 2.0, 2.0).unwrap(),
         ));
 
         let c = Shape::Cylinder(Cylinder::new(
             Default::default(),
-            Transform::translation(-4.0, -1.0, 4.0)
-                * Transform::try_scaling(0.5, 1.0, 0.5).unwrap(),
+            Transform::translation(-4.0, -1.0, 4.0) * Transform::scaling(0.5, 1.0, 0.5).unwrap(),
             -2.0,
             2.0,
             false,
@@ -330,22 +318,6 @@ mod tests {
     }
 
     #[test]
-    fn creating_a_subgroup_from_a_list_of_children() {
-        let s0 = Shape::Sphere(Default::default());
-        let s1 = Shape::Cube(Default::default());
-
-        let mut g = Group::default();
-
-        g.add_subgroup([s0.clone(), s1.clone()]);
-
-        assert_eq!(g.children.len(), 1);
-        assert_eq!(
-            g.children[0],
-            Shape::Group(Group::new([s0, s1], Default::default()))
-        );
-    }
-
-    #[test]
     fn subdividing_a_group_partitions_its_children() {
         let s0 = Shape::Sphere(Sphere::new(
             Default::default(),
@@ -359,7 +331,7 @@ mod tests {
 
         let s2 = Shape::Sphere(Sphere::new(
             Default::default(),
-            Transform::try_scaling(4.0, 4.0, 4.0).unwrap(),
+            Transform::scaling(4.0, 4.0, 4.0).unwrap(),
         ));
 
         let mut g = Group::new([s0, s1, s2], Default::default());

@@ -163,7 +163,7 @@ mod tests {
         };
 
         let mut s = TestObject {
-            transform: Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
+            transform: Transform::scaling(2.0, 2.0, 2.0).unwrap(),
             saved_ray: None,
         };
 
@@ -216,7 +216,7 @@ mod tests {
     #[test]
     fn computing_the_normal_on_a_transformed_object() {
         let o = TestObject {
-            transform: Transform::try_scaling(1.0, 0.5, 1.0).unwrap()
+            transform: Transform::scaling(1.0, 0.5, 1.0).unwrap()
                 * Transform::rotation_z(std::f64::consts::PI / 5.0),
             saved_ray: None,
         };
@@ -233,7 +233,7 @@ mod tests {
             Transform::translation(5.0, 0.0, 0.0),
         ));
 
-        let g1 = Group::new([s], Transform::try_scaling(1.0, 2.0, 3.0).unwrap());
+        let g1 = Group::new([s], Transform::scaling(1.0, 2.0, 3.0).unwrap());
 
         let g0 = Group::new(
             [Shape::Group(g1)],
@@ -259,7 +259,7 @@ mod tests {
     fn querying_a_shapess_bounding_box_in_its_parents_space() {
         let s = Shape::Sphere(Sphere::new(
             Default::default(),
-            Transform::translation(1.0, -3.0, 5.0) * Transform::try_scaling(0.5, 2.0, 4.0).unwrap(),
+            Transform::translation(1.0, -3.0, 5.0) * Transform::scaling(0.5, 2.0, 4.0).unwrap(),
         ));
 
         let bounds = s.as_ref().world_bounds;

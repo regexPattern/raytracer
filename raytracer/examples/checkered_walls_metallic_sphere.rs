@@ -48,7 +48,7 @@ fn main() {
             pattern: Pattern::Solid(color::consts::RED),
             ..Default::default()
         },
-        Transform::translation(4.0, 0.5, -6.0) * Transform::try_scaling(0.5, 0.5, 0.5).unwrap(),
+        Transform::translation(4.0, 0.5, -6.0) * Transform::scaling(0.5, 0.5, 0.5).unwrap(),
     ));
 
     let blue_sphere = Shape::Sphere(Sphere::new(
@@ -60,7 +60,7 @@ fn main() {
             }),
             ..Default::default()
         },
-        Transform::translation(6.0, 0.25, -4.5) * Transform::try_scaling(0.25, 0.25, 0.25).unwrap(),
+        Transform::translation(6.0, 0.25, -4.5) * Transform::scaling(0.25, 0.25, 0.25).unwrap(),
     ));
 
     let light = PointLight {
@@ -80,11 +80,11 @@ fn main() {
         lights: vec![light],
     };
 
-    let camera = Camera::try_new(
+    let camera = Camera::new(
         1280,
         720,
         std::f64::consts::FRAC_PI_3,
-        Transform::try_view(
+        Transform::view(
             Point::new(10.0, 3.0, -10.0),
             Point::new(0.0, 0.0, 0.0),
             Vector::new(0.0, 1.0, 0.0),

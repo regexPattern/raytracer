@@ -92,7 +92,7 @@ impl FromStr for OBJModel {
                 // There's always going to be a valid group in the group's queue, as it always
                 // contains at least the "__default" group.
                 #[allow(clippy::unwrap_used)]
-                groups.last_mut().unwrap().group.add_children(face);
+                groups.last_mut().unwrap().group.extend(face);
             } else if line.starts_with("g ") {
                 groups.push(parse_group(line).map_err(propagate_line_err)?);
             } else if line.starts_with("vn") {

@@ -72,7 +72,7 @@ mod tests {
             direction: Vector::new(0.0, 1.0, 0.0),
         };
 
-        let t = Transform::try_scaling(2.0, 3.0, 4.0).unwrap();
+        let t = Transform::scaling(2.0, 3.0, 4.0).unwrap();
 
         let r = r.transform(t);
 

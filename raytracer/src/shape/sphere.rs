@@ -6,7 +6,7 @@ use crate::{
     tuple::{Point, Vector},
 };
 
-use super::{Bounds, Shape, ShapeProps};
+use super::{Bounds, ShapeProps, Shape};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Sphere(pub(crate) ShapeProps);
@@ -50,18 +50,8 @@ impl Sphere {
         let t1 = (-b + discriminant.sqrt()) / (2.0 * a);
 
         vec![
-            Intersection {
-                t: t0,
-                object,
-                u: None,
-                v: None,
-            },
-            Intersection {
-                t: t1,
-                object,
-                u: None,
-                v: None,
-            },
+            Intersection { t: t0, object, u: None, v: None },
+            Intersection { t: t1, object, u: None, v: None },
         ]
     }
 

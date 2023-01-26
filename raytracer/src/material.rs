@@ -1,3 +1,5 @@
+use thiserror::Error;
+
 use crate::{
     color::{self, Color},
     float,
@@ -14,7 +16,8 @@ pub mod consts {
     pub const GLASS_INDEX_OF_REFRACTION: f64 = 1.52;
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Error)]
+#[error("light positioned over an object's surface")]
 pub struct LightOnTheSurfaceError;
 
 #[derive(Clone, Debug)]

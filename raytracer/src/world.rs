@@ -129,7 +129,7 @@ impl World {
 }
 
 #[cfg(test)]
-pub fn test_world() -> World {
+pub(crate) fn test_world() -> World {
     use crate::{material::Material, pattern::Pattern, shape::Sphere, transform::Transform};
 
     let light = PointLight {
@@ -153,7 +153,7 @@ pub fn test_world() -> World {
 
     let s1 = Shape::Sphere(Sphere::new(
         Default::default(),
-        Transform::try_scaling(0.5, 0.5, 0.5).unwrap(),
+        Transform::scaling(0.5, 0.5, 0.5).unwrap(),
     ));
 
     World {

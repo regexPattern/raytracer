@@ -174,7 +174,7 @@ mod tests {
     fn stripes_with_object_transform() {
         let o = Shape::Sphere(Sphere::new(
             Default::default(),
-            Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
+            Transform::scaling(2.0, 2.0, 2.0).unwrap(),
         ));
 
         let p = Pattern::Stripe(Schema::new(
@@ -195,7 +195,7 @@ mod tests {
         let p = Pattern::Stripe(Schema::new(
             color::consts::WHITE,
             color::consts::BLACK,
-            Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
+            Transform::scaling(2.0, 2.0, 2.0).unwrap(),
         ));
 
         let c = p.color_at_object(&o, Point::new(1.5, 0.0, 0.0));
@@ -207,7 +207,7 @@ mod tests {
     fn stripes_with_both_an_object_and_a_pattern_transformation() {
         let o = Shape::Sphere(Sphere::new(
             Default::default(),
-            Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
+            Transform::scaling(2.0, 2.0, 2.0).unwrap(),
         ));
 
         let p = Pattern::Stripe(Schema::new(
@@ -225,7 +225,7 @@ mod tests {
     fn a_pattern_with_an_object_transformation() {
         let o = Shape::Sphere(Sphere::new(
             Default::default(),
-            Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
+            Transform::scaling(2.0, 2.0, 2.0).unwrap(),
         ));
 
         let p = TestPattern::default();
@@ -249,7 +249,7 @@ mod tests {
         let p = TestPattern(Schema::new(
             color::consts::WHITE,
             color::consts::BLACK,
-            Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
+            Transform::scaling(2.0, 2.0, 2.0).unwrap(),
         ));
 
         let c = p.color_at_object(&o, Point::new(2.0, 3.0, 4.0));
@@ -268,7 +268,7 @@ mod tests {
     fn a_pattern_with_both_an_object_and_a_pattern_transformation() {
         let o = Shape::Sphere(Sphere::new(
             Default::default(),
-            Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
+            Transform::scaling(2.0, 2.0, 2.0).unwrap(),
         ));
 
         let p = TestPattern(Schema::new(

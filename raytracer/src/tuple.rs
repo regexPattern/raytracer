@@ -1,15 +1,12 @@
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
+use serde::Deserialize;
+use thiserror::Error;
+
 use crate::float;
 
 const POINT_W: f64 = 1.0;
 const VECTOR_W: f64 = 0.0;
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct NormalizeNullVectorError;
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct DivisionByZeroError;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Tuple {
@@ -19,11 +16,43 @@ pub struct Tuple {
     pub w: f64,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Deserialize)]
+#[serde(from = "Deserializer")]
 pub struct Point(pub Tuple);
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Deserialize)]
+#[serde(from = "Deserializer")]
 pub struct Vector(pub Tuple);
+
+#[derive(Debug, PartialEq, Eq, Error)]
+#[error("tried to normalize a null vector")]
+pub struct NormalizeNullVectorError;
+
+#[derive(Debug, PartialEq, Eq, Error)]
+#[error("division by zero")]
+pub struct DivisionByZeroError;
+
+// Helper struct to deserialize `Point` and `Vector` without exposing `Tuple`'s private fields.
+// Note that `PartialEq` is being used here. I don't really care about comparing this type beyoond
+// the tests, so floating point comparission doesn't matter here. #[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Deserialize)]
+struct Deserializer {
+    x: f64,
+    y: f64,
+    z: f64,
+}
+
+impl From<Deserializer> for Point {
+    fn from(value: Deserializer) -> Self {
+        Point::new(value.x, value.y, value.z)
+    }
+}
+
+impl From<Deserializer> for Vector {
+    fn from(value: Deserializer) -> Self {
+        Vector::new(value.x, value.y, value.z)
+    }
+}
 
 impl PartialEq for Tuple {
     fn eq(&self, other: &Self) -> bool {
@@ -188,6 +217,8 @@ impl Div<f64> for Vector {
 
 #[cfg(test)]
 mod tests {
+    use serde_test::{assert_de_tokens, Token};
+
     use crate::assert_approx;
 
     use super::*;
@@ -510,5 +541,43 @@ mod tests {
         let r = v.reflect(n);
 
         assert_eq!(r, Vector::new(1.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn deserializing_a_point() {
+        let tokens = [
+            Token::Struct {
+                name: "Deserializer",
+                len: 3,
+            },
+            Token::Str("x"),
+            Token::F64(1.0),
+            Token::Str("y"),
+            Token::F64(-4.25),
+            Token::Str("z"),
+            Token::F64(0.001),
+            Token::StructEnd,
+        ];
+
+        assert_de_tokens(&Point::new(1.0, -4.25, 0.001), &tokens);
+    }
+
+    #[test]
+    fn deserializing_a_vector() {
+        let tokens = [
+            Token::Struct {
+                name: "Deserializer",
+                len: 3,
+            },
+            Token::Str("x"),
+            Token::F64(1.0),
+            Token::Str("y"),
+            Token::F64(-4.25),
+            Token::Str("z"),
+            Token::F64(0.001),
+            Token::StructEnd,
+        ];
+
+        assert_de_tokens(&Vector::new(1.0, -4.25, 0.001), &tokens);
     }
 }

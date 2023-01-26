@@ -1,5 +1,7 @@
 use std::ops::{Index, IndexMut, Mul};
 
+use thiserror::Error;
+
 use crate::{float, tuple::Tuple};
 
 pub mod consts {
@@ -13,11 +15,12 @@ pub mod consts {
     ]);
 }
 
-#[derive(Debug, PartialEq)]
-pub struct NonInvertibleMatrixError;
-
 #[derive(Copy, Clone, Debug)]
 pub struct Matrix<const M: usize, const N: usize>(pub [[f64; N]; M]);
+
+#[derive(Debug, PartialEq, Error)]
+#[error("tried to inverse a singular matrix")]
+pub struct NonInvertibleMatrixError;
 
 impl<const M: usize, const N: usize> PartialEq for Matrix<M, N> {
     fn eq(&self, other: &Self) -> bool {

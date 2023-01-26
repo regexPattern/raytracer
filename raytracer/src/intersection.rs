@@ -463,7 +463,7 @@ mod tests {
                 index_of_refraction: 1.5,
                 ..glass_material()
             },
-            Transform::try_scaling(2.0, 2.0, 2.0).unwrap(),
+            Transform::scaling(2.0, 2.0, 2.0).unwrap(),
         ));
 
         let b = Shape::Sphere(Sphere::new(
