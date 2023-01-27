@@ -128,6 +128,7 @@ impl World {
     }
 }
 
+// This base world is used in other modules for testing purposes.
 #[cfg(test)]
 pub(crate) fn test_world() -> World {
     use crate::{material::Material, pattern::Pattern, shape::Sphere, transform::Transform};

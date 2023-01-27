@@ -1,3 +1,5 @@
+use std::num::NonZeroUsize;
+
 use raytracer::{
     camera::{Camera, RenderProgress},
     color::{self, Color},
@@ -81,8 +83,8 @@ fn main() {
     };
 
     let camera = Camera::new(
-        1280,
-        720,
+        NonZeroUsize::new(1280).unwrap(),
+        NonZeroUsize::new(720).unwrap(),
         std::f64::consts::FRAC_PI_3,
         Transform::view(
             Point::new(10.0, 3.0, -10.0),

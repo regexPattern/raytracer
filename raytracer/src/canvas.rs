@@ -6,35 +6,33 @@ use crate::color::{self, Color};
 
 #[derive(Debug)]
 pub struct Canvas {
-    pub(crate) width: u32,
-    pub(crate) height: u32,
-    pixels: HashMap<(u32, u32), Color>,
+    pub(crate) width: usize,
+    pub(crate) height: usize,
+    pixels: HashMap<(usize, usize), Color>,
 }
 
 impl Canvas {
-    pub fn new(width: u32, height: u32) -> Self {
-        let pixels = HashMap::new();
-
+    pub(crate) fn new(width: usize, height: usize) -> Self {
         Self {
             width,
             height,
-            pixels,
+            pixels: HashMap::new(),
         }
     }
 
-    pub(crate) fn pixel_at(&self, x: u32, y: u32) -> &Color {
+    pub(crate) fn pixel_at(&self, x: usize, y: usize) -> &Color {
         self.pixels.get(&(x, y)).unwrap_or(&color::consts::BLACK)
     }
 
-    pub(crate) fn write_pixel(&mut self, x: u32, y: u32, color: Color) {
+    pub(crate) fn write_pixel(&mut self, x: usize, y: usize, color: Color) {
         self.pixels.insert((x, y), color);
     }
 
     pub fn to_image(&self) -> RgbImage {
-        let mut img_buf = ImageBuffer::new(self.width, self.height);
+        let mut img_buf = ImageBuffer::new(self.width as u32, self.height as u32);
 
         for (x, y, pixel) in img_buf.enumerate_pixels_mut() {
-            let Color { red, green, blue } = self.pixel_at(x, y);
+            let Color { red, green, blue } = self.pixel_at(x as usize, y as usize);
 
             let red = (red * 255.0) as u8;
             let green = (green * 255.0) as u8;

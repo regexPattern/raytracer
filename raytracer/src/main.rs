@@ -1,6 +1,6 @@
 #![allow(unused, dead_code)]
 
-use std::str::FromStr;
+use std::{str::FromStr, num::NonZeroUsize};
 
 use raytracer::{
     camera::{Camera, RenderProgress},
@@ -71,8 +71,8 @@ fn main() {
     };
 
     let camera = Camera::new(
-        500,
-        500,
+        NonZeroUsize::new(500).unwrap(),
+        NonZeroUsize::new(500).unwrap(),
         std::f64::consts::FRAC_PI_3,
         Transform::view(
             Point::new(0.0, 3.0, -3.0),
