@@ -133,14 +133,27 @@ impl Group {
 }
 
 fn transform_recursive(object: &mut Shape, transform: Transform) {
-    if let Shape::Group(group) = object {
-        for child in &mut group.children {
-            transform_recursive(child, transform);
+    match object {
+        Shape::Group(group) => {
+            group.props.transform = transform;
+            group.props.transform_inverse = transform.inverse();
+
+            group
+                .children
+                .iter_mut()
+                .for_each(|child| transform_recursive(child, transform));
+
+            // TODO: Improve this.
+            group.adjust_bounds();
         }
-    } else {
-        let new_transform = transform * object.as_ref().transform;
-        object.as_mut().transform = new_transform;
-        object.as_mut().transform_inverse = new_transform.inverse();
+        _ => {
+            let new_transform = transform * object.as_ref().transform;
+            let new_world_bounds = object.as_ref().local_bounds.transform(transform);
+
+            object.as_mut().transform = new_transform;
+            object.as_mut().transform_inverse = new_transform.inverse();
+            object.as_mut().world_bounds = new_world_bounds;
+        }
     }
 }
 
