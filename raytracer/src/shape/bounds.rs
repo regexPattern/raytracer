@@ -34,10 +34,6 @@ where
     }
 }
 
-fn is_between_range(x: f64, lower: f64, greater: f64) -> bool {
-    crate::float::ge(x, lower) && crate::float::le(x, greater)
-}
-
 impl Bounds {
     pub fn add(&mut self, point: Point) {
         self.min.0.x = f64::min(point.0.x, self.min.0.x);
@@ -143,6 +139,10 @@ impl Bounds {
 
         (left, right)
     }
+}
+
+fn is_between_range(x: f64, lower: f64, greater: f64) -> bool {
+    crate::float::ge(x, lower) && crate::float::le(x, greater)
 }
 
 #[cfg(test)]
