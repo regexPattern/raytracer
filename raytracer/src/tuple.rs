@@ -18,11 +18,11 @@ pub struct Tuple {
 
 #[derive(Copy, Clone, Debug, PartialEq, Deserialize)]
 #[serde(from = "CoordinateDeserializer")]
-pub struct Point(pub Tuple);
+pub struct Point(pub(crate) Tuple);
 
 #[derive(Copy, Clone, Debug, PartialEq, Deserialize)]
 #[serde(from = "CoordinateDeserializer")]
-pub struct Vector(pub Tuple);
+pub struct Vector(pub(crate) Tuple);
 
 #[derive(Debug, PartialEq, Eq, Error)]
 #[error("tried to normalize a null vector")]

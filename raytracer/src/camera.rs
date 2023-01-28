@@ -7,7 +7,10 @@ use indicatif::ProgressBar;
 use rayon::ThreadPoolBuilder;
 use thiserror::Error;
 
-use crate::{canvas::Canvas, float, ray::Ray, transform::Transform, tuple::Point, world::World};
+use crate::{
+    canvas::Canvas, float, ray::Ray, scene::SceneProgress, transform::Transform, tuple::Point,
+    world::World,
+};
 
 const DEFAULT_THREADS: usize = 8;
 
@@ -27,12 +30,6 @@ pub struct Camera {
     half_width: f64,
     transform: Transform,
     transform_inverse: Transform,
-}
-
-#[derive(Debug)]
-pub enum RenderProgress {
-    Enable,
-    Disable,
 }
 
 impl PartialEq for Camera {
@@ -85,7 +82,7 @@ impl Camera {
         })
     }
 
-    pub fn render(&self, world: &World, progress: RenderProgress) -> Canvas {
+    pub fn render(&self, world: &World, progress: SceneProgress) -> Canvas {
         let mut image = Canvas::new(self.hsize, self.vsize);
         let mutex = Arc::new(Mutex::new(&mut image));
 
@@ -101,8 +98,8 @@ impl Camera {
             .unwrap();
 
         let progress_bar = match progress {
-            RenderProgress::Enable => ProgressBar::new((self.hsize * self.vsize) as u64),
-            RenderProgress::Disable => ProgressBar::hidden(),
+            SceneProgress::Enable => ProgressBar::new((self.hsize * self.vsize) as u64),
+            SceneProgress::Disable => ProgressBar::hidden(),
         };
 
         pool.scope(|s| {
@@ -273,7 +270,7 @@ mod tests {
         )
         .unwrap();
 
-        let image = c.render(&w, RenderProgress::Disable);
+        let image = c.render(&w, SceneProgress::Disable);
 
         assert_eq!(
             image.pixel_at(5, 5),

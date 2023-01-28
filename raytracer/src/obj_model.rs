@@ -1,10 +1,12 @@
-use std::{num::NonZeroUsize, str::FromStr};
+use std::num::NonZeroUsize;
 
+use indicatif::{ProgressBar, ProgressStyle};
 use thiserror::Error;
 
 use crate::{
+    scene::SceneProgress,
     shape::{Group, Shape, SmoothTriangle, Triangle},
-    tuple::{Point, Vector},
+    tuple::{Point, Vector}, transform::Transform,
 };
 
 const MIN_POLYGON_VERTICES: usize = 3;
@@ -14,6 +16,7 @@ pub struct OBJModel {
     groups: Vec<PolygonGroup>,
     normals: Vec<Vector>,
     vertices: Vec<Point>,
+    parsing_progress: SceneProgress,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -56,22 +59,8 @@ pub enum ParsingErrorKind {
     MissingField { name: &'static str },
 }
 
-impl From<OBJModel> for Group {
-    fn from(value: OBJModel) -> Self {
-        let groups: Vec<_> = value
-            .groups
-            .into_iter()
-            .map(|group| Shape::Group(group.group))
-            .collect();
-
-        Self::new(groups, Default::default())
-    }
-}
-
-impl FromStr for OBJModel {
-    type Err = ParsingError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+impl OBJModel {
+    pub fn new(string: &str, parse_progress: SceneProgress) -> Result<Self, ParsingError> {
         let mut groups = vec![PolygonGroup {
             group: Group::default(),
             name: "__default".to_string(),
@@ -80,7 +69,21 @@ impl FromStr for OBJModel {
         let mut normals = vec![];
         let mut vertices = vec![];
 
-        for (line_nr, line) in s.lines().enumerate() {
+        let progress_bar = if let SceneProgress::Enable = parse_progress {
+            let bar = ProgressBar::new_spinner();
+
+            // This style template string is ensured to be valid.
+            #[allow(clippy::unwrap_used)]
+            bar.set_style(
+                ProgressStyle::with_template("{spinner} loading OBJ model ({pos} lines read)")
+                    .unwrap(),
+            );
+            bar
+        } else {
+            ProgressBar::hidden()
+        };
+
+        for (line_nr, line) in string.lines().enumerate() {
             let propagate_line_err = |kind| ParsingError { kind, line_nr };
 
             if line.starts_with("v ") {
@@ -99,13 +102,26 @@ impl FromStr for OBJModel {
                 let (x, y, z) = parse_coordinate(line).map_err(propagate_line_err)?;
                 normals.push(Vector::new(x, y, z));
             }
+
+            progress_bar.inc(1);
         }
 
         Ok(OBJModel {
             groups,
             normals,
             vertices,
+            parsing_progress: parse_progress,
         })
+    }
+
+    pub fn build(self, transform: Transform) -> Group {
+        let groups: Vec<_> = self
+            .groups
+            .into_iter()
+            .map(|group| Shape::Group(group.group))
+            .collect();
+
+        Group::new(groups, transform)
     }
 }
 
@@ -231,7 +247,7 @@ v -1.0000 0.50000 0.0000
 v 1 0 0
 v 1 1 0";
 
-        let model = OBJModel::from_str(input).unwrap();
+        let model = OBJModel::new(input, SceneProgress::Disable).unwrap();
 
         assert_eq!(model.vertices[0], Point::new(-1.0, 1.0, 0.0));
         assert_eq!(model.vertices[1], Point::new(-1.0, 0.5, 0.0));
@@ -279,7 +295,7 @@ v 1 1 0";
         let input = "v 1";
 
         assert_eq!(
-            OBJModel::from_str(input),
+            OBJModel::new(input, SceneProgress::Disable),
             Err(ParsingError {
                 kind: ParsingErrorKind::MissingField { name: "y" },
                 line_nr: 0,
@@ -291,7 +307,7 @@ v 1 1 0";
     fn an_error_should_display_with_correct_message() {
         let input = "v 1";
 
-        let err = OBJModel::from_str(input).unwrap_err();
+        let err = OBJModel::new(input, SceneProgress::Disable).unwrap_err();
 
         assert_eq!(
             err.to_string(),
@@ -310,7 +326,7 @@ v 1 1 0
 f 1 2 3
 f 1 3 4";
 
-        let model = OBJModel::from_str(input).unwrap();
+        let model = OBJModel::new(input, SceneProgress::Disable).unwrap();
 
         let g = &model.groups[0].group;
         let t0 = &g.children[0];
@@ -408,7 +424,7 @@ v 0 2 0
 
 f 1 2 3 4 5";
 
-        let model = OBJModel::from_str(input).unwrap();
+        let model = OBJModel::new(input, SceneProgress::Disable).unwrap();
 
         let g = &model.groups[0].group;
         let t0 = &g.children[0];
@@ -452,7 +468,7 @@ f 1 2 3
 g SecondGroup
 f 1 3 4";
 
-        let model = OBJModel::from_str(input).unwrap();
+        let model = OBJModel::new(input, SceneProgress::Disable).unwrap();
 
         let g1 = &model
             .groups
@@ -508,11 +524,11 @@ f 1 2 3
 g SecondGroup
 f 1 3 4";
 
-        let model = OBJModel::from_str(input).unwrap();
+        let model = OBJModel::new(input, SceneProgress::Disable).unwrap();
         let first_group = Shape::Group(model.groups[1].group.clone());
         let second_group = Shape::Group(model.groups[2].group.clone());
 
-        let g = Group::from(model);
+        let g = model.build(Default::default());
 
         assert!(g.children.contains(&first_group));
         assert!(g.children.contains(&second_group));
@@ -525,7 +541,7 @@ vn 0 0 1
 vn 0.707 0 -0.707
 vn 1 2 3";
 
-        let model = OBJModel::from_str(input).unwrap();
+        let model = OBJModel::new(input, SceneProgress::Disable).unwrap();
 
         assert_eq!(model.normals[0], Vector::new(0.0, 0.0, 1.0));
         assert_eq!(model.normals[1], Vector::new(0.707, 0.0, -0.707));
@@ -546,7 +562,7 @@ vn 0 1 0
 f 1//3 2//1 3//2
 f 1/0/3 2/102/1 3/14/2";
 
-        let model = OBJModel::from_str(input).unwrap();
+        let model = OBJModel::new(input, SceneProgress::Disable).unwrap();
 
         let g = &model.groups[0].group;
         let t0 = &g.children[0];

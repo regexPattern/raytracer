@@ -25,15 +25,6 @@ pub use self::sphere::Sphere;
 pub use self::triangle::{CollinearTriangleSidesError, Triangle};
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ShapeProps {
-    pub material: Material,
-    pub transform: Transform,
-    pub(crate) transform_inverse: Transform,
-    pub(crate) local_bounds: Bounds,
-    pub(crate) world_bounds: Bounds,
-}
-
-#[derive(Clone, Debug, PartialEq)]
 pub enum Shape {
     Cube(Cube),
     Cylinder(Cylinder),
@@ -42,6 +33,15 @@ pub enum Shape {
     Sphere(Sphere),
     Triangle(Triangle),
     SmoothTriangle(SmoothTriangle),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ShapeProps {
+    pub material: Material,
+    pub transform: Transform,
+    pub(crate) transform_inverse: Transform,
+    pub(crate) local_bounds: Bounds,
+    pub(crate) world_bounds: Bounds,
 }
 
 impl AsRef<ShapeProps> for Shape {

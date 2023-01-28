@@ -15,17 +15,12 @@ pub struct Schema {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum Pattern {
+pub enum Pattern3D {
     Solid(Color),
     Stripe(Schema),
     Gradient(Schema),
     Ring(Schema),
     Checker(Schema),
-}
-
-fn pattern_point(object: &Shape, transform_inverse: Transform, point: Point) -> Point {
-    let object_point = object.as_ref().transform_inverse * point;
-    transform_inverse * object_point
 }
 
 impl Schema {
@@ -39,7 +34,7 @@ impl Schema {
     }
 }
 
-impl Pattern {
+impl Pattern3D {
     pub(crate) fn color_at_object(&self, object: &Shape, point: Point) -> Color {
         self.color_at(pattern_point(object, self.transform().inverse(), point))
     }
@@ -82,6 +77,11 @@ impl Pattern {
     }
 }
 
+fn pattern_point(object: &Shape, transform_inverse: Transform, point: Point) -> Point {
+    let object_point = object.as_ref().transform_inverse * point;
+    transform_inverse * object_point
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{color, shape::Sphere};
@@ -115,22 +115,22 @@ mod tests {
 
     #[test]
     fn creating_a_stripe_pattern() {
-        let p = Pattern::Stripe(Schema::new(
+        let p = Pattern3D::Stripe(Schema::new(
             color::consts::WHITE,
             color::consts::BLACK,
             Default::default(),
         ));
 
-        assert!(matches!(p, Pattern::Stripe(Schema { from, .. }) if from == color::consts::WHITE));
-        assert!(matches!(p, Pattern::Stripe(Schema { to, .. }) if to == color::consts::BLACK));
+        assert!(matches!(p, Pattern3D::Stripe(Schema { from, .. }) if from == color::consts::WHITE));
+        assert!(matches!(p, Pattern3D::Stripe(Schema { to, .. }) if to == color::consts::BLACK));
         assert!(
-            matches!(p, Pattern::Stripe(Schema { transform: t, .. }) if t == Default::default())
+            matches!(p, Pattern3D::Stripe(Schema { transform: t, .. }) if t == Default::default())
         );
     }
 
     #[test]
     fn a_stripe_pattern_is_constant_in_y() {
-        let p = Pattern::Stripe(Schema::new(
+        let p = Pattern3D::Stripe(Schema::new(
             color::consts::WHITE,
             color::consts::BLACK,
             Default::default(),
@@ -143,7 +143,7 @@ mod tests {
 
     #[test]
     fn a_stripe_pattern_is_constant_in_z() {
-        let p = Pattern::Stripe(Schema::new(
+        let p = Pattern3D::Stripe(Schema::new(
             color::consts::WHITE,
             color::consts::BLACK,
             Default::default(),
@@ -156,7 +156,7 @@ mod tests {
 
     #[test]
     fn a_stripe_pattern_alternates_in_x() {
-        let p = Pattern::Stripe(Schema::new(
+        let p = Pattern3D::Stripe(Schema::new(
             color::consts::WHITE,
             color::consts::BLACK,
             Default::default(),
@@ -177,7 +177,7 @@ mod tests {
             Transform::scaling(2.0, 2.0, 2.0).unwrap(),
         ));
 
-        let p = Pattern::Stripe(Schema::new(
+        let p = Pattern3D::Stripe(Schema::new(
             color::consts::WHITE,
             color::consts::BLACK,
             Default::default(),
@@ -192,7 +192,7 @@ mod tests {
     fn stripes_with_a_pattern_transformation() {
         let o = Shape::Sphere(Default::default());
 
-        let p = Pattern::Stripe(Schema::new(
+        let p = Pattern3D::Stripe(Schema::new(
             color::consts::WHITE,
             color::consts::BLACK,
             Transform::scaling(2.0, 2.0, 2.0).unwrap(),
@@ -210,7 +210,7 @@ mod tests {
             Transform::scaling(2.0, 2.0, 2.0).unwrap(),
         ));
 
-        let p = Pattern::Stripe(Schema::new(
+        let p = Pattern3D::Stripe(Schema::new(
             color::consts::WHITE,
             color::consts::BLACK,
             Transform::translation(0.5, 0.0, 0.0),
@@ -291,7 +291,7 @@ mod tests {
 
     #[test]
     fn a_gradient_linearly_interpolates_between_colors() {
-        let p = Pattern::Gradient(Schema::new(
+        let p = Pattern3D::Gradient(Schema::new(
             color::consts::WHITE,
             color::consts::BLACK,
             Default::default(),
@@ -326,7 +326,7 @@ mod tests {
 
     #[test]
     fn a_ring_should_extend_in_both_x_and_z() {
-        let p = Pattern::Ring(Schema::new(
+        let p = Pattern3D::Ring(Schema::new(
             color::consts::WHITE,
             color::consts::BLACK,
             Default::default(),
@@ -343,7 +343,7 @@ mod tests {
 
     #[test]
     fn checkers_should_repeat_in_x() {
-        let p = Pattern::Checker(Schema::new(
+        let p = Pattern3D::Checker(Schema::new(
             color::consts::WHITE,
             color::consts::BLACK,
             Default::default(),
@@ -356,7 +356,7 @@ mod tests {
 
     #[test]
     fn checkers_should_repeat_in_y() {
-        let p = Pattern::Checker(Schema::new(
+        let p = Pattern3D::Checker(Schema::new(
             color::consts::WHITE,
             color::consts::BLACK,
             Default::default(),
@@ -369,7 +369,7 @@ mod tests {
 
     #[test]
     fn checkers_should_repeat_in_z() {
-        let p = Pattern::Checker(Schema::new(
+        let p = Pattern3D::Checker(Schema::new(
             color::consts::WHITE,
             color::consts::BLACK,
             Default::default(),

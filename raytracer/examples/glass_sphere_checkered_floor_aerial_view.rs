@@ -8,14 +8,13 @@ use raytracer::{
     pattern::{Pattern3D, Schema},
     shape::{Plane, Shape, Sphere},
     transform::Transform,
-    tuple::{Point, Vector},
-    world::World, scene::SceneProgress,
+    tuple::Point,
+    scene::SceneProgress,
+    world::World,
 };
 
 fn main() {
-    let floor = Shape::Plane(Plane::default());
-
-    let left_wall = Shape::Plane(Plane::new(
+    let floor = Shape::Plane(Plane::new(
         Material {
             pattern: Pattern3D::Checker(Schema::new(
                 color::consts::WHITE,
@@ -24,25 +23,34 @@ fn main() {
             )),
             ..Default::default()
         },
-        Transform::translation(0.0, 1.0, 0.0) * Transform::rotation_z(std::f64::consts::FRAC_PI_2),
+        Default::default(),
+    ));
+
+    let left_wall = Shape::Plane(Plane::new(
+        Default::default(),
+        Transform::rotation_z(std::f64::consts::FRAC_PI_2),
     ));
 
     let right_wall = Shape::Plane(Plane::new(
-        left_wall.as_ref().material.clone(),
+        Default::default(),
         Transform::rotation_x(std::f64::consts::FRAC_PI_2),
     ));
 
-    let metallic_sphere = Shape::Sphere(Sphere::new(
+    let glass_sphere = Shape::Sphere(Sphere::new(
         Material {
-            reflectivity: 0.25,
             pattern: Pattern3D::Solid(Color {
-                red: 0.5,
-                green: 0.5,
-                blue: 0.5,
+                red: 0.2,
+                green: 0.2,
+                blue: 0.3,
             }),
+            transparency: 1.0,
+            index_of_refraction: 1.35,
+            specular: 0.01,
+            reflectivity: 0.2,
+            shininess: 400.0,
             ..Default::default()
         },
-        Transform::translation(4.0, 1.0, -4.0),
+        Transform::translation(6.0, 1.0, -6.0),
     ));
 
     let red_sphere = Shape::Sphere(Sphere::new(
@@ -62,7 +70,19 @@ fn main() {
             }),
             ..Default::default()
         },
-        Transform::translation(6.0, 0.25, -4.5) * Transform::scaling(0.25, 0.25, 0.25).unwrap(),
+        Transform::scaling(0.75, 0.75, 0.75).unwrap() * Transform::translation(7.0, 1.0, -4.5),
+    ));
+
+    let green_sphere = Shape::Sphere(Sphere::new(
+        Material {
+            pattern: Pattern3D::Solid(Color {
+                red: 0.5373,
+                green: 0.6745,
+                blue: 0.4627,
+            }),
+            ..Default::default()
+        },
+        Transform::translation(3.0, 1.0, -3.0),
     ));
 
     let light = PointLight {
@@ -75,9 +95,10 @@ fn main() {
             floor,
             left_wall,
             right_wall,
-            metallic_sphere,
+            glass_sphere,
             red_sphere,
             blue_sphere,
+            green_sphere,
         ],
         lights: vec![light],
     };
@@ -86,12 +107,8 @@ fn main() {
         NonZeroUsize::new(1280).unwrap(),
         NonZeroUsize::new(720).unwrap(),
         std::f64::consts::FRAC_PI_3,
-        Transform::view(
-            Point::new(10.0, 3.0, -10.0),
-            Point::new(0.0, 0.0, 0.0),
-            Vector::new(0.0, 1.0, 0.0),
-        )
-        .unwrap(),
+        Transform::rotation_x(std::f64::consts::FRAC_PI_2)
+            * Transform::translation(-4.5, -12.0, 4.5),
     )
     .unwrap();
 

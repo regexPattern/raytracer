@@ -11,4 +11,5 @@ serde = { version = "1.0.152", features = ["derive"] }
 thiserror = "1.0.38"
 
 [dev-dependencies]
+rand = "0.8.5"
 serde_test = "1.0.152"

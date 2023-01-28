@@ -131,7 +131,7 @@ impl World {
 // This base world is used in other modules for testing purposes.
 #[cfg(test)]
 pub(crate) fn test_world() -> World {
-    use crate::{material::Material, pattern::Pattern, shape::Sphere, transform::Transform};
+    use crate::{material::Material, pattern::Pattern3D, shape::Sphere, transform::Transform};
 
     let light = PointLight {
         position: Point::new(-10.0, 10.0, -10.0),
@@ -140,7 +140,7 @@ pub(crate) fn test_world() -> World {
 
     let s0 = Shape::Sphere(Sphere::new(
         Material {
-            pattern: Pattern::Solid(color::Color {
+            pattern: Pattern3D::Solid(color::Color {
                 red: 0.8,
                 green: 1.0,
                 blue: 0.6,
@@ -169,7 +169,7 @@ mod tests {
         assert_approx,
         intersection::Intersection,
         material::Material,
-        pattern::Pattern,
+        pattern::Pattern3D,
         shape::{Plane, Sphere},
         transform::Transform,
         tuple::Vector,
@@ -353,7 +353,7 @@ mod tests {
         let c = w.color_at(&r, RECURSION_DEPTH);
         let inner = &w.objects[1];
 
-        assert_eq!(Pattern::Solid(c), inner.as_ref().material.pattern);
+        assert_eq!(Pattern3D::Solid(c), inner.as_ref().material.pattern);
     }
 
     #[test]
@@ -748,7 +748,7 @@ mod tests {
         let ball = Shape::Sphere(Sphere::new(
             Material {
                 ambient: 0.5,
-                pattern: Pattern::Solid(color::consts::RED),
+                pattern: Pattern3D::Solid(color::consts::RED),
                 ..Default::default()
             },
             Transform::translation(0.0, -3.5, -0.5),
@@ -805,7 +805,7 @@ mod tests {
         let ball = Shape::Sphere(Sphere::new(
             Material {
                 ambient: 0.5,
-                pattern: Pattern::Solid(color::consts::RED),
+                pattern: Pattern3D::Solid(color::consts::RED),
                 ..Default::default()
             },
             Transform::translation(0.0, -3.5, -0.5),

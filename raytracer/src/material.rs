@@ -4,7 +4,7 @@ use crate::{
     color::{self, Color},
     float,
     light::PointLight,
-    pattern::Pattern,
+    pattern::Pattern3D,
     shape::Shape,
     tuple::{Point, Vector},
 };
@@ -25,7 +25,7 @@ pub struct Material {
     pub ambient: f64,
     pub diffuse: f64,
     pub index_of_refraction: f64,
-    pub pattern: Pattern,
+    pub pattern: Pattern3D,
     pub reflectivity: f64,
     pub shininess: f64,
     pub specular: f64,
@@ -51,7 +51,7 @@ impl Default for Material {
             ambient: 0.1,
             diffuse: 0.9,
             index_of_refraction: self::consts::VACUUM_INDEX_OF_REFRACTION,
-            pattern: Pattern::Solid(color::consts::WHITE),
+            pattern: Pattern3D::Solid(color::consts::WHITE),
             reflectivity: 0.0,
             shininess: 200.0,
             specular: 0.9,
@@ -102,7 +102,7 @@ impl Material {
 mod tests {
     use crate::{
         assert_approx,
-        pattern::{Pattern, Schema},
+        pattern::{Pattern3D, Schema},
     };
 
     use super::*;
@@ -119,7 +119,7 @@ mod tests {
     fn the_default_matrial() {
         let m = Material::default();
 
-        assert_eq!(m.pattern, Pattern::Solid(color::consts::WHITE));
+        assert_eq!(m.pattern, Pattern3D::Solid(color::consts::WHITE));
         assert_approx!(m.ambient, 0.1);
         assert_approx!(m.diffuse, 0.9);
         assert_approx!(m.specular, 0.9);
@@ -297,7 +297,7 @@ mod tests {
         let (o, _, _) = test_object_material_point();
 
         let m = Material {
-            pattern: Pattern::Stripe(Schema::new(
+            pattern: Pattern3D::Stripe(Schema::new(
                 color::consts::WHITE,
                 color::consts::BLACK,
                 Default::default(),
