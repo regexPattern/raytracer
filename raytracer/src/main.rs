@@ -9,27 +9,29 @@ use raytracer::{
 };
 
 fn main() {
-    let sphere = Shape::Sphere(Sphere::new(Default::default(), Default::default()));
+    let sphere = Shape::Sphere(Sphere::new(
+        Default::default(),
+        Transform::scaling(2.0, 1.0, 1.25).unwrap(),
+    ));
     let cylinder = Shape::Cylinder(Cylinder::new(
         Default::default(),
         Default::default(),
-        1.0,
-        2.0,
+        -1.5,
+        1.5,
         false,
     ));
 
-    let mut inner =
-        Group::default().with_transform(Transform::rotation_z(std::f64::consts::FRAC_PI_2));
+    let mut inner = Group::default().with_transform(
+        Transform::scaling(2.0, 1.0, 1.0).unwrap()
+            * Transform::rotation_z(std::f64::consts::FRAC_PI_2),
+    );
     inner.push(cylinder);
 
     let mut group = Group::default();
     group.push(sphere);
     group.push(Shape::Group(inner));
 
-    group.update_transform(
-        Transform::rotation_z(std::f64::consts::FRAC_PI_2)
-            * Transform::scaling(2.0, 2.0, 2.0).unwrap(),
-    );
+    group.change_transform(Transform::rotation_z(std::f64::consts::FRAC_PI_6));
 
     let light = PointLight {
         position: Point::new(5.0, 5.0, 5.0),

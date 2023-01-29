@@ -1,6 +1,6 @@
 use crate::{intersection::Intersection, ray::Ray, transform::Transform};
 
-use super::{Shape, ShapeProps};
+use super::{Bounds, Shape, ShapeProps};
 
 #[derive(Clone, Default, Debug, PartialEq)]
 pub struct Group {
@@ -16,20 +16,36 @@ impl Group {
 
     pub fn push(&mut self, mut child: Shape) {
         Self::apply_transform_to_child(&mut child, self.props.transform);
+
+        self.props.local_bounds.merge(child.as_ref().world_bounds);
+        self.props.world_bounds = self.props.local_bounds;
+
         self.children.push(child);
     }
 
-    pub fn update_transform(&mut self, transform: Transform) {
+    pub fn change_transform(&mut self, transform: Transform) {
         let new_transform = transform * self.props.transform_inverse;
 
         for child in &mut self.children {
             Self::apply_transform_to_child(child, new_transform);
         }
 
-        self.props.change_transform(transform);
+        let mut local_bounds = Bounds::default();
+        for child in &self.children {
+            local_bounds.merge(child.as_ref().world_bounds);
+        }
+
+        self.props.local_bounds = local_bounds;
+        self.props.transform = transform;
+        self.props.transform_inverse = transform.inverse();
+        self.props.world_bounds = local_bounds;
     }
 
     pub(crate) fn local_intersect(&self, ray: &Ray) -> Vec<Intersection<'_>> {
+        if !self.props.world_bounds.intersect(ray) {
+            return vec![];
+        }
+
         let mut intersections: Vec<_> = self
             .children
             .iter()
@@ -55,7 +71,7 @@ impl Group {
 #[cfg(test)]
 mod tests {
     use crate::{
-        shape::Sphere,
+        shape::{Cylinder, Sphere},
         transform::Transform,
         tuple::{Point, Vector},
     };
@@ -126,7 +142,7 @@ mod tests {
 
         // Update outer_group's transform
         let new_transform = Transform::shearing(1.0, 2.0, 3.0, 4.0, 5.0, 6.0).unwrap();
-        outer_group.update_transform(new_transform);
+        outer_group.change_transform(new_transform);
 
         // 🔴 Check if changes were applied to the outer group itself.
         assert_eq!(outer_group.props.transform, new_transform);
@@ -227,5 +243,46 @@ mod tests {
         let xs = group.intersect(&ray); // Now using `intersect` instead of `local_intersect`.
 
         assert_eq!(xs.len(), 2);
+    }
+
+    #[test]
+    fn a_group_has_a_bouding_box_that_contains_its_children() {
+        let child0 = Shape::Sphere(Sphere::default().with_transform(
+            Transform::translation(2.0, 5.0, -3.0) * Transform::scaling(2.0, 2.0, 2.0).unwrap(),
+        ));
+
+        let child1 = Shape::Cylinder(Cylinder::new(
+            Default::default(),
+            Transform::translation(-4.0, -1.0, 4.0) * Transform::scaling(0.5, 1.0, 0.5).unwrap(),
+            -2.0,
+            2.0,
+            false,
+        ));
+
+        let mut group = Group::default().with_transform(Transform::scaling(2.0, 2.0, 2.0).unwrap());
+        group.push(child0);
+        group.push(child1);
+
+        let bounds = group.props.world_bounds;
+
+        assert_eq!(bounds.min, Point::new(-9.0, -6.0, -10.0));
+        assert_eq!(bounds.max, Point::new(8.0, 14.0, 9.0));
+    }
+
+    #[test]
+    fn updating_a_groups_transform_also_updates_its_bounds() {
+        let child = Shape::Sphere(
+            Sphere::default().with_transform(Transform::scaling(2.0, 2.0, 2.0).unwrap()),
+        );
+
+        let mut group = Group::default().with_transform(Transform::scaling(2.0, 2.0, 2.0).unwrap());
+        group.push(child);
+
+        group.change_transform(Transform::scaling(0.5, 0.5, 0.5).unwrap());
+
+        let bounds = group.props.world_bounds;
+
+        assert_eq!(bounds.min, Point::new(-1.0, -1.0, -1.0));
+        assert_eq!(bounds.max, Point::new(1.0, 1.0, 1.0));
     }
 }

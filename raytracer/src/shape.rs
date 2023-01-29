@@ -180,40 +180,40 @@ mod tests {
         assert_eq!(normal, Vector::new(0.0, 0.97014, -0.24254));
     }
 
-    // #[test]
-    // fn finding_the_normal_on_a_child_object() {
-    //     let child = Shape::Sphere(Sphere::new(
-    //         Default::default(),
-    //         Transform::translation(5.0, 0.0, 0.0),
-    //     ));
+    #[test]
+    fn finding_the_normal_on_a_child_object() {
+        let child = Shape::Sphere(Sphere::new(
+            Default::default(),
+            Transform::translation(5.0, 0.0, 0.0),
+        ));
 
-    //     let mut inner_group = Group::default();
-    //     inner_group.change_transform(Transform::scaling(1.0, 2.0, 3.0).unwrap());
-    //     inner_group.push(child);
+        let mut inner_group =
+            Group::default().with_transform(Transform::scaling(1.0, 2.0, 3.0).unwrap());
+        inner_group.push(child);
 
-    //     let mut outer_group = Group::default();
-    //     outer_group.change_transform(Transform::rotation_y(std::f64::consts::FRAC_PI_2));
-    //     outer_group.push(Shape::Group(inner_group));
+        let mut outer_group =
+            Group::default().with_transform(Transform::rotation_y(std::f64::consts::FRAC_PI_2));
+        outer_group.push(Shape::Group(inner_group));
 
-    //     // Retreiving the `inner_gruop`'s child. Clone would not work here since after adding the
-    //     // child to the group (takes ownership of it), it's new parent's transformation is applied.
-    //     let child = match &outer_group.children[0] {
-    //         Shape::Group(inner_group) => &inner_group.children[0],
-    //         _ => panic!(),
-    //     };
+        // Retreiving the `inner_group`'s child. Clone would not work here since after adding the
+        // child to the group (takes ownership of it), it's new parent's transformation is applied.
+        let child = match &outer_group.children[0] {
+            Shape::Group(inner_group) => &inner_group.children[0],
+            _ => panic!(),
+        };
 
-    //     let normal = child.normal_at(
-    //         Point::new(1.7321, 1.1547, -5.5774),
-    //         &Intersection {
-    //             t: 0.0,
-    //             object: child,
-    //             u: None,
-    //             v: None,
-    //         },
-    //     );
+        let normal = child.normal_at(
+            Point::new(1.7321, 1.1547, -5.5774),
+            &Intersection {
+                t: 0.0,
+                object: child,
+                u: None,
+                v: None,
+            },
+        );
 
-    //     // 🔴 A child parent's transformations are taken into account when converting a normal in
-    //     // it's object space to world space.
-    //     assert_eq!(normal, Vector::new(0.2857, 0.42854, -0.8571));
-    // }
+        // 🔴 A child parent's transformations are taken into account when converting a normal in
+        // it's object space to world space.
+        assert_eq!(normal, Vector::new(0.2857, 0.42854, -0.85716));
+    }
 }
