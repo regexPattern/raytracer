@@ -18,11 +18,15 @@ fn main() {
         false,
     ));
 
+    let mut inner =
+        Group::default().with_transform(Transform::rotation_z(std::f64::consts::FRAC_PI_2));
+    inner.push(cylinder);
+
     let mut group = Group::default();
     group.push(sphere);
-    group.push(cylinder);
+    group.push(Shape::Group(inner));
 
-    group.change_transform(
+    group.update_transform(
         Transform::rotation_z(std::f64::consts::FRAC_PI_2)
             * Transform::scaling(2.0, 2.0, 2.0).unwrap(),
     );

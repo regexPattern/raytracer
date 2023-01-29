@@ -33,6 +33,11 @@ impl Sphere {
         })
     }
 
+    pub fn with_transform(mut self, transform: Transform) -> Self {
+        self.0.change_transform(transform);
+        self
+    }
+
     pub(crate) fn local_intersect<'a>(
         &self,
         object: &'a Shape,
