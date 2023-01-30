@@ -4,7 +4,7 @@ use crate::{
     tuple::{Point, Vector},
 };
 
-use super::{Shape, Triangle};
+use super::{triangle::Triangle, Shape};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct SmoothTriangle {

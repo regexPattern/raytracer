@@ -9,10 +9,6 @@ use crate::{
     tuple::{Point, Vector},
 };
 
-#[derive(Copy, Clone, Debug, PartialEq, Deserialize)]
-#[serde(try_from = "TransformDeserializer")]
-pub struct Transform(Matrix<4, 4>);
-
 #[derive(Debug, PartialEq, Error)]
 pub enum AntiIsomorphicTransformError {
     #[error("components cannot be scaled to zero")]
@@ -40,12 +36,10 @@ pub enum AntiIsomorphicTransformError {
     CollinearToFromAndUpVectors { to_from: Vector, up: Vector },
 }
 
-// This enum exits to facilitate the parsing of the allowed transform variants. The `Transform`
-// type itself it's not an enum because of the matrix constructors that have to be used and their
-// respective validations. However, using an enum for parsing it's much easier than implementing
-// `Deseriliaze` manually on the original type.
-// Also note that `PartialEq` is being used here. I don't really care about comparing this type
-// beyoond the tests, so floating point comparission doesn't matter here.
+#[derive(Copy, Clone, Debug, PartialEq, Deserialize)]
+#[serde(try_from = "TransformDeserializer")]
+pub struct Transform(Matrix<4, 4>);
+
 #[derive(Debug, PartialEq, Deserialize)]
 #[serde(rename_all(deserialize = "snake_case"))]
 #[serde(tag = "type")]

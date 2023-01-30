@@ -1,36 +1,19 @@
 use std::num::NonZeroUsize;
 
-use indicatif::{ProgressBar, ProgressStyle};
 use thiserror::Error;
 
 use crate::{
-    scene::SceneProgress,
-    shape::{Group, Shape, SmoothTriangle, Triangle},
+    shape::{
+        group::{Group, GroupBuilder},
+        smooth_triangle::SmoothTriangle,
+        triangle::Triangle,
+        Shape,
+    },
     transform::Transform,
     tuple::{Point, Vector},
 };
 
 const MIN_POLYGON_VERTICES: usize = 3;
-
-#[derive(Debug, PartialEq)]
-pub struct OBJModel {
-    groups: Vec<PolygonGroup>,
-    normals: Vec<Vector>,
-    vertices: Vec<Point>,
-    parsing_progress: SceneProgress,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq)]
-struct FaceVertex {
-    vertex: Point,
-    normal: Option<Vector>,
-}
-
-#[derive(Debug, PartialEq)]
-struct PolygonGroup {
-    group: Group,
-    name: String,
-}
 
 #[derive(Debug, Error, PartialEq)]
 #[error("parsing error at line {}: '{kind}'", line_nr + 1)]
@@ -60,9 +43,39 @@ pub enum ParsingErrorKind {
     MissingField { name: &'static str },
 }
 
-impl OBJModel {
-    pub fn new(string: &str, parse_progress: SceneProgress) -> Result<Self, ParsingError> {
-        let mut groups = vec![PolygonGroup {
+#[derive(Debug, PartialEq)]
+pub struct OBJModel {
+    groups: Vec<PolygonsGroup>,
+    normals: Vec<Vector>,
+    vertices: Vec<Point>,
+    transform: Transform,
+}
+
+#[derive(Clone)]
+pub struct OBJModelBuilder<'a> {
+    pub content: &'a str,
+    pub transform: Transform,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+struct FaceVertex {
+    vertex: Point,
+    normal: Option<Vector>,
+}
+
+#[derive(Debug, PartialEq)]
+struct PolygonsGroup {
+    group: Group,
+    name: String,
+}
+
+impl TryFrom<OBJModelBuilder<'_>> for OBJModel {
+    type Error = ParsingError;
+
+    fn try_from(builder: OBJModelBuilder) -> Result<Self, Self::Error> {
+        let OBJModelBuilder { content, transform } = builder;
+
+        let mut groups = vec![PolygonsGroup {
             group: Group::default(),
             name: "__default".to_string(),
         }];
@@ -70,171 +83,172 @@ impl OBJModel {
         let mut normals = vec![];
         let mut vertices = vec![];
 
-        let progress_bar = if let SceneProgress::Enable = parse_progress {
-            let bar = ProgressBar::new_spinner();
-
-            // This style template string is ensured to be valid.
-            #[allow(clippy::unwrap_used)]
-            bar.set_style(
-                ProgressStyle::with_template("{spinner} loading OBJ model ({pos} lines read)")
-                    .unwrap(),
-            );
-            bar
-        } else {
-            ProgressBar::hidden()
-        };
-
-        for (line_nr, line) in string.lines().enumerate() {
+        for (line_nr, line) in content.lines().enumerate() {
             let propagate_line_err = |kind| ParsingError { kind, line_nr };
 
             if line.starts_with("v ") {
-                let (x, y, z) = parse_coordinate(line).map_err(propagate_line_err)?;
+                let (x, y, z) = Self::parse_coordinate(line).map_err(propagate_line_err)?;
                 vertices.push(Point::new(x, y, z));
             } else if line.starts_with("f ") {
-                let face = parse_face(line, &normals, &vertices).map_err(propagate_line_err)?;
+                let face =
+                    Self::parse_face(line, &normals, &vertices).map_err(propagate_line_err)?;
 
                 // There's always going to be a valid group in the group's queue, as it always
                 // contains at least the "__default" group.
                 #[allow(clippy::unwrap_used)]
                 groups.last_mut().unwrap().group.extend(face);
             } else if line.starts_with("g ") {
-                groups.push(parse_group(line).map_err(propagate_line_err)?);
+                groups.push(Self::parse_group(line).map_err(propagate_line_err)?);
             } else if line.starts_with("vn") {
-                let (x, y, z) = parse_coordinate(line).map_err(propagate_line_err)?;
+                let (x, y, z) = Self::parse_coordinate(line).map_err(propagate_line_err)?;
                 normals.push(Vector::new(x, y, z));
             }
-
-            progress_bar.inc(1);
         }
 
         Ok(OBJModel {
             groups,
             normals,
             vertices,
-            parsing_progress: parse_progress,
+            transform,
         })
     }
+}
 
-    pub fn build(self, transform: Transform) -> Group {
-        let mut group = Group::new(transform);
+impl TryFrom<OBJModelBuilder<'_>> for Group {
+    type Error = ParsingError;
 
-        for polygons_group in self.groups {
-            group.push(Shape::Group(polygons_group.group));
-        }
-
-        group
+    fn try_from(builder: OBJModelBuilder<'_>) -> Result<Self, Self::Error> {
+        let model = OBJModel::try_from(builder)?;
+        Ok(Group::from(model))
     }
 }
 
-fn parse_coordinate(line: &str) -> Result<(f64, f64, f64), ParsingErrorKind> {
-    let mut fields = line.split_whitespace().skip(1);
-
-    let x = fields
-        .next()
-        .ok_or(ParsingErrorKind::MissingField { name: "x" })?
-        .parse::<f64>()?;
-
-    let y = fields
-        .next()
-        .ok_or(ParsingErrorKind::MissingField { name: "y" })?
-        .parse::<f64>()?;
-
-    let z = fields
-        .next()
-        .ok_or(ParsingErrorKind::MissingField { name: "z" })?
-        .parse::<f64>()?;
-
-    Ok((x, y, z))
-}
-
-fn parse_face(
-    line: &str,
-    saved_normals: &[Vector],
-    saved_vertices: &[Point],
-) -> Result<Vec<Shape>, ParsingErrorKind> {
-    let elements: Vec<_> = line.split_whitespace().skip(1).collect();
-
-    if elements.len() < MIN_POLYGON_VERTICES {
-        return Err(ParsingErrorKind::InsufficientVertices);
-    }
-
-    let mut vertices = vec![];
-
-    for elem in elements {
-        let mut fields = elem.split('/');
-
-        // There's always going to be an element in the split's first position. This element might
-        // be empty, but it is there. Empty elements are going to be handled when parsing them into
-        // numbers from `get_face_element()`.
-        #[allow(clippy::unwrap_used)]
-        let vertex = get_face_element(fields.next().unwrap(), saved_vertices)?;
-
-        fields.next();
-
-        let normal = match fields.next() {
-            Some(normal_index) => Some(get_face_element(normal_index, saved_normals)?),
-            None => None,
+impl From<OBJModel> for Group {
+    fn from(model: OBJModel) -> Self {
+        let group_builder = GroupBuilder {
+            children: model
+                .groups
+                .into_iter()
+                .map(|polygons_group| Shape::Group(polygons_group.group)),
+            transform: model.transform,
         };
 
-        vertices.push(FaceVertex { vertex, normal });
+        Self::from(group_builder)
+    }
+}
+
+impl OBJModel {
+    fn parse_coordinate(line: &str) -> Result<(f64, f64, f64), ParsingErrorKind> {
+        let mut fields = line.split_whitespace().skip(1);
+
+        let x = fields
+            .next()
+            .ok_or(ParsingErrorKind::MissingField { name: "x" })?
+            .parse::<f64>()?;
+
+        let y = fields
+            .next()
+            .ok_or(ParsingErrorKind::MissingField { name: "y" })?
+            .parse::<f64>()?;
+
+        let z = fields
+            .next()
+            .ok_or(ParsingErrorKind::MissingField { name: "z" })?
+            .parse::<f64>()?;
+
+        Ok((x, y, z))
     }
 
-    fan_triangulation(vertices)
-}
+    fn parse_face(
+        line: &str,
+        saved_normals: &[Vector],
+        saved_vertices: &[Point],
+    ) -> Result<Vec<Shape>, ParsingErrorKind> {
+        let elements: Vec<_> = line.split_whitespace().skip(1).collect();
 
-fn get_face_element<T>(raw: &str, saved_elements: &[T]) -> Result<T, ParsingErrorKind>
-where
-    T: Copy,
-{
-    let index = raw.parse::<NonZeroUsize>()?;
-    saved_elements
-        .get(index.get() - 1)
-        .ok_or(ParsingErrorKind::FaceElementOutOfBounds {
-            accessed: index,
-            available: saved_elements.len(),
-        })
-        .copied()
-}
+        if elements.len() < MIN_POLYGON_VERTICES {
+            return Err(ParsingErrorKind::InsufficientVertices);
+        }
 
-fn fan_triangulation(vertices: Vec<FaceVertex>) -> Result<Vec<Shape>, ParsingErrorKind> {
-    let mut triangles = vec![];
+        let mut vertices = vec![];
 
-    for i in 2..vertices.len() {
-        let v0 = vertices[0];
-        let v1 = vertices[i - 1];
-        let v2 = vertices[i];
+        for elem in elements {
+            let mut fields = elem.split('/');
 
-        if let Ok(triangle) = Triangle::try_default_from_vertices([v0.vertex, v1.vertex, v2.vertex])
-        {
-            let triangle = if let (Some(n0), Some(n1), Some(n2)) = (v0.normal, v1.normal, v2.normal)
-            {
-                Shape::SmoothTriangle(SmoothTriangle {
-                    triangle,
-                    n0,
-                    n1,
-                    n2,
-                })
-            } else {
-                Shape::Triangle(triangle)
+            // There's always going to be an element in the split's first position. This element might
+            // be empty, but it is there. Empty elements are going to be handled when parsing them into
+            // numbers from `get_face_element()`.
+            #[allow(clippy::unwrap_used)]
+            let vertex = Self::get_face_element(fields.next().unwrap(), saved_vertices)?;
+
+            fields.next();
+
+            let normal = match fields.next() {
+                Some(normal_index) => Some(Self::get_face_element(normal_index, saved_normals)?),
+                None => None,
             };
 
-            triangles.push(triangle);
+            vertices.push(FaceVertex { vertex, normal });
         }
+
+        Self::fan_triangulation(vertices)
     }
 
-    Ok(triangles)
-}
+    fn get_face_element<T>(raw: &str, saved_elements: &[T]) -> Result<T, ParsingErrorKind>
+    where
+        T: Copy,
+    {
+        let index = raw.parse::<NonZeroUsize>()?;
+        saved_elements
+            .get(index.get() - 1)
+            .ok_or(ParsingErrorKind::FaceElementOutOfBounds {
+                accessed: index,
+                available: saved_elements.len(),
+            })
+            .copied()
+    }
 
-fn parse_group(line: &str) -> Result<PolygonGroup, ParsingErrorKind> {
-    let group_name = line
-        .split_whitespace()
-        .nth(1)
-        .ok_or(ParsingErrorKind::MissingField { name: "group_name" })?;
+    fn fan_triangulation(vertices: Vec<FaceVertex>) -> Result<Vec<Shape>, ParsingErrorKind> {
+        let mut triangles = vec![];
 
-    Ok(PolygonGroup {
-        group: Group::default(),
-        name: group_name.to_string(),
-    })
+        for i in 2..vertices.len() {
+            let v0 = vertices[0];
+            let v1 = vertices[i - 1];
+            let v2 = vertices[i];
+
+            if let Ok(triangle) =
+                Triangle::try_default_from_vertices([v0.vertex, v1.vertex, v2.vertex])
+            {
+                let triangle =
+                    if let (Some(n0), Some(n1), Some(n2)) = (v0.normal, v1.normal, v2.normal) {
+                        Shape::SmoothTriangle(SmoothTriangle {
+                            triangle,
+                            n0,
+                            n1,
+                            n2,
+                        })
+                    } else {
+                        Shape::Triangle(triangle)
+                    };
+
+                triangles.push(triangle);
+            }
+        }
+
+        Ok(triangles)
+    }
+
+    fn parse_group(line: &str) -> Result<PolygonsGroup, ParsingErrorKind> {
+        let group_name = line
+            .split_whitespace()
+            .nth(1)
+            .ok_or(ParsingErrorKind::MissingField { name: "group_name" })?;
+
+        Ok(PolygonsGroup {
+            group: Group::default(),
+            name: group_name.to_string(),
+        })
+    }
 }
 
 #[cfg(test)]
@@ -249,7 +263,11 @@ v -1.0000 0.50000 0.0000
 v 1 0 0
 v 1 1 0";
 
-        let model = OBJModel::new(input, SceneProgress::Disable).unwrap();
+        let model = OBJModel::try_from(OBJModelBuilder {
+            content: input,
+            transform: Default::default(),
+        })
+        .unwrap();
 
         assert_eq!(model.vertices[0], Point::new(-1.0, 1.0, 0.0));
         assert_eq!(model.vertices[1], Point::new(-1.0, 0.5, 0.0));
@@ -261,7 +279,7 @@ v 1 1 0";
     fn parsing_a_vertex() {
         let input = "v 1 2.5000 -3.0";
 
-        let vertex = parse_coordinate(input).unwrap();
+        let vertex = OBJModel::parse_coordinate(input).unwrap();
 
         assert_eq!(vertex, (1.0, 2.5, -3.0));
     }
@@ -269,17 +287,17 @@ v 1 1 0";
     #[test]
     fn trying_to_parse_a_vertex_with_a_missing_field() {
         assert_eq!(
-            parse_coordinate("v "),
+            OBJModel::parse_coordinate("v "),
             Err(ParsingErrorKind::MissingField { name: "x" })
         );
 
         assert_eq!(
-            parse_coordinate("v 1"),
+            OBJModel::parse_coordinate("v 1"),
             Err(ParsingErrorKind::MissingField { name: "y" })
         );
 
         assert_eq!(
-            parse_coordinate("v 1 2.5"),
+            OBJModel::parse_coordinate("v 1 2.5"),
             Err(ParsingErrorKind::MissingField { name: "z" })
         );
     }
@@ -287,7 +305,7 @@ v 1 1 0";
     #[test]
     fn trying_to_parse_a_vertex_with_an_invalid_coordinate() {
         assert!(matches!(
-            parse_coordinate("v 1 @ 2.0"),
+            OBJModel::parse_coordinate("v 1 @ 2.0"),
             Err(ParsingErrorKind::InvalidCoordinate(_))
         ));
     }
@@ -297,7 +315,10 @@ v 1 1 0";
         let input = "v 1";
 
         assert_eq!(
-            OBJModel::new(input, SceneProgress::Disable),
+            OBJModel::try_from(OBJModelBuilder {
+                content: input,
+                transform: Default::default()
+            }),
             Err(ParsingError {
                 kind: ParsingErrorKind::MissingField { name: "y" },
                 line_nr: 0,
@@ -309,7 +330,11 @@ v 1 1 0";
     fn an_error_should_display_with_correct_message() {
         let input = "v 1";
 
-        let err = OBJModel::new(input, SceneProgress::Disable).unwrap_err();
+        let err = OBJModel::try_from(OBJModelBuilder {
+            content: input,
+            transform: Default::default(),
+        })
+        .unwrap_err();
 
         assert_eq!(
             err.to_string(),
@@ -328,7 +353,11 @@ v 1 1 0
 f 1 2 3
 f 1 3 4";
 
-        let model = OBJModel::new(input, SceneProgress::Disable).unwrap();
+        let model = OBJModel::try_from(OBJModelBuilder {
+            content: input,
+            transform: Default::default(),
+        })
+        .unwrap();
 
         let g = &model.groups[0].group;
         let t0 = &g.children[0];
@@ -363,7 +392,7 @@ f 1 3 4";
     fn trying_to_parse_a_face_with_insufficient_vertices() {
         let input = "f ";
 
-        let err = parse_face(input, &[], &[]).unwrap_err();
+        let err = OBJModel::parse_face(input, &[], &[]).unwrap_err();
 
         assert_eq!(err, ParsingErrorKind::InsufficientVertices);
     }
@@ -371,11 +400,11 @@ f 1 3 4";
     #[test]
     fn trying_to_parse_a_face_element_with_an_invalid_vertex_index() {
         assert!(matches!(
-            get_face_element::<Point>("@", &[]),
+            OBJModel::get_face_element::<Point>("@", &[]),
             Err(ParsingErrorKind::InvalidVertexIndex(_))
         ));
 
-        let err = get_face_element("2", &[Point::new(1.0, 2.0, 3.0)]).unwrap_err();
+        let err = OBJModel::get_face_element("2", &[Point::new(1.0, 2.0, 3.0)]).unwrap_err();
 
         assert_eq!(
             err,
@@ -400,7 +429,7 @@ f 1 3 4";
             Point::new(4.0, 5.0, 6.0),
         ];
 
-        let vertex = get_face_element("3", &vertices).unwrap();
+        let vertex = OBJModel::get_face_element("3", &vertices).unwrap();
 
         assert_eq!(vertex, vertices[2]);
     }
@@ -415,7 +444,7 @@ f 1 3 4";
 
         let input = "f 1 2 3";
 
-        let tri = parse_face(input, &[], &vertices).unwrap();
+        let tri = OBJModel::parse_face(input, &[], &vertices).unwrap();
 
         assert_eq!(
             tri[0],
@@ -434,7 +463,11 @@ v 0 2 0
 
 f 1 2 3 4 5";
 
-        let model = OBJModel::new(input, SceneProgress::Disable).unwrap();
+        let model = OBJModel::try_from(OBJModelBuilder {
+            content: input,
+            transform: Default::default(),
+        })
+        .unwrap();
 
         let g = &model.groups[0].group;
         let t0 = &g.children[0];
@@ -490,7 +523,11 @@ f 1 2 3
 g SecondGroup
 f 1 3 4";
 
-        let model = OBJModel::new(input, SceneProgress::Disable).unwrap();
+        let model = OBJModel::try_from(OBJModelBuilder {
+            content: input,
+            transform: Default::default(),
+        })
+        .unwrap();
 
         let g1 = &model
             .groups
@@ -537,7 +574,7 @@ f 1 3 4";
     #[test]
     fn trying_to_parse_a_group_without_a_name() {
         assert_eq!(
-            parse_group("g"),
+            OBJModel::parse_group("g"),
             Err(ParsingErrorKind::MissingField { name: "group_name" })
         );
     }
@@ -554,11 +591,16 @@ f 1 2 3
 g SecondGroup
 f 1 3 4";
 
-        let model = OBJModel::new(input, SceneProgress::Disable).unwrap();
+        let model = OBJModel::try_from(OBJModelBuilder {
+            content: input,
+            transform: Default::default(),
+        })
+        .unwrap();
+
         let first_group = Shape::Group(model.groups[1].group.clone());
         let second_group = Shape::Group(model.groups[2].group.clone());
 
-        let g = model.build(Default::default());
+        let g = Group::from(model);
 
         assert!(g.children.contains(&first_group));
         assert!(g.children.contains(&second_group));
@@ -571,7 +613,11 @@ vn 0 0 1
 vn 0.707 0 -0.707
 vn 1 2 3";
 
-        let model = OBJModel::new(input, SceneProgress::Disable).unwrap();
+        let model = OBJModel::try_from(OBJModelBuilder {
+            content: input,
+            transform: Default::default(),
+        })
+        .unwrap();
 
         assert_eq!(model.normals[0], Vector::new(0.0, 0.0, 1.0));
         assert_eq!(model.normals[1], Vector::new(0.707, 0.0, -0.707));
@@ -592,7 +638,11 @@ vn 0 1 0
 f 1//3 2//1 3//2
 f 1/0/3 2/102/1 3/14/2";
 
-        let model = OBJModel::new(input, SceneProgress::Disable).unwrap();
+        let model = OBJModel::try_from(OBJModelBuilder {
+            content: input,
+            transform: Default::default(),
+        })
+        .unwrap();
 
         let g = &model.groups[0].group;
         let t0 = &g.children[0];
@@ -632,7 +682,7 @@ f 1/0/3 2/102/1 3/14/2";
 
         let input = "f 1//3 2//2 3//1";
 
-        let tri = parse_face(input, &normals, &vertices).unwrap();
+        let tri = OBJModel::parse_face(input, &normals, &vertices).unwrap();
 
         assert_eq!(
             tri[0],

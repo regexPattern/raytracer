@@ -128,13 +128,13 @@ impl World {
     }
 }
 
-// This base world is used in other modules for testing purposes.
 #[cfg(test)]
+// This base world is used in other modules for testing purposes.
 pub(crate) fn test_world() -> World {
     use crate::{
         material::Material,
         pattern::Pattern3D,
-        shape::{ObjectBuilder, Sphere},
+        shape::sphere::{Sphere, SphereBuilder},
         transform::Transform,
     };
 
@@ -143,7 +143,7 @@ pub(crate) fn test_world() -> World {
         intensity: color::consts::WHITE,
     };
 
-    let s0 = Shape::Sphere(Sphere::from(ObjectBuilder {
+    let s0 = Shape::Sphere(Sphere::from(SphereBuilder {
         material: Material {
             pattern: Pattern3D::Solid(color::Color {
                 red: 0.8,
@@ -157,7 +157,7 @@ pub(crate) fn test_world() -> World {
         ..Default::default()
     }));
 
-    let s1 = Shape::Sphere(Sphere::from(ObjectBuilder {
+    let s1 = Shape::Sphere(Sphere::from(SphereBuilder {
         transform: Transform::scaling(0.5, 0.5, 0.5).unwrap(),
         ..Default::default()
     }));
@@ -175,7 +175,10 @@ mod tests {
         intersection::Intersection,
         material::Material,
         pattern::Pattern3D,
-        shape::{ObjectBuilder, Plane, Sphere},
+        shape::{
+            plane::{Plane, PlaneBuilder},
+            sphere::{Sphere, SphereBuilder},
+        },
         transform::Transform,
         tuple::Vector,
     };
@@ -418,7 +421,7 @@ mod tests {
     fn shade_hit_is_given_an_intersection_in_shadow() {
         let s0 = Shape::Sphere(Default::default());
 
-        let s1 = Shape::Sphere(Sphere::from(ObjectBuilder {
+        let s1 = Shape::Sphere(Sphere::from(SphereBuilder {
             transform: Transform::translation(0.0, 0.0, 10.0),
             ..Default::default()
         }));
@@ -492,7 +495,7 @@ mod tests {
     fn the_reflected_color_for_a_reflective_material() {
         let w = test_world();
 
-        let o = Shape::Plane(Plane::from(ObjectBuilder {
+        let o = Shape::Plane(Plane::from(PlaneBuilder {
             material: Material {
                 reflectivity: 0.5,
                 ..Default::default()
@@ -530,7 +533,7 @@ mod tests {
     fn shade_hit_with_a_reflective_material() {
         let w = test_world();
 
-        let s = Shape::Plane(Plane::from(ObjectBuilder {
+        let s = Shape::Plane(Plane::from(PlaneBuilder {
             material: Material {
                 reflectivity: 0.5,
                 ..Default::default()
@@ -566,7 +569,7 @@ mod tests {
 
     #[test]
     fn color_at_with_mutually_reflective_surfaces() {
-        let lower = Shape::Sphere(Sphere::from(ObjectBuilder {
+        let lower = Shape::Sphere(Sphere::from(SphereBuilder {
             material: Material {
                 reflectivity: 1.0,
                 ..Default::default()
@@ -574,7 +577,7 @@ mod tests {
             transform: Transform::translation(0.0, -1.0, 0.0),
         }));
 
-        let upper = Shape::Sphere(Sphere::from(ObjectBuilder {
+        let upper = Shape::Sphere(Sphere::from(SphereBuilder {
             material: lower.as_ref().material.clone(),
             transform: Transform::translation(0.0, 1.0, 0.0),
         }));
@@ -600,7 +603,7 @@ mod tests {
 
     #[test]
     fn the_reflected_color_at_the_maximum_recursive_depth() {
-        let s = Shape::Sphere(Sphere::from(ObjectBuilder {
+        let s = Shape::Sphere(Sphere::from(SphereBuilder {
             material: Material {
                 reflectivity: 0.5,
                 ..Default::default()
@@ -741,7 +744,7 @@ mod tests {
     fn shade_hit_with_a_transparent_material() {
         let mut w = test_world();
 
-        let floor = Shape::Plane(Plane::from(ObjectBuilder {
+        let floor = Shape::Plane(Plane::from(PlaneBuilder {
             material: Material {
                 index_of_refraction: 1.5,
                 transparency: 0.5,
@@ -750,7 +753,7 @@ mod tests {
             transform: Transform::translation(0.0, -1.0, 0.0),
         }));
 
-        let ball = Shape::Sphere(Sphere::from(ObjectBuilder {
+        let ball = Shape::Sphere(Sphere::from(SphereBuilder {
             material: Material {
                 ambient: 0.5,
                 pattern: Pattern3D::Solid(color::consts::RED),
@@ -797,7 +800,7 @@ mod tests {
             direction: Vector::new(0.0, -2_f64.sqrt() / 2.0, 2_f64.sqrt() / 2.0),
         };
 
-        let floor = Shape::Plane(Plane::from(ObjectBuilder {
+        let floor = Shape::Plane(Plane::from(PlaneBuilder {
             material: Material {
                 index_of_refraction: 1.5,
                 reflectivity: 0.5,
@@ -807,7 +810,7 @@ mod tests {
             transform: Transform::translation(0.0, -1.0, 0.0),
         }));
 
-        let ball = Shape::Sphere(Sphere::from(ObjectBuilder {
+        let ball = Shape::Sphere(Sphere::from(SphereBuilder {
             material: Material {
                 ambient: 0.5,
                 pattern: Pattern3D::Solid(color::consts::RED),

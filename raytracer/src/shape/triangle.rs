@@ -9,19 +9,11 @@ use crate::{
     tuple::{Point, Vector},
 };
 
-use super::{BoundingBox, ObjectCache, Shape};
+use super::{bounding_box::BoundingBox, object::ObjectCache, Shape};
 
 #[derive(Debug, PartialEq, Error)]
 #[error("triangle sides most not be collinear")]
 pub struct CollinearTriangleSidesError;
-
-pub struct TriangleBuilder {
-    material: Material,
-    transform: Transform,
-    v0: Point,
-    v1: Point,
-    v2: Point,
-}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Triangle {
@@ -32,6 +24,15 @@ pub struct Triangle {
     e0: Vector,
     e1: Vector,
     normal: Vector,
+}
+
+#[derive(Clone)]
+pub struct TriangleBuilder {
+    material: Material,
+    transform: Transform,
+    v0: Point,
+    v1: Point,
+    v2: Point,
 }
 
 impl TryFrom<TriangleBuilder> for Triangle {

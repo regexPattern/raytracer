@@ -12,6 +12,8 @@ use crate::{
     world::World,
 };
 
+pub mod consts;
+
 const DEFAULT_THREADS: usize = 8;
 
 #[derive(Debug, PartialEq, Error)]
@@ -35,26 +37,25 @@ pub struct Camera {
     transform_inverse: Transform,
 }
 
-impl PartialEq for Camera {
-    fn eq(&self, other: &Self) -> bool {
-        self.hsize == other.hsize
-            && self.vsize == other.vsize
-            && float::approx(self.field_of_view, other.field_of_view)
-            && float::approx(self.pixel_size, other.pixel_size)
-            && float::approx(self.half_width, other.half_width)
-            && float::approx(self.half_height, other.half_height)
-            && self.transform == other.transform
-            && self.transform_inverse == other.transform_inverse
-    }
+#[derive(Clone)]
+pub struct CameraBuilder {
+    pub image_width: usize,
+    pub image_height: usize,
+    pub field_of_view: f64,
+    pub transform: Transform,
 }
 
-impl Camera {
-    pub fn new(
-        hsize: usize,
-        vsize: usize,
-        field_of_view: f64,
-        transform: Transform,
-    ) -> Result<Self, CameraError> {
+impl TryFrom<CameraBuilder> for Camera {
+    type Error = CameraError;
+
+    fn try_from(builder: CameraBuilder) -> Result<Self, Self::Error> {
+        let CameraBuilder {
+            image_width: hsize,
+            image_height: vsize,
+            field_of_view,
+            transform,
+        } = builder;
+
         if float::approx(field_of_view % std::f64::consts::PI, 0.0) {
             return Err(CameraError::MultipleOfPiFieldOfView);
         }
@@ -88,7 +89,22 @@ impl Camera {
             transform_inverse: transform.inverse(),
         })
     }
+}
 
+impl PartialEq for Camera {
+    fn eq(&self, other: &Self) -> bool {
+        self.hsize == other.hsize
+            && self.vsize == other.vsize
+            && float::approx(self.field_of_view, other.field_of_view)
+            && float::approx(self.pixel_size, other.pixel_size)
+            && float::approx(self.half_width, other.half_width)
+            && float::approx(self.half_height, other.half_height)
+            && self.transform == other.transform
+            && self.transform_inverse == other.transform_inverse
+    }
+}
+
+impl Camera {
     pub fn render(&self, world: &World, progress: SceneProgress) -> Canvas {
         let mut image = Canvas::new(self.hsize, self.vsize);
         let mutex = Arc::new(Mutex::new(&mut image));
@@ -115,7 +131,7 @@ impl Camera {
                 let progress_bar = progress_bar.clone();
 
                 s.spawn(move |_| {
-                    let mut buffer = Vec::with_capacity(self.hsize as usize);
+                    let mut buffer = Vec::with_capacity(self.hsize);
 
                     for x in 0..self.hsize {
                         let ray = self.ray_for_pixel(x, y);
@@ -169,7 +185,13 @@ mod tests {
         let vsize = 120;
         let field_of_view = std::f64::consts::FRAC_PI_2;
 
-        let c = Camera::new(hsize, vsize, field_of_view, Default::default()).unwrap();
+        let c = Camera::try_from(CameraBuilder {
+            image_width: hsize,
+            image_height: vsize,
+            field_of_view,
+            transform: Default::default(),
+        })
+        .unwrap();
 
         assert_eq!(c.hsize, hsize);
         assert_eq!(c.vsize, vsize);
@@ -179,21 +201,39 @@ mod tests {
 
     #[test]
     fn the_pixel_size_for_a_horizontal_canvas() {
-        let c = Camera::new(200, 125, std::f64::consts::FRAC_PI_2, Default::default()).unwrap();
+        let c = Camera::try_from(CameraBuilder {
+            image_width: 200,
+            image_height: 125,
+            field_of_view: std::f64::consts::FRAC_PI_2,
+            transform: Default::default(),
+        })
+        .unwrap();
 
         assert_approx!(c.pixel_size, 0.01);
     }
 
     #[test]
     fn the_pixel_size_for_a_vertical_canvas() {
-        let c = Camera::new(125, 200, std::f64::consts::FRAC_PI_2, Default::default()).unwrap();
+        let c = Camera::try_from(CameraBuilder {
+            image_width: 125,
+            image_height: 200,
+            field_of_view: std::f64::consts::FRAC_PI_2,
+            transform: Default::default(),
+        })
+        .unwrap();
 
         assert_approx!(c.pixel_size, 0.01);
     }
 
     #[test]
     fn constructing_a_ray_through_the_center_of_the_canvas() {
-        let c = Camera::new(201, 101, std::f64::consts::FRAC_PI_2, Default::default()).unwrap();
+        let c = Camera::try_from(CameraBuilder {
+            image_width: 201,
+            image_height: 101,
+            field_of_view: std::f64::consts::FRAC_PI_2,
+            transform: Default::default(),
+        })
+        .unwrap();
 
         let r = c.ray_for_pixel(100, 50);
 
@@ -203,7 +243,13 @@ mod tests {
 
     #[test]
     fn constructing_a_ray_through_a_corner_of_the_canvas() {
-        let c = Camera::new(201, 101, std::f64::consts::FRAC_PI_2, Default::default()).unwrap();
+        let c = Camera::try_from(CameraBuilder {
+            image_width: 201,
+            image_height: 101,
+            field_of_view: std::f64::consts::FRAC_PI_2,
+            transform: Default::default(),
+        })
+        .unwrap();
 
         let r = c.ray_for_pixel(0, 0);
 
@@ -213,13 +259,13 @@ mod tests {
 
     #[test]
     fn constructing_a_ray_when_the_camera_is_transformed() {
-        let c = Camera::new(
-            201,
-            101,
-            std::f64::consts::FRAC_PI_2,
-            Transform::rotation_y(std::f64::consts::FRAC_PI_4)
+        let c = Camera::try_from(CameraBuilder {
+            image_width: 201,
+            image_height: 101,
+            field_of_view: std::f64::consts::FRAC_PI_2,
+            transform: Transform::rotation_y(std::f64::consts::FRAC_PI_4)
                 * Transform::translation(0.0, -2.0, 5.0),
-        )
+        })
         .unwrap();
 
         let r = c.ray_for_pixel(100, 50);
@@ -239,12 +285,12 @@ mod tests {
         let to = Point::new(0.0, 0.0, 0.0);
         let up = Vector::new(0.0, 1.0, 0.0);
 
-        let c = Camera::new(
-            11,
-            11,
-            std::f64::consts::FRAC_PI_2,
-            Transform::view(from, to, up).unwrap(),
-        )
+        let c = Camera::try_from(CameraBuilder {
+            image_width: 11,
+            image_height: 11,
+            field_of_view: std::f64::consts::FRAC_PI_2,
+            transform: Transform::view(from, to, up).unwrap(),
+        })
         .unwrap();
 
         let image = c.render(&w, SceneProgress::Disable);
@@ -261,15 +307,27 @@ mod tests {
 
     #[test]
     fn comparing_cameras() {
-        let c0 = Camera::new(100, 200, std::f64::consts::FRAC_PI_3, Default::default()).unwrap();
-        let c1 = Camera::new(100, 200, std::f64::consts::FRAC_PI_3, Default::default()).unwrap();
+        let c0 = Camera::try_from(CameraBuilder {
+            image_width: 100,
+            image_height: 200,
+            field_of_view: std::f64::consts::FRAC_PI_3,
+            transform: Default::default(),
+        })
+        .unwrap();
+        let c1 = Camera::try_from(CameraBuilder {
+            image_width: 100,
+            image_height: 200,
+            field_of_view: std::f64::consts::FRAC_PI_3,
+            transform: Default::default(),
+        })
+        .unwrap();
 
-        let c2 = Camera::new(
-            200,
-            300,
-            std::f64::consts::FRAC_PI_6,
-            Transform::scaling(1.0, 2.0, 3.0).unwrap(),
-        )
+        let c2 = Camera::try_from(CameraBuilder {
+            image_width: 200,
+            image_height: 300,
+            field_of_view: std::f64::consts::FRAC_PI_6,
+            transform: Transform::scaling(1.0, 2.0, 3.0).unwrap(),
+        })
         .unwrap();
 
         assert_eq!(c0, c1);
@@ -278,16 +336,36 @@ mod tests {
 
     #[test]
     fn trying_to_create_a_camera_with_null_dimensions() {
-        let c = Camera::new(0, 0, std::f64::consts::FRAC_PI_2, Default::default());
+        let c = Camera::try_from(CameraBuilder {
+            image_width: 0,
+            image_height: 0,
+            field_of_view: std::f64::consts::FRAC_PI_2,
+            transform: Default::default(),
+        });
 
         assert_eq!(c, Err(CameraError::NullDimension));
     }
 
     #[test]
     fn trying_to_create_a_camera_with_a_multiple_of_pi_field_of_view() {
-        let c0 = Camera::new(100, 200, 0.0, Default::default());
-        let c1 = Camera::new(100, 200, std::f64::consts::PI, Default::default());
-        let c2 = Camera::new(100, 200, 3.0 * std::f64::consts::PI, Default::default());
+        let c0 = Camera::try_from(CameraBuilder {
+            image_width: 100,
+            image_height: 200,
+            field_of_view: 0.0,
+            transform: Default::default(),
+        });
+        let c1 = Camera::try_from(CameraBuilder {
+            image_width: 100,
+            image_height: 200,
+            field_of_view: std::f64::consts::PI,
+            transform: Default::default(),
+        });
+        let c2 = Camera::try_from(CameraBuilder {
+            image_width: 100,
+            image_height: 200,
+            field_of_view: 3.0 * std::f64::consts::PI,
+            transform: Default::default(),
+        });
 
         assert_eq!(c0, Err(CameraError::MultipleOfPiFieldOfView));
         assert_eq!(c1, Err(CameraError::MultipleOfPiFieldOfView));

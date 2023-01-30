@@ -5,39 +5,28 @@ use crate::{
     tuple::{Point, Vector},
 };
 
-mod bounding_box;
-mod cube;
-mod cylinder;
-mod group;
-mod object;
-mod plane;
-mod smooth_triangle;
-mod sphere;
-mod triangle;
+pub mod bounding_box;
+pub mod cube;
+pub mod cylinder;
+pub mod group;
+pub mod plane;
+pub mod smooth_triangle;
+pub mod sphere;
+pub mod triangle;
 
-use object::ObjectCache;
+pub(crate) mod object;
 
-pub use self::{
-    bounding_box::BoundingBox,
-    cube::Cube,
-    cylinder::Cylinder,
-    group::Group,
-    object::ObjectBuilder,
-    plane::Plane,
-    smooth_triangle::SmoothTriangle,
-    sphere::Sphere,
-    triangle::{CollinearTriangleSidesError, Triangle},
-};
+use bounding_box::BoundingBox;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Shape {
-    Cube(Cube),
-    Cylinder(Cylinder),
-    Plane(Plane),
-    Sphere(Sphere),
-    Triangle(Triangle),
-    SmoothTriangle(SmoothTriangle),
-    Group(Group),
+    Cube(cube::Cube),
+    Cylinder(cylinder::Cylinder),
+    Plane(plane::Plane),
+    Sphere(sphere::Sphere),
+    Triangle(triangle::Triangle),
+    SmoothTriangle(smooth_triangle::SmoothTriangle),
+    Group(group::Group),
 }
 
 fn object_ray(ray: &Ray, transform_inverse: Transform) -> Ray {
@@ -109,6 +98,11 @@ impl Shape {
 
 #[cfg(test)]
 mod tests {
+    use crate::shape::{
+        group::Group,
+        sphere::{Sphere, SphereBuilder},
+    };
+
     use super::*;
 
     #[test]
@@ -174,7 +168,7 @@ mod tests {
 
     #[test]
     fn finding_the_normal_on_a_child_object() {
-        let child = Shape::Sphere(Sphere::from(ObjectBuilder {
+        let child = Shape::Sphere(Sphere::from(SphereBuilder {
             transform: Transform::translation(5.0, 0.0, 0.0),
             ..Default::default()
         }));
@@ -209,7 +203,7 @@ mod tests {
 
     #[test]
     fn querying_a_shapes_bounds_in_its_parents_space() {
-        let s = Shape::Sphere(Sphere::from(ObjectBuilder {
+        let s = Shape::Sphere(Sphere::from(SphereBuilder {
             transform: Transform::translation(1.0, -3.0, 5.0)
                 * Transform::scaling(0.5, 2.0, 4.0).unwrap(),
             ..Default::default()

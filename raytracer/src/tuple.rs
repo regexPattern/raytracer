@@ -8,8 +8,16 @@ use crate::float;
 const POINT_W: f64 = 1.0;
 const VECTOR_W: f64 = 0.0;
 
+#[derive(Debug, PartialEq, Eq, Error)]
+#[error("tried to normalize a null vector")]
+pub struct NormalizeNullVectorError;
+
+#[derive(Debug, PartialEq, Eq, Error)]
+#[error("division by zero")]
+pub struct DivisionByZeroError;
+
 #[derive(Copy, Clone, Debug)]
-pub struct Tuple {
+pub(crate) struct Tuple {
     pub x: f64,
     pub y: f64,
     pub z: f64,
@@ -24,17 +32,6 @@ pub struct Point(pub(crate) Tuple);
 #[serde(from = "CoordinateDeserializer")]
 pub struct Vector(pub(crate) Tuple);
 
-#[derive(Debug, PartialEq, Eq, Error)]
-#[error("tried to normalize a null vector")]
-pub struct NormalizeNullVectorError;
-
-#[derive(Debug, PartialEq, Eq, Error)]
-#[error("division by zero")]
-pub struct DivisionByZeroError;
-
-// Helper struct to deserialize `Point` and `Vector` without exposing `Tuple`'s private fields.
-// Note that `PartialEq` is being used here. I don't really care about comparing this type beyoond
-// the tests, so floating point comparission doesn't matter here. #[derive(Debug, PartialEq)]
 #[derive(Debug, PartialEq, Deserialize)]
 struct CoordinateDeserializer {
     x: f64,

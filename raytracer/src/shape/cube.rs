@@ -1,21 +1,35 @@
 use crate::{
     float,
     intersection::Intersection,
+    material::Material,
     ray::Ray,
+    transform::Transform,
     tuple::{Point, Tuple, Vector},
 };
 
-use super::{BoundingBox, ObjectBuilder, ObjectCache, Shape};
+use super::{bounding_box::BoundingBox, object::ObjectCache, Shape};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Cube(pub(crate) ObjectCache);
 
-impl From<ObjectBuilder> for Cube {
-    fn from(object: ObjectBuilder) -> Self {
-        let ObjectBuilder {
+#[derive(Clone, Default)]
+pub struct CubeBuilder {
+    pub material: Material,
+    pub transform: Transform,
+}
+
+impl Default for Cube {
+    fn default() -> Self {
+        Self::from(CubeBuilder::default())
+    }
+}
+
+impl From<CubeBuilder> for Cube {
+    fn from(builder: CubeBuilder) -> Self {
+        let CubeBuilder {
             material,
             transform,
-        } = object;
+        } = builder;
 
         let bounding_box = BoundingBox {
             min: Point::new(-1.0, -1.0, -1.0),
@@ -23,12 +37,6 @@ impl From<ObjectBuilder> for Cube {
         };
 
         Self(ObjectCache::new(material, transform, bounding_box))
-    }
-}
-
-impl Default for Cube {
-    fn default() -> Self {
-        Self::from(ObjectBuilder::default())
     }
 }
 

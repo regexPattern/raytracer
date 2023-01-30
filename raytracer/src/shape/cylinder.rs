@@ -7,15 +7,7 @@ use crate::{
     tuple::{Point, Tuple, Vector},
 };
 
-use super::{BoundingBox, ObjectCache, Shape};
-
-pub struct CylinderBuilder {
-    pub material: Material,
-    pub transform: Transform,
-    pub min: f64,
-    pub max: f64,
-    pub closed: bool,
-}
+use super::{bounding_box::BoundingBox, object::ObjectCache, Shape};
 
 #[derive(Clone, Debug)]
 pub struct Cylinder {
@@ -25,12 +17,30 @@ pub struct Cylinder {
     pub(crate) closed: bool,
 }
 
-impl PartialEq for Cylinder {
-    fn eq(&self, other: &Self) -> bool {
-        self.object_cache == other.object_cache
-            && float::approx(self.min, other.min)
-            && float::approx(self.max, other.max)
-            && self.closed == other.closed
+#[derive(Clone)]
+pub struct CylinderBuilder {
+    pub material: Material,
+    pub transform: Transform,
+    pub min: f64,
+    pub max: f64,
+    pub closed: bool,
+}
+
+impl Default for Cylinder {
+    fn default() -> Self {
+        Self::from(CylinderBuilder::default())
+    }
+}
+
+impl Default for CylinderBuilder {
+    fn default() -> Self {
+        Self {
+            material: Default::default(),
+            transform: Default::default(),
+            min: std::f64::NEG_INFINITY,
+            max: std::f64::INFINITY,
+            closed: false,
+        }
     }
 }
 
@@ -62,21 +72,12 @@ impl From<CylinderBuilder> for Cylinder {
     }
 }
 
-impl Default for CylinderBuilder {
-    fn default() -> Self {
-        Self {
-            material: Default::default(),
-            transform: Default::default(),
-            min: std::f64::NEG_INFINITY,
-            max: std::f64::INFINITY,
-            closed: false,
-        }
-    }
-}
-
-impl Default for Cylinder {
-    fn default() -> Self {
-        Self::from(CylinderBuilder::default())
+impl PartialEq for Cylinder {
+    fn eq(&self, other: &Self) -> bool {
+        self.object_cache == other.object_cache
+            && float::approx(self.min, other.min)
+            && float::approx(self.max, other.max)
+            && self.closed == other.closed
     }
 }
 

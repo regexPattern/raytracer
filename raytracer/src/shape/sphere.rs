@@ -1,20 +1,34 @@
 use crate::{
     intersection::Intersection,
+    material::Material,
     ray::Ray,
+    transform::Transform,
     tuple::{Point, Vector},
 };
 
-use super::{BoundingBox, ObjectBuilder, ObjectCache, Shape};
+use super::{bounding_box::BoundingBox, object::ObjectCache, Shape};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Sphere(pub(crate) ObjectCache);
 
-impl From<ObjectBuilder> for Sphere {
-    fn from(object: ObjectBuilder) -> Self {
-        let ObjectBuilder {
+#[derive(Clone, Default)]
+pub struct SphereBuilder {
+    pub material: Material,
+    pub transform: Transform,
+}
+
+impl Default for Sphere {
+    fn default() -> Self {
+        Self::from(SphereBuilder::default())
+    }
+}
+
+impl From<SphereBuilder> for Sphere {
+    fn from(builder: SphereBuilder) -> Self {
+        let SphereBuilder {
             material,
             transform,
-        } = object;
+        } = builder;
 
         let bounding_box = BoundingBox {
             min: Point::new(-1.0, -1.0, -1.0),
@@ -22,12 +36,6 @@ impl From<ObjectBuilder> for Sphere {
         };
 
         Self(ObjectCache::new(material, transform, bounding_box))
-    }
-}
-
-impl Default for Sphere {
-    fn default() -> Self {
-        Self::from(ObjectBuilder::default())
     }
 }
 

@@ -15,12 +15,12 @@ pub mod consts {
     ]);
 }
 
-#[derive(Copy, Clone, Debug)]
-pub struct Matrix<const M: usize, const N: usize>(pub [[f64; N]; M]);
-
 #[derive(Debug, PartialEq, Error)]
 #[error("tried to inverse a singular matrix")]
 pub struct NonInvertibleMatrixError;
+
+#[derive(Copy, Clone, Debug)]
+pub struct Matrix<const M: usize, const N: usize>(pub [[f64; N]; M]);
 
 impl<const M: usize, const N: usize> PartialEq for Matrix<M, N> {
     fn eq(&self, other: &Self) -> bool {

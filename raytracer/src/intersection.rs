@@ -146,14 +146,14 @@ mod tests {
     use crate::{
         assert_approx,
         material::Material,
-        shape::{ObjectBuilder, Sphere},
+        shape::sphere::{Sphere, SphereBuilder},
         transform::Transform,
     };
 
     use super::*;
 
     fn glass_sphere() -> Shape {
-        Shape::Sphere(Sphere::from(ObjectBuilder {
+        Shape::Sphere(Sphere::from(SphereBuilder {
             material: glass_material(),
             ..Default::default()
         }))
@@ -417,7 +417,7 @@ mod tests {
 
     #[test]
     fn the_hit_should_offset_the_point() {
-        let o = Shape::Sphere(Sphere::from(ObjectBuilder {
+        let o = Shape::Sphere(Sphere::from(SphereBuilder {
             transform: Transform::translation(0.0, 0.0, 1.0),
             ..Default::default()
         }));
@@ -466,7 +466,7 @@ mod tests {
 
     #[test]
     fn finding_n1_and_n2_at_various_intersections() {
-        let a = Shape::Sphere(Sphere::from(ObjectBuilder {
+        let a = Shape::Sphere(Sphere::from(SphereBuilder {
             material: Material {
                 index_of_refraction: 1.5,
                 ..glass_material()
@@ -474,7 +474,7 @@ mod tests {
             transform: Transform::scaling(2.0, 2.0, 2.0).unwrap(),
         }));
 
-        let b = Shape::Sphere(Sphere::from(ObjectBuilder {
+        let b = Shape::Sphere(Sphere::from(SphereBuilder {
             material: Material {
                 index_of_refraction: 2.0,
                 ..glass_material()
@@ -482,7 +482,7 @@ mod tests {
             transform: Transform::translation(0.0, 0.0, -0.25),
         }));
 
-        let c = Shape::Sphere(Sphere::from(ObjectBuilder {
+        let c = Shape::Sphere(Sphere::from(SphereBuilder {
             material: Material {
                 index_of_refraction: 2.5,
                 ..glass_material()
@@ -561,7 +561,7 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let o = Shape::Sphere(Sphere::from(ObjectBuilder {
+        let o = Shape::Sphere(Sphere::from(SphereBuilder {
             material: glass_material(),
             transform: Transform::translation(0.0, 0.0, 1.0),
         }));
@@ -581,7 +581,7 @@ mod tests {
 
     #[test]
     fn the_schlick_approximation_under_total_internal_reflection() {
-        let o = Shape::Sphere(Sphere::from(ObjectBuilder {
+        let o = Shape::Sphere(Sphere::from(SphereBuilder {
             material: glass_material(),
             ..Default::default()
         }));

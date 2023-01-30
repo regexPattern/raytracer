@@ -84,7 +84,10 @@ fn pattern_point(object: &Shape, transform_inverse: Transform, point: Point) -> 
 
 #[cfg(test)]
 mod tests {
-    use crate::{color, shape::{Sphere, ObjectBuilder}};
+    use crate::{
+        color,
+        shape::sphere::{Sphere, SphereBuilder},
+    };
 
     use super::*;
 
@@ -174,7 +177,7 @@ mod tests {
 
     #[test]
     fn stripes_with_object_transform() {
-        let o = Shape::Sphere(Sphere::from(ObjectBuilder {
+        let o = Shape::Sphere(Sphere::from(SphereBuilder {
             transform: Transform::scaling(2.0, 2.0, 2.0).unwrap(),
             ..Default::default()
         }));
@@ -207,7 +210,7 @@ mod tests {
 
     #[test]
     fn stripes_with_both_an_object_and_a_pattern_transformation() {
-        let o = Shape::Sphere(Sphere::from(ObjectBuilder {
+        let o = Shape::Sphere(Sphere::from(SphereBuilder {
             transform: Transform::scaling(2.0, 2.0, 2.0).unwrap(),
             ..Default::default()
         }));
@@ -225,7 +228,7 @@ mod tests {
 
     #[test]
     fn a_pattern_with_an_object_transformation() {
-        let o = Shape::Sphere(Sphere::from(ObjectBuilder {
+        let o = Shape::Sphere(Sphere::from(SphereBuilder {
             transform: Transform::scaling(2.0, 2.0, 2.0).unwrap(),
             ..Default::default()
         }));
@@ -268,7 +271,7 @@ mod tests {
 
     #[test]
     fn a_pattern_with_both_an_object_and_a_pattern_transformation() {
-        let o = Shape::Sphere(Sphere::from(ObjectBuilder {
+        let o = Shape::Sphere(Sphere::from(SphereBuilder {
             transform: Transform::scaling(2.0, 2.0, 2.0).unwrap(),
             ..Default::default()
         }));
