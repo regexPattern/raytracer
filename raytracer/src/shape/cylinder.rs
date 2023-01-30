@@ -40,18 +40,15 @@ impl Default for Cylinder {
 
 impl Cylinder {
     pub fn new(material: Material, transform: Transform, min: f64, max: f64, closed: bool) -> Self {
-        let local_bounds = Bounds {
-            min: Point::new(-1.0, min, -1.0),
-            max: Point::new(1.0, max, 1.0),
-        };
-
         Self {
             props: ShapeProps {
                 material,
                 transform,
                 transform_inverse: transform.inverse(),
-                local_bounds,
-                world_bounds: local_bounds.transform(transform),
+                bounds: Bounds {
+                    min: Point::new(-1.0, min, -1.0),
+                    max: Point::new(1.0, max, 1.0),
+                },
             },
             min,
             max,
@@ -509,7 +506,7 @@ mod tests {
     fn an_unbounde_cylinder_has_a_bounding_box() {
         let c = Cylinder::default();
 
-        let bounds = c.props.local_bounds;
+        let bounds = c.props.bounds;
 
         assert_eq!(bounds.max, Point::new(1.0, std::f64::INFINITY, 1.0));
         assert_eq!(bounds.min, Point::new(-1.0, std::f64::NEG_INFINITY, -1.0));
@@ -519,7 +516,7 @@ mod tests {
     fn a_bounded_cylinder_has_a_bounding_box() {
         let c = Cylinder::new(Default::default(), Default::default(), -5.0, 3.0, false);
 
-        let bounds = c.props.local_bounds;
+        let bounds = c.props.bounds;
 
         assert_eq!(bounds.min, Point::new(-1.0, -5.0, -1.0));
         assert_eq!(bounds.max, Point::new(1.0, 3.0, 1.0));

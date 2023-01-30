@@ -115,13 +115,13 @@ impl OBJModel {
     }
 
     pub fn build(self, transform: Transform) -> Group {
-        let groups: Vec<_> = self
-            .groups
-            .into_iter()
-            .map(|group| Shape::Group(group.group))
-            .collect();
+        let mut group = Group::new(transform);
 
-        Group::new(groups, transform)
+        for polygons_group in self.groups {
+            group.push(Shape::Group(polygons_group.group));
+        }
+
+        group
     }
 }
 

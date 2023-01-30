@@ -20,22 +20,19 @@ impl Default for Cube {
 
 impl Cube {
     pub fn new(material: Material, transform: Transform) -> Self {
-        let local_bounds = Bounds {
-            min: Point::new(-1.0, -1.0, -1.0),
-            max: Point::new(1.0, 1.0, 1.0),
-        };
-
         Self(ShapeProps {
             material,
             transform,
             transform_inverse: transform.inverse(),
-            local_bounds,
-            world_bounds: local_bounds.transform(transform),
+            bounds: Bounds {
+                min: Point::new(-1.0, -1.0, -1.0),
+                max: Point::new(1.0, 1.0, 1.0),
+            },
         })
     }
 
     pub(crate) fn intersect<'a>(&self, object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
-        intersect_box_with_bounds(object, ray, &self.0.local_bounds)
+        intersect_box_with_bounds(object, ray, &self.0.bounds)
     }
 
     pub(crate) fn normal_at(&self, point: Point) -> Vector {
@@ -366,7 +363,7 @@ mod tests {
     #[test]
     fn a_cube_has_a_bounding_box() {
         let c = Cube::default();
-        let bounds = c.0.local_bounds;
+        let bounds = c.0.bounds;
 
         assert_eq!(bounds.min, Point::new(-1.0, -1.0, -1.0));
         assert_eq!(bounds.max, Point::new(1.0, 1.0, 1.0));

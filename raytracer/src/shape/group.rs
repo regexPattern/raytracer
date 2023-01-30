@@ -9,40 +9,46 @@ pub struct Group {
 }
 
 impl Group {
-    pub fn with_transform(mut self, transform: Transform) -> Self {
-        self.props.change_transform(transform);
-        self
+    pub fn new(transform: Transform) -> Self {
+        Self {
+            children: vec![],
+            props: ShapeProps {
+                transform,
+                transform_inverse: transform.inverse(),
+                ..Default::default()
+            },
+        }
     }
 
     pub fn push(&mut self, mut child: Shape) {
         Self::apply_transform_to_child(&mut child, self.props.transform);
-
-        self.props.local_bounds.merge(child.as_ref().world_bounds);
-        self.props.world_bounds = self.props.local_bounds;
-
         self.children.push(child);
     }
 
-    pub fn change_transform(&mut self, transform: Transform) {
-        let new_transform = transform * self.props.transform_inverse;
-
-        for child in &mut self.children {
-            Self::apply_transform_to_child(child, new_transform);
+    fn apply_transform_to_child(child: &mut Shape, transform: Transform) {
+        if let Shape::Group(subgroup) = child {
+            for child in &mut subgroup.children {
+                Self::apply_transform_to_child(child, transform);
+            }
         }
 
-        let mut local_bounds = Bounds::default();
-        for child in &self.children {
-            local_bounds.merge(child.as_ref().world_bounds);
-        }
+        let new_transform = transform * child.as_ref().transform;
 
-        self.props.local_bounds = local_bounds;
-        self.props.transform = transform;
-        self.props.transform_inverse = transform.inverse();
-        self.props.world_bounds = local_bounds;
+        child.as_mut().transform = new_transform;
+        child.as_mut().transform_inverse = new_transform.inverse();
+    }
+
+    pub fn extend<T>(&mut self, children: T)
+    where
+        T: IntoIterator<Item = Shape>,
+    {
+        for child in children {
+            self.push(child);
+        }
     }
 
     pub(crate) fn local_intersect(&self, ray: &Ray) -> Vec<Intersection<'_>> {
-        if !self.props.world_bounds.intersect(ray) {
+        if !self.bounds().intersect(ray) {
             return vec![];
         }
 
@@ -56,15 +62,72 @@ impl Group {
         intersections
     }
 
-    fn apply_transform_to_child(child: &mut Shape, transform: Transform) {
-        if let Shape::Group(inner_group) = child {
-            for child in &mut inner_group.children {
-                Self::apply_transform_to_child(child, transform);
+    pub fn divide(&mut self, threshold: usize) {
+        if threshold <= self.children.len() {
+            let (left_children, right_children) = self.partition_children();
+
+            if !left_children.is_empty() {
+                self.make_subgroup(left_children);
+            }
+
+            if !right_children.is_empty() {
+                self.make_subgroup(right_children);
             }
         }
 
-        let prev_transform = child.as_ref().transform;
-        child.as_mut().change_transform(transform * prev_transform);
+        for child in &mut self.children {
+            if let Shape::Group(subgroup) = child {
+                subgroup.divide(threshold)
+            }
+        }
+    }
+
+    fn partition_children(&mut self) -> (Vec<Shape>, Vec<Shape>) {
+        let (left_bounds, right_bounds) = self.bounds().split();
+
+        let mut left_children = Vec::with_capacity(self.children.len());
+        let mut right_children = Vec::with_capacity(self.children.len());
+
+        let mut i = 0;
+        while i < self.children.len() {
+            let child = &mut self.children[i];
+            let child_bounds = child.parent_space_bounds();
+
+            if left_bounds.contains_box(&child_bounds) {
+                child.as_mut().transform = self.props.transform_inverse * child.as_ref().transform;
+                left_children.push(self.children.swap_remove(i));
+            } else if right_bounds.contains_box(&child_bounds) {
+                child.as_mut().transform = self.props.transform_inverse * child.as_ref().transform;
+                right_children.push(self.children.swap_remove(i));
+            } else {
+                i += 1;
+            }
+        }
+
+        (left_children, right_children)
+    }
+
+    fn make_subgroup<T>(&mut self, children: T)
+    where
+        T: IntoIterator<Item = Shape>,
+    {
+        let mut subgroup = Self::default();
+        for child in children {
+            subgroup.push(child);
+        }
+
+        self.push(Shape::Group(subgroup));
+    }
+
+    fn bounds(&self) -> Bounds {
+        let mut bounds = Bounds::default();
+
+        for child in &self.children {
+            let child_bounds = child.parent_space_bounds();
+            bounds.merge(child_bounds);
+        }
+
+        bounds
     }
 }
 
@@ -79,144 +142,46 @@ mod tests {
     use super::*;
 
     #[test]
-    fn adding_a_child_to_a_group_applies_its_transform_to_the_added_children() {
-        // Child
-        let child_transform = Transform::shearing(1.0, 3.0, 5.0, 7.0, 9.0, 11.0).unwrap();
-        let child = Shape::Sphere(Sphere::default().with_transform(child_transform));
-
-        // Inner group
-        let inner_group_transform = Transform::rotation_z(std::f64::consts::FRAC_PI_2);
-        let mut inner_group = Group::default().with_transform(inner_group_transform);
-
-        inner_group.push(child);
-
-        // Outer group
-        let outer_group_transform = Transform::translation(1.0, 2.0, 3.0);
-        let mut outer_group = Group::default().with_transform(outer_group_transform);
-
-        outer_group.push(Shape::Group(inner_group));
-
-        // 🔴 Check if the outer group's transform is applied to the inner group.
-        let inner_group = match &outer_group.children[0] {
-            Shape::Group(inner_group) => inner_group,
-            _ => panic!(),
-        };
-
-        assert_eq!(
-            inner_group.props.transform,
-            outer_group_transform * inner_group_transform
-        );
-        assert_eq!(
-            inner_group.props.transform_inverse,
-            (outer_group_transform * inner_group_transform).inverse()
-        );
-
-        // 🔴 Check if the outer and inner group's transform is applied to the leaf child node.
-        let child = &inner_group.children[0];
-
-        assert_eq!(
-            child.as_ref().transform,
-            inner_group.props.transform * child_transform
-        );
-        assert_eq!(
-            child.as_ref().transform_inverse,
-            (inner_group.props.transform * child_transform).inverse()
-        );
-    }
-
-    #[test]
-    fn updating_a_groups_transform_also_updates_its_children_transforms() {
-        // Child
-        let child_transform = Transform::scaling(1.0, 2.0, 3.0).unwrap();
-        let child = Shape::Sphere(Sphere::default().with_transform(child_transform));
-
-        // Inner group
-        let inner_group_transform = Transform::translation(1.0, 2.0, 3.0);
-        let mut inner_group = Group::default().with_transform(inner_group_transform);
-        inner_group.push(child);
-
-        // Outer group
-        let outer_group_transform = Transform::rotation_x(std::f64::consts::FRAC_PI_2);
-        let mut outer_group = Group::default().with_transform(outer_group_transform);
-        outer_group.push(Shape::Group(inner_group));
-
-        // Update outer_group's transform
-        let new_transform = Transform::shearing(1.0, 2.0, 3.0, 4.0, 5.0, 6.0).unwrap();
-        outer_group.change_transform(new_transform);
-
-        // 🔴 Check if changes were applied to the outer group itself.
-        assert_eq!(outer_group.props.transform, new_transform);
-
-        // 🔴 Check if changes were applied to the inner group.
-        let inner_group = match &outer_group.children[0] {
-            Shape::Group(inner_group) => inner_group,
-            _ => panic!(),
-        };
-
-        // Notice how its parent's previous transformation `outer_group_transform` is no longer
-        // applied to this child, instead, this child's original transform is now being composed
-        // with its parent's new transfrom `new_transform`.
-        assert_eq!(
-            inner_group.props.transform,
-            new_transform * inner_group_transform
-        );
-
-        // 🔴 Check if changes were applied to the leaf child node.
-        let child = &inner_group.children[0];
-
-        // Same as with the outer gruop's first child, here the previous outer group's
-        // transformation is no longer taken into account.
-        assert_eq!(
-            child.as_ref().transform,
-            new_transform * inner_group_transform * child_transform
-        );
-    }
-
-    #[test]
     fn intersecting_a_ray_with_an_empty_group() {
         let group = Group::default();
 
-        let ray = Ray {
+        let r = Ray {
             origin: Point::new(0.0, 0.0, 0.0),
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let xs = group.local_intersect(&ray);
+        let xs = group.local_intersect(&r);
 
         assert!(xs.is_empty());
     }
 
     #[test]
     fn intersecting_a_ray_with_a_non_empty_group() {
-        let mut group = Group::default();
-
         let child0 = Shape::Sphere(Default::default());
-        let child1 = Shape::Sphere(Sphere::new(
-            Default::default(),
-            Transform::translation(0.0, 0.0, -3.0),
-        ));
-        let child2 = Shape::Sphere(Sphere::new(
-            Default::default(),
-            Transform::translation(5.0, 0.0, 0.0),
-        ));
+        let child1 =
+            Shape::Sphere(Sphere::default().with_transform(Transform::translation(0.0, 0.0, -3.0)));
+        let child2 =
+            Shape::Sphere(Sphere::default().with_transform(Transform::translation(5.0, 0.0, 0.0)));
+
+        let mut group = Group::default();
 
         group.push(child0);
         group.push(child1);
         group.push(child2);
 
-        let ray = Ray {
+        let r = Ray {
             origin: Point::new(0.0, 0.0, -5.0),
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let xs = group.local_intersect(&ray);
+        let xs = group.local_intersect(&r);
 
         assert_eq!(xs.len(), 4);
 
         let child0 = &group.children[0];
         let child1 = &group.children[1];
 
-        // 🔴 Intersections are sorted by `t`.
+        // Intersections are sorted by `t`.
         assert_eq!(xs[0].object, child1);
         assert_eq!(xs[1].object, child1);
         assert_eq!(xs[2].object, child0);
@@ -225,13 +190,10 @@ mod tests {
 
     #[test]
     fn intersecting_a_transformed_group() {
-        let mut group = Group::default().with_transform(Transform::scaling(2.0, 2.0, 2.0).unwrap());
+        let child =
+            Shape::Sphere(Sphere::default().with_transform(Transform::translation(5.0, 0.0, 0.0)));
 
-        let child = Shape::Sphere(Sphere::new(
-            Default::default(),
-            Transform::translation(5.0, 0.0, 0.0),
-        ));
-
+        let mut group = Group::new(Transform::scaling(2.0, 2.0, 2.0).unwrap());
         group.push(child);
 
         let ray = Ray {
@@ -259,30 +221,82 @@ mod tests {
             false,
         ));
 
-        let mut group = Group::default().with_transform(Transform::scaling(2.0, 2.0, 2.0).unwrap());
+        let mut group = Group::new(Transform::scaling(2.0, 2.0, 2.0).unwrap());
         group.push(child0);
         group.push(child1);
 
-        let bounds = group.props.world_bounds;
+        let bounds = group.bounds();
 
         assert_eq!(bounds.min, Point::new(-9.0, -6.0, -10.0));
         assert_eq!(bounds.max, Point::new(8.0, 14.0, 9.0));
     }
 
     #[test]
-    fn updating_a_groups_transform_also_updates_its_bounds() {
-        let child = Shape::Sphere(
-            Sphere::default().with_transform(Transform::scaling(2.0, 2.0, 2.0).unwrap()),
+    fn partitioning_a_groups_children() {
+        let s0 =
+            Shape::Sphere(Sphere::default().with_transform(Transform::translation(-2.0, 0.0, 0.0)));
+        let s1 =
+            Shape::Sphere(Sphere::default().with_transform(Transform::translation(2.0, 0.0, 0.0)));
+        let s2 = Shape::Sphere(Default::default());
+
+        let mut group = Group::default();
+
+        group.push(s0.clone());
+        group.push(s1.clone());
+        group.push(s2.clone());
+
+        let (left, right) = group.partition_children();
+
+        assert_eq!(group.children, vec![s2]);
+        assert_eq!(left, vec![s0]);
+        assert_eq!(right, vec![s1]);
+    }
+
+    #[test]
+    fn creating_a_subgroup_from_a_list_of_children() {
+        let s0 = Shape::Sphere(Default::default());
+        let s1 = Shape::Sphere(Default::default());
+
+        let mut group = Group::default();
+        group.make_subgroup([s0.clone(), s1.clone()]);
+
+        assert_eq!(group.children.len(), 1);
+
+        let subgroup = match &group.children[0] {
+            Shape::Group(subgroup) => subgroup,
+            _ => panic!(),
+        };
+
+        assert_eq!(subgroup.children, vec![s0, s1]);
+    }
+
+    #[test]
+    fn subdividing_a_group_partitions_its_children() {
+        let s0 =
+            Shape::Sphere(Sphere::default().with_transform(Transform::translation(-2.0, 0.0, 0.0)));
+        let s1 =
+            Shape::Sphere(Sphere::default().with_transform(Transform::translation(2.0, 0.0, 0.0)));
+        let s2 = Shape::Sphere(
+            Sphere::default().with_transform(Transform::scaling(4.0, 4.0, 4.0).unwrap()),
         );
 
-        let mut group = Group::default().with_transform(Transform::scaling(2.0, 2.0, 2.0).unwrap());
-        group.push(child);
+        let mut group = Group::default();
 
-        group.change_transform(Transform::scaling(0.5, 0.5, 0.5).unwrap());
+        group.push(s0.clone());
+        group.push(s1.clone());
+        group.push(s2.clone());
 
-        let bounds = group.props.world_bounds;
+        group.divide(1);
 
-        assert_eq!(bounds.min, Point::new(-1.0, -1.0, -1.0));
-        assert_eq!(bounds.max, Point::new(1.0, 1.0, 1.0));
+        assert_eq!(group.children[0], s2);
+
+        // Children that fit into left or right bounds are added to a new subgroup.
+        let subgroup = match &group.children[1] {
+            Shape::Group(subgroup) => subgroup,
+            _ => panic!(),
+        };
+
+        assert_eq!(subgroup.children[0], s0);
+        assert_eq!(subgroup.children[1], s1);
     }
 }

@@ -2,6 +2,7 @@ use raytracer::{
     camera::Camera,
     color,
     light::PointLight,
+    obj_model::OBJModel,
     shape::{Cylinder, Group, Shape, Sphere},
     transform::Transform,
     tuple::Point,
@@ -9,10 +10,16 @@ use raytracer::{
 };
 
 fn main() {
-    let sphere = Shape::Sphere(Sphere::new(
-        Default::default(),
-        Transform::scaling(2.0, 1.0, 1.25).unwrap(),
-    ));
+    let file = std::fs::read_to_string("al.obj").unwrap();
+    let mut model = OBJModel::new(&file, raytracer::scene::SceneProgress::Enable)
+        .unwrap()
+        .build(Transform::rotation_y(std::f64::consts::FRAC_PI_2));
+
+    model.divide(64);
+
+    let sphere = Shape::Sphere(
+        Sphere::default().with_transform(Transform::scaling(2.0, 1.0, 1.25).unwrap()),
+    );
     let cylinder = Shape::Cylinder(Cylinder::new(
         Default::default(),
         Default::default(),
@@ -21,7 +28,7 @@ fn main() {
         false,
     ));
 
-    let mut inner = Group::default().with_transform(
+    let mut inner = Group::new(
         Transform::scaling(2.0, 1.0, 1.0).unwrap()
             * Transform::rotation_z(std::f64::consts::FRAC_PI_2),
     );
@@ -31,7 +38,7 @@ fn main() {
     group.push(sphere);
     group.push(Shape::Group(inner));
 
-    group.change_transform(Transform::rotation_z(std::f64::consts::FRAC_PI_6));
+    // group.replace_transform(Transform::rotation_z(std::f64::consts::FRAC_PI_6));
 
     let light = PointLight {
         position: Point::new(5.0, 5.0, 5.0),
@@ -39,15 +46,15 @@ fn main() {
     };
 
     let world = World {
-        objects: vec![Shape::Group(group)],
+        objects: vec![Shape::Group(model)],
         lights: vec![light],
     };
 
     let camera = Camera::new(
-        500,
-        500,
+        200,
+        200,
         std::f64::consts::FRAC_PI_3,
-        Transform::translation(0.0, 0.0, -10.0),
+        Transform::translation(0.0, 0.0, -5.0),
     )
     .unwrap();
 

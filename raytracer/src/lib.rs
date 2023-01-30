@@ -8,7 +8,7 @@ pub mod camera;
 pub mod color;
 pub mod light;
 pub mod material;
-// pub mod obj_model;
+pub mod obj_model;
 pub mod pattern;
 pub mod scene;
 pub mod shape;

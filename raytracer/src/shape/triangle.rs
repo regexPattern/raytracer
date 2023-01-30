@@ -38,15 +38,12 @@ impl Triangle {
             .normalize()
             .map_err(|_| CollinearTriangleSidesError)?;
 
-        let local_bounds = Bounds::from([v0, v1, v2]);
-
         Ok(Self {
             props: ShapeProps {
                 material,
                 transform,
                 transform_inverse: transform.inverse(),
-                local_bounds,
-                world_bounds: local_bounds.transform(transform),
+                bounds: Bounds::from([v0, v1, v2]),
             },
             v0,
             v1,
@@ -286,7 +283,7 @@ mod tests {
 
         let t = Triangle::try_new(Default::default(), Default::default(), [v0, v1, v2]).unwrap();
 
-        let bbox = t.props.local_bounds;
+        let bbox = t.props.bounds;
 
         assert_eq!(bbox.min, Point::new(-3.0, -1.0, -4.0));
         assert_eq!(bbox.max, Point::new(6.0, 7.0, 2.0));

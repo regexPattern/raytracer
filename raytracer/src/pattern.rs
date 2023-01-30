@@ -121,7 +121,9 @@ mod tests {
             Default::default(),
         ));
 
-        assert!(matches!(p, Pattern3D::Stripe(Schema { from, .. }) if from == color::consts::WHITE));
+        assert!(
+            matches!(p, Pattern3D::Stripe(Schema { from, .. }) if from == color::consts::WHITE)
+        );
         assert!(matches!(p, Pattern3D::Stripe(Schema { to, .. }) if to == color::consts::BLACK));
         assert!(
             matches!(p, Pattern3D::Stripe(Schema { transform: t, .. }) if t == Default::default())
@@ -172,10 +174,9 @@ mod tests {
 
     #[test]
     fn stripes_with_object_transform() {
-        let o = Shape::Sphere(Sphere::new(
-            Default::default(),
-            Transform::scaling(2.0, 2.0, 2.0).unwrap(),
-        ));
+        let o = Shape::Sphere(
+            Sphere::default().with_transform(Transform::scaling(2.0, 2.0, 2.0).unwrap()),
+        );
 
         let p = Pattern3D::Stripe(Schema::new(
             color::consts::WHITE,
@@ -205,10 +206,9 @@ mod tests {
 
     #[test]
     fn stripes_with_both_an_object_and_a_pattern_transformation() {
-        let o = Shape::Sphere(Sphere::new(
-            Default::default(),
-            Transform::scaling(2.0, 2.0, 2.0).unwrap(),
-        ));
+        let o = Shape::Sphere(
+            Sphere::default().with_transform(Transform::scaling(2.0, 2.0, 2.0).unwrap()),
+        );
 
         let p = Pattern3D::Stripe(Schema::new(
             color::consts::WHITE,
@@ -223,10 +223,9 @@ mod tests {
 
     #[test]
     fn a_pattern_with_an_object_transformation() {
-        let o = Shape::Sphere(Sphere::new(
-            Default::default(),
-            Transform::scaling(2.0, 2.0, 2.0).unwrap(),
-        ));
+        let o = Shape::Sphere(
+            Sphere::default().with_transform(Transform::scaling(2.0, 2.0, 2.0).unwrap()),
+        );
 
         let p = TestPattern::default();
 
@@ -266,10 +265,9 @@ mod tests {
 
     #[test]
     fn a_pattern_with_both_an_object_and_a_pattern_transformation() {
-        let o = Shape::Sphere(Sphere::new(
-            Default::default(),
-            Transform::scaling(2.0, 2.0, 2.0).unwrap(),
-        ));
+        let o = Shape::Sphere(
+            Sphere::default().with_transform(Transform::scaling(2.0, 2.0, 2.0).unwrap()),
+        );
 
         let p = TestPattern(Schema::new(
             color::consts::WHITE,

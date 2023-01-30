@@ -20,17 +20,14 @@ impl Default for Plane {
 
 impl Plane {
     pub fn new(material: Material, transform: Transform) -> Self {
-        let local_bounds = Bounds {
-            min: Point::new(std::f64::NEG_INFINITY, 0.0, std::f64::NEG_INFINITY),
-            max: Point::new(std::f64::INFINITY, 0.0, std::f64::INFINITY),
-        };
-
         Self(ShapeProps {
             material,
             transform,
             transform_inverse: transform.inverse(),
-            local_bounds,
-            world_bounds: local_bounds.transform(transform),
+            bounds: Bounds {
+                min: Point::new(std::f64::NEG_INFINITY, 0.0, std::f64::NEG_INFINITY),
+                max: Point::new(std::f64::INFINITY, 0.0, std::f64::INFINITY),
+            },
         })
     }
 
@@ -137,7 +134,7 @@ mod tests {
     #[test]
     fn a_plane_has_a_bounding_box() {
         let p = Plane::default();
-        let bounds = p.0.local_bounds;
+        let bounds = p.0.bounds;
 
         assert_eq!(
             bounds.min,

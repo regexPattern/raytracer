@@ -38,25 +38,10 @@ pub enum Shape {
     Group(Group),
 }
 
-/// Transforms a ray in world-space coordinates to object-space coordinates, using the given
-/// transformation.
-///
-/// # Arguments
-/// * `transform_inverse` - The inverse transformation of the shape that's going to be tested for
-/// intersections.
-///
 fn object_ray(ray: &Ray, transform_inverse: Transform) -> Ray {
     ray.transform(transform_inverse)
 }
 
-/// Returns an object's normal at an intersection point, in world-space coordinates, using the
-/// given transformation.
-///
-/// # Arguments
-/// * `world_point` - Point on the surface in world-space coordinates.
-/// * `transform_inverse` - The inverse transformation of the hit shape.
-/// * `local_normal_at` - Closure to compute a shape's normal, in object-space coordinates.
-///
 fn world_normal<F>(point: Point, transform_inverse: Transform, local_normal_at: F) -> Vector
 where
     F: Fn(Point) -> Vector,
@@ -66,7 +51,7 @@ where
     let mut world_normal = transform_inverse.transpose() * object_normal;
     world_normal.0.w = 0.0;
 
-    // ✅ The point is always ensured to be on the object surface so a non-null world normal always
+    // The point is always ensured to be on the object surface so a non-null world normal always
     // exists for any object type, meaning it can always be normalized.
     #[allow(clippy::unwrap_used)]
     world_normal.normalize().unwrap()
@@ -104,14 +89,17 @@ impl Shape {
                 Self::Sphere(inner_sphere) => inner_sphere.local_normal_at(object_point),
                 Self::Triangle(inner_triangle) => inner_triangle.normal_at(object_point),
 
-                // ✅  A group is never going to be asked for it's normal at certain point because
-                // the normals are used to get shading information of an intersected point,
-                // however, a group's intersections are only a collection of it's children
-                // intersections, so the `normal_at` is called for a group's child instead that for
-                // the group itself.
+                // A group is never going to be asked for it's normal at certain point because the
+                // normals are used to get shading information of an intersected point, however, a
+                // group's intersections are only a collection of it's children intersections, so
+                // the `normal_at` is called for a group's child instead that for the group itself.
                 Self::Group(_) => unreachable!(),
             },
         )
+    }
+
+    pub fn parent_space_bounds(&self) -> Bounds {
+        self.as_ref().bounds.transform(self.as_ref().transform)
     }
 }
 
@@ -139,15 +127,15 @@ mod tests {
 
     #[test]
     fn intersecting_a_translated_object_with_a_ray() {
-        let ray = Ray {
+        let r = Ray {
             origin: Point::new(0.0, 0.0, -5.0),
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let transform = Transform::translation(5.0, 0.0, 0.0);
+        let t = Transform::translation(5.0, 0.0, 0.0);
 
         assert_eq!(
-            object_ray(&ray, transform.inverse()),
+            object_ray(&r, t.inverse()),
             Ray {
                 origin: Point::new(-5.0, 0.0, -5.0),
                 direction: Vector::new(0.0, 0.0, 1.0),
@@ -157,42 +145,38 @@ mod tests {
 
     #[test]
     fn computing_the_normal_on_a_translated_object() {
-        let point = Point::new(0.0, 1.70711, -0.70711);
-        let transform = Transform::translation(0.0, 1.0, 0.0);
+        let p = Point::new(0.0, 1.70711, -0.70711);
+        let t = Transform::translation(0.0, 1.0, 0.0);
 
-        let normal = world_normal(point, transform.inverse(), |object_point| {
+        let n = world_normal(p, t.inverse(), |object_point| {
             Vector::new(object_point.0.x, object_point.0.y, object_point.0.z)
         });
 
-        assert_eq!(normal, Vector::new(0.0, 0.70711, -0.70711));
+        assert_eq!(n, Vector::new(0.0, 0.70711, -0.70711));
     }
 
     #[test]
     fn computing_the_normal_on_a_transformed_object() {
-        let point = Point::new(0.0, 2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0);
-        let transform = Transform::scaling(1.0, 0.5, 1.0).unwrap()
+        let p = Point::new(0.0, 2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0);
+        let t = Transform::scaling(1.0, 0.5, 1.0).unwrap()
             * Transform::rotation_z(std::f64::consts::PI / 5.0);
 
-        let normal = world_normal(point, transform.inverse(), |object_point| {
+        let n = world_normal(p, t.inverse(), |object_point| {
             Vector::new(object_point.0.x, object_point.0.y, object_point.0.z)
         });
 
-        assert_eq!(normal, Vector::new(0.0, 0.97014, -0.24254));
+        assert_eq!(n, Vector::new(0.0, 0.97014, -0.24254));
     }
 
     #[test]
     fn finding_the_normal_on_a_child_object() {
-        let child = Shape::Sphere(Sphere::new(
-            Default::default(),
-            Transform::translation(5.0, 0.0, 0.0),
-        ));
+        let child =
+            Shape::Sphere(Sphere::default().with_transform(Transform::translation(5.0, 0.0, 0.0)));
 
-        let mut inner_group =
-            Group::default().with_transform(Transform::scaling(1.0, 2.0, 3.0).unwrap());
+        let mut inner_group = Group::new(Transform::scaling(1.0, 2.0, 3.0).unwrap());
         inner_group.push(child);
 
-        let mut outer_group =
-            Group::default().with_transform(Transform::rotation_y(std::f64::consts::FRAC_PI_2));
+        let mut outer_group = Group::new(Transform::rotation_y(std::f64::consts::FRAC_PI_2));
         outer_group.push(Shape::Group(inner_group));
 
         // Retreiving the `inner_group`'s child. Clone would not work here since after adding the
@@ -202,7 +186,7 @@ mod tests {
             _ => panic!(),
         };
 
-        let normal = child.normal_at(
+        let n = child.normal_at(
             Point::new(1.7321, 1.1547, -5.5774),
             &Intersection {
                 t: 0.0,
@@ -212,8 +196,20 @@ mod tests {
             },
         );
 
-        // 🔴 A child parent's transformations are taken into account when converting a normal in
+        // A child parent's transformations are taken into account when converting a normal in
         // it's object space to world space.
-        assert_eq!(normal, Vector::new(0.2857, 0.42854, -0.85716));
+        assert_eq!(n, Vector::new(0.2857, 0.42854, -0.85716));
+    }
+
+    #[test]
+    fn querying_a_shapes_bounds_in_its_parents_space() {
+        let s = Shape::Sphere(Sphere::default().with_transform(
+            Transform::translation(1.0, -3.0, 5.0) * Transform::scaling(0.5, 2.0, 4.0).unwrap(),
+        ));
+
+        let bounds = s.parent_space_bounds();
+
+        assert_eq!(bounds.min, Point::new(0.5, -5.0, 1.0));
+        assert_eq!(bounds.max, Point::new(1.5, -1.0, 9.0));
     }
 }

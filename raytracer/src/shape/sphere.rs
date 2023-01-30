@@ -13,28 +13,25 @@ pub struct Sphere(pub(crate) ShapeProps);
 
 impl Default for Sphere {
     fn default() -> Self {
-        Self::new(Default::default(), Default::default())
+        Self(ShapeProps {
+            bounds: Bounds {
+                min: Point::new(-1.0, -1.0, -1.0),
+                max: Point::new(1.0, 1.0, 1.0),
+            },
+            ..Default::default()
+        })
     }
 }
 
 impl Sphere {
-    pub fn new(material: Material, transform: Transform) -> Self {
-        let local_bounds = Bounds {
-            min: Point::new(-1.0, -1.0, -1.0),
-            max: Point::new(1.0, 1.0, 1.0),
-        };
-
-        Self(ShapeProps {
-            material,
-            transform,
-            transform_inverse: transform.inverse(),
-            local_bounds,
-            world_bounds: local_bounds.transform(transform),
-        })
+    pub fn with_material(mut self, material: Material) -> Self {
+        self.0.material = material;
+        self
     }
 
     pub fn with_transform(mut self, transform: Transform) -> Self {
-        self.0.change_transform(transform);
+        self.0.transform = transform;
+        self.0.transform_inverse = transform.inverse();
         self
     }
 
@@ -104,7 +101,7 @@ mod tests {
 
     #[test]
     fn a_ray_intersects_a_sphere_at_a_tangent() {
-        let s = Sphere::new(Default::default(), Default::default());
+        let s = Sphere::default();
         let o = Shape::Sphere(Default::default());
 
         let r = Ray {
@@ -227,7 +224,7 @@ mod tests {
     #[test]
     fn a_sphere_has_a_bounding_box() {
         let s = Sphere::default();
-        let bounds = s.0.local_bounds;
+        let bounds = s.0.bounds;
 
         assert_eq!(bounds.min, Point::new(-1.0, -1.0, -1.0));
         assert_eq!(bounds.max, Point::new(1.0, 1.0, 1.0));
