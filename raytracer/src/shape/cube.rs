@@ -1,38 +1,40 @@
 use crate::{
     float,
     intersection::Intersection,
-    material::Material,
     ray::Ray,
-    transform::Transform,
     tuple::{Point, Tuple, Vector},
 };
 
-use super::{Bounds, Shape, ShapeProps};
+use super::{BoundingBox, ObjectBuilder, ObjectCache, Shape};
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Cube(pub(crate) ShapeProps);
+pub struct Cube(pub(crate) ObjectCache);
+
+impl From<ObjectBuilder> for Cube {
+    fn from(object: ObjectBuilder) -> Self {
+        let ObjectBuilder {
+            material,
+            transform,
+        } = object;
+
+        let bounding_box = BoundingBox {
+            min: Point::new(-1.0, -1.0, -1.0),
+            max: Point::new(1.0, 1.0, 1.0),
+        };
+
+        Self(ObjectCache::new(material, transform, bounding_box))
+    }
+}
 
 impl Default for Cube {
     fn default() -> Self {
-        Self::new(Default::default(), Default::default())
+        Self::from(ObjectBuilder::default())
     }
 }
 
 impl Cube {
-    pub fn new(material: Material, transform: Transform) -> Self {
-        Self(ShapeProps {
-            material,
-            transform,
-            transform_inverse: transform.inverse(),
-            bounds: Bounds {
-                min: Point::new(-1.0, -1.0, -1.0),
-                max: Point::new(1.0, 1.0, 1.0),
-            },
-        })
-    }
-
     pub(crate) fn intersect<'a>(&self, object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
-        intersect_box_with_bounds(object, ray, &self.0.bounds)
+        intersect_box_with_bounds(object, ray, &self.0.bounding_box)
     }
 
     pub(crate) fn normal_at(&self, point: Point) -> Vector {
@@ -57,7 +59,7 @@ impl Cube {
 pub fn intersect_box_with_bounds<'a>(
     object: &'a Shape,
     ray: &Ray,
-    bounds: &Bounds,
+    bounds: &BoundingBox,
 ) -> Vec<Intersection<'a>> {
     let (xtmin, xtmax) = check_axis(
         ray.origin.0.x,
@@ -363,7 +365,7 @@ mod tests {
     #[test]
     fn a_cube_has_a_bounding_box() {
         let c = Cube::default();
-        let bounds = c.0.bounds;
+        let bounds = c.0.bounding_box;
 
         assert_eq!(bounds.min, Point::new(-1.0, -1.0, -1.0));
         assert_eq!(bounds.max, Point::new(1.0, 1.0, 1.0));

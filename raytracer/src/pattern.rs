@@ -84,7 +84,7 @@ fn pattern_point(object: &Shape, transform_inverse: Transform, point: Point) -> 
 
 #[cfg(test)]
 mod tests {
-    use crate::{color, shape::Sphere};
+    use crate::{color, shape::{Sphere, ObjectBuilder}};
 
     use super::*;
 
@@ -174,9 +174,10 @@ mod tests {
 
     #[test]
     fn stripes_with_object_transform() {
-        let o = Shape::Sphere(
-            Sphere::default().with_transform(Transform::scaling(2.0, 2.0, 2.0).unwrap()),
-        );
+        let o = Shape::Sphere(Sphere::from(ObjectBuilder {
+            transform: Transform::scaling(2.0, 2.0, 2.0).unwrap(),
+            ..Default::default()
+        }));
 
         let p = Pattern3D::Stripe(Schema::new(
             color::consts::WHITE,
@@ -206,9 +207,10 @@ mod tests {
 
     #[test]
     fn stripes_with_both_an_object_and_a_pattern_transformation() {
-        let o = Shape::Sphere(
-            Sphere::default().with_transform(Transform::scaling(2.0, 2.0, 2.0).unwrap()),
-        );
+        let o = Shape::Sphere(Sphere::from(ObjectBuilder {
+            transform: Transform::scaling(2.0, 2.0, 2.0).unwrap(),
+            ..Default::default()
+        }));
 
         let p = Pattern3D::Stripe(Schema::new(
             color::consts::WHITE,
@@ -223,9 +225,10 @@ mod tests {
 
     #[test]
     fn a_pattern_with_an_object_transformation() {
-        let o = Shape::Sphere(
-            Sphere::default().with_transform(Transform::scaling(2.0, 2.0, 2.0).unwrap()),
-        );
+        let o = Shape::Sphere(Sphere::from(ObjectBuilder {
+            transform: Transform::scaling(2.0, 2.0, 2.0).unwrap(),
+            ..Default::default()
+        }));
 
         let p = TestPattern::default();
 
@@ -265,9 +268,10 @@ mod tests {
 
     #[test]
     fn a_pattern_with_both_an_object_and_a_pattern_transformation() {
-        let o = Shape::Sphere(
-            Sphere::default().with_transform(Transform::scaling(2.0, 2.0, 2.0).unwrap()),
-        );
+        let o = Shape::Sphere(Sphere::from(ObjectBuilder {
+            transform: Transform::scaling(2.0, 2.0, 2.0).unwrap(),
+            ..Default::default()
+        }));
 
         let p = TestPattern(Schema::new(
             color::consts::WHITE,

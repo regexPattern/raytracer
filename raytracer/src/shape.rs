@@ -5,23 +5,25 @@ use crate::{
     tuple::{Point, Vector},
 };
 
-mod bounds;
+mod bounding_box;
 mod cube;
 mod cylinder;
 mod group;
+mod object;
 mod plane;
-mod props;
 mod smooth_triangle;
 mod sphere;
 mod triangle;
 
+use object::ObjectCache;
+
 pub use self::{
-    bounds::Bounds,
+    bounding_box::BoundingBox,
     cube::Cube,
     cylinder::Cylinder,
     group::Group,
+    object::ObjectBuilder,
     plane::Plane,
-    props::ShapeProps,
     smooth_triangle::SmoothTriangle,
     sphere::Sphere,
     triangle::{CollinearTriangleSidesError, Triangle},
@@ -98,8 +100,10 @@ impl Shape {
         )
     }
 
-    pub fn parent_space_bounds(&self) -> Bounds {
-        self.as_ref().bounds.transform(self.as_ref().transform)
+    pub fn parent_space_bounds(&self) -> BoundingBox {
+        self.as_ref()
+            .bounding_box
+            .transform(self.as_ref().transform)
     }
 }
 
@@ -170,8 +174,10 @@ mod tests {
 
     #[test]
     fn finding_the_normal_on_a_child_object() {
-        let child =
-            Shape::Sphere(Sphere::default().with_transform(Transform::translation(5.0, 0.0, 0.0)));
+        let child = Shape::Sphere(Sphere::from(ObjectBuilder {
+            transform: Transform::translation(5.0, 0.0, 0.0),
+            ..Default::default()
+        }));
 
         let mut inner_group = Group::new(Transform::scaling(1.0, 2.0, 3.0).unwrap());
         inner_group.push(child);
@@ -203,9 +209,11 @@ mod tests {
 
     #[test]
     fn querying_a_shapes_bounds_in_its_parents_space() {
-        let s = Shape::Sphere(Sphere::default().with_transform(
-            Transform::translation(1.0, -3.0, 5.0) * Transform::scaling(0.5, 2.0, 4.0).unwrap(),
-        ));
+        let s = Shape::Sphere(Sphere::from(ObjectBuilder {
+            transform: Transform::translation(1.0, -3.0, 5.0)
+                * Transform::scaling(0.5, 2.0, 4.0).unwrap(),
+            ..Default::default()
+        }));
 
         let bounds = s.parent_space_bounds();
 

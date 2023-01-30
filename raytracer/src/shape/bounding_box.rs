@@ -1,12 +1,14 @@
 use crate::{ray::Ray, transform::Transform, tuple::Point};
 
+use super::{cube, Shape};
+
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Bounds {
+pub struct BoundingBox {
     pub min: Point,
     pub max: Point,
 }
 
-impl Default for Bounds {
+impl Default for BoundingBox {
     fn default() -> Self {
         Self {
             min: Point::new(std::f64::INFINITY, std::f64::INFINITY, std::f64::INFINITY),
@@ -19,22 +21,21 @@ impl Default for Bounds {
     }
 }
 
-impl<T> From<T> for Bounds
+impl<T> From<T> for BoundingBox
 where
     T: IntoIterator<Item = Point>,
 {
     fn from(value: T) -> Self {
-        let mut bbox = Self::default();
-
+        let mut bounding_box = Self::default();
         for point in value {
-            bbox.add(point);
+            bounding_box.add(point);
         }
 
-        bbox
+        bounding_box
     }
 }
 
-impl Bounds {
+impl BoundingBox {
     pub fn add(&mut self, point: Point) {
         self.min.0.x = f64::min(point.0.x, self.min.0.x);
         self.min.0.y = f64::min(point.0.y, self.min.0.y);
@@ -56,7 +57,7 @@ impl Bounds {
             && is_between_range(point.0.z, self.min.0.z, self.max.0.z)
     }
 
-    pub fn contains_box(&self, other: &Bounds) -> bool {
+    pub fn contains(&self, other: &BoundingBox) -> bool {
         self.contains_point(other.min) && self.contains_point(other.max)
     }
 
@@ -74,11 +75,10 @@ impl Bounds {
         .into_iter()
         .map(|point| transform * point);
 
-        Bounds::from(corners)
+        BoundingBox::from(corners)
     }
 
     pub fn intersect(&self, ray: &Ray) -> bool {
-        use crate::shape::{cube, Shape};
         !cube::intersect_box_with_bounds(&Shape::Cube(Default::default()), ray, self).is_empty()
     }
 
@@ -127,12 +127,12 @@ impl Bounds {
             z1 = tmp;
         }
 
-        let left = Bounds {
+        let left = BoundingBox {
             min: self.min,
             max: Point::new(x1, y1, z1),
         };
 
-        let right = Bounds {
+        let right = BoundingBox {
             min: Point::new(x0, y0, z0),
             max: self.max,
         };
@@ -153,7 +153,7 @@ mod tests {
 
     #[test]
     fn adding_points_to_an_empty_bounding_box() {
-        let mut bounds = Bounds::default();
+        let mut bounds = BoundingBox::default();
         let p0 = Point::new(-5.0, 2.0, 0.0);
         let p1 = Point::new(7.0, 0.0, -3.0);
 
@@ -166,12 +166,12 @@ mod tests {
 
     #[test]
     fn adding_one_bouding_box_to_another() {
-        let mut bounds = Bounds {
+        let mut bounds = BoundingBox {
             min: Point::new(-5.0, -2.0, 0.0),
             max: Point::new(7.0, 4.0, 4.0),
         };
 
-        let bounds1 = Bounds {
+        let bounds1 = BoundingBox {
             min: Point::new(8.0, -7.0, -2.0),
             max: Point::new(14.0, 2.0, 8.0),
         };
@@ -184,7 +184,7 @@ mod tests {
 
     #[test]
     fn checking_to_see_if_a_box_contains_a_given_point() {
-        let bounds = Bounds {
+        let bounds = BoundingBox {
             min: Point::new(5.0, -2.0, 0.0),
             max: Point::new(11.0, 4.0, 7.0),
         };
@@ -202,27 +202,27 @@ mod tests {
 
     #[test]
     fn checking_to_see_if_a_box_contains_another_box() {
-        let bounds = Bounds {
+        let bounds = BoundingBox {
             min: Point::new(5.0, -2.0, 0.0),
             max: Point::new(11.0, 4.0, 7.0),
         };
 
-        assert!(bounds.contains_box(&Bounds {
+        assert!(bounds.contains(&BoundingBox {
             min: Point::new(5.0, -2.0, 0.0),
             max: Point::new(11.0, 4.0, 7.0)
         }));
 
-        assert!(bounds.contains_box(&Bounds {
+        assert!(bounds.contains(&BoundingBox {
             min: Point::new(6.0, -1.0, 1.0),
             max: Point::new(10.0, 3.0, 6.0)
         }));
 
-        assert!(!bounds.contains_box(&Bounds {
+        assert!(!bounds.contains(&BoundingBox {
             min: Point::new(4.0, -3.0, -1.0),
             max: Point::new(10.0, 3.0, 6.0)
         }));
 
-        assert!(!bounds.contains_box(&Bounds {
+        assert!(!bounds.contains(&BoundingBox {
             min: Point::new(6.0, -1.0, 1.0),
             max: Point::new(12.0, 5.0, 8.0)
         }));
@@ -230,7 +230,7 @@ mod tests {
 
     #[test]
     fn transforming_a_bounding_box() {
-        let bounds0 = Bounds {
+        let bounds0 = BoundingBox {
             min: Point::new(-1.0, -1.0, -1.0),
             max: Point::new(1.0, 1.0, 1.0),
         };
@@ -246,7 +246,7 @@ mod tests {
 
     #[test]
     fn intersecting_a_ray_with_a_bouding_box_at_the_origin() {
-        let bounds = Bounds {
+        let bounds = BoundingBox {
             min: Point::new(-1.0, -1.0, -1.0),
             max: Point::new(1.0, 1.0, 1.0),
         };
@@ -319,7 +319,7 @@ mod tests {
 
     #[test]
     fn intersecting_a_ray_with_a_non_cubic_bounding_box() {
-        let bounds = Bounds {
+        let bounds = BoundingBox {
             min: Point::new(5.0, -2.0, 0.0),
             max: Point::new(11.0, 4.0, 7.0),
         };
@@ -392,7 +392,7 @@ mod tests {
 
     #[test]
     fn splitting_a_perfect_cube() {
-        let bounds = Bounds {
+        let bounds = BoundingBox {
             min: Point::new(-1.0, -4.0, -5.0),
             max: Point::new(9.0, 6.0, 5.0),
         };
@@ -408,7 +408,7 @@ mod tests {
 
     #[test]
     fn splitting_an_x_wide_bounding_box() {
-        let bounds = Bounds {
+        let bounds = BoundingBox {
             min: Point::new(-1.0, -2.0, -3.0),
             max: Point::new(9.0, 5.5, 3.0),
         };
@@ -424,7 +424,7 @@ mod tests {
 
     #[test]
     fn splitting_an_y_wide_bounding_box() {
-        let bounds = Bounds {
+        let bounds = BoundingBox {
             min: Point::new(-1.0, -2.0, -3.0),
             max: Point::new(5.0, 8.0, 3.0),
         };
@@ -440,7 +440,7 @@ mod tests {
 
     #[test]
     fn splitting_an_z_wide_bounding_box() {
-        let bounds = Bounds {
+        let bounds = BoundingBox {
             min: Point::new(-1.0, -2.0, -3.0),
             max: Point::new(5.0, 3.0, 7.0),
         };

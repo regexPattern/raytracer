@@ -6,7 +6,8 @@ use thiserror::Error;
 use crate::{
     scene::SceneProgress,
     shape::{Group, Shape, SmoothTriangle, Triangle},
-    tuple::{Point, Vector}, transform::Transform,
+    transform::Transform,
+    tuple::{Point, Vector},
 };
 
 const MIN_POLYGON_VERTICES: usize = 3;
@@ -203,7 +204,8 @@ fn fan_triangulation(vertices: Vec<FaceVertex>) -> Result<Vec<Shape>, ParsingErr
         let v1 = vertices[i - 1];
         let v2 = vertices[i];
 
-        if let Ok(triangle) = Triangle::try_default([v0.vertex, v1.vertex, v2.vertex]) {
+        if let Ok(triangle) = Triangle::try_default_from_vertices([v0.vertex, v1.vertex, v2.vertex])
+        {
             let triangle = if let (Some(n0), Some(n1), Some(n2)) = (v0.normal, v1.normal, v2.normal)
             {
                 Shape::SmoothTriangle(SmoothTriangle {
@@ -335,16 +337,24 @@ f 1 3 4";
         assert_eq!(
             t0,
             &Shape::Triangle(
-                Triangle::try_default([model.vertices[0], model.vertices[1], model.vertices[2]])
-                    .unwrap()
+                Triangle::try_default_from_vertices([
+                    model.vertices[0],
+                    model.vertices[1],
+                    model.vertices[2]
+                ])
+                .unwrap()
             )
         );
 
         assert_eq!(
             t1,
             &Shape::Triangle(
-                Triangle::try_default([model.vertices[0], model.vertices[2], model.vertices[3]])
-                    .unwrap()
+                Triangle::try_default_from_vertices([
+                    model.vertices[0],
+                    model.vertices[2],
+                    model.vertices[3]
+                ])
+                .unwrap()
             )
         );
     }
@@ -409,7 +419,7 @@ f 1 3 4";
 
         assert_eq!(
             tri[0],
-            Shape::Triangle(Triangle::try_default(vertices).unwrap())
+            Shape::Triangle(Triangle::try_default_from_vertices(vertices).unwrap())
         );
     }
 
@@ -434,24 +444,36 @@ f 1 2 3 4 5";
         assert_eq!(
             t0,
             &Shape::Triangle(
-                Triangle::try_default([model.vertices[0], model.vertices[1], model.vertices[2]])
-                    .unwrap()
+                Triangle::try_default_from_vertices([
+                    model.vertices[0],
+                    model.vertices[1],
+                    model.vertices[2]
+                ])
+                .unwrap()
             )
         );
 
         assert_eq!(
             t1,
             &Shape::Triangle(
-                Triangle::try_default([model.vertices[0], model.vertices[2], model.vertices[3]])
-                    .unwrap()
+                Triangle::try_default_from_vertices([
+                    model.vertices[0],
+                    model.vertices[2],
+                    model.vertices[3]
+                ])
+                .unwrap()
             )
         );
 
         assert_eq!(
             t2,
             &Shape::Triangle(
-                Triangle::try_default([model.vertices[0], model.vertices[3], model.vertices[4]])
-                    .unwrap()
+                Triangle::try_default_from_vertices([
+                    model.vertices[0],
+                    model.vertices[3],
+                    model.vertices[4]
+                ])
+                .unwrap()
             )
         );
     }
@@ -490,16 +512,24 @@ f 1 3 4";
         assert_eq!(
             t0,
             &Shape::Triangle(
-                Triangle::try_default([model.vertices[0], model.vertices[1], model.vertices[2]])
-                    .unwrap()
+                Triangle::try_default_from_vertices([
+                    model.vertices[0],
+                    model.vertices[1],
+                    model.vertices[2]
+                ])
+                .unwrap()
             )
         );
 
         assert_eq!(
             t1,
             &Shape::Triangle(
-                Triangle::try_default([model.vertices[0], model.vertices[2], model.vertices[3]])
-                    .unwrap()
+                Triangle::try_default_from_vertices([
+                    model.vertices[0],
+                    model.vertices[2],
+                    model.vertices[3]
+                ])
+                .unwrap()
             )
         );
     }
@@ -571,7 +601,7 @@ f 1/0/3 2/102/1 3/14/2";
         assert_eq!(
             t0,
             &Shape::SmoothTriangle(SmoothTriangle {
-                triangle: Triangle::try_default([
+                triangle: Triangle::try_default_from_vertices([
                     model.vertices[0],
                     model.vertices[1],
                     model.vertices[2]
@@ -607,7 +637,7 @@ f 1/0/3 2/102/1 3/14/2";
         assert_eq!(
             tri[0],
             Shape::SmoothTriangle(SmoothTriangle {
-                triangle: Triangle::try_default(vertices).unwrap(),
+                triangle: Triangle::try_default_from_vertices(vertices).unwrap(),
                 n0: normals[2],
                 n1: normals[1],
                 n2: normals[0]

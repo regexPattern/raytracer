@@ -1,18 +1,18 @@
 use crate::{intersection::Intersection, ray::Ray, transform::Transform};
 
-use super::{Bounds, Shape, ShapeProps};
+use super::{BoundingBox, ObjectCache, Shape};
 
 #[derive(Clone, Default, Debug, PartialEq)]
 pub struct Group {
     pub(crate) children: Vec<Shape>,
-    pub(crate) props: ShapeProps,
+    pub(crate) object: ObjectCache,
 }
 
 impl Group {
     pub fn new(transform: Transform) -> Self {
         Self {
             children: vec![],
-            props: ShapeProps {
+            object: ObjectCache {
                 transform,
                 transform_inverse: transform.inverse(),
                 ..Default::default()
@@ -21,7 +21,7 @@ impl Group {
     }
 
     pub fn push(&mut self, mut child: Shape) {
-        Self::apply_transform_to_child(&mut child, self.props.transform);
+        Self::apply_transform_to_child(&mut child, self.object.transform);
         self.children.push(child);
     }
 
@@ -93,11 +93,11 @@ impl Group {
             let child = &mut self.children[i];
             let child_bounds = child.parent_space_bounds();
 
-            if left_bounds.contains_box(&child_bounds) {
-                child.as_mut().transform = self.props.transform_inverse * child.as_ref().transform;
+            if left_bounds.contains(&child_bounds) {
+                child.as_mut().transform = self.object.transform_inverse * child.as_ref().transform;
                 left_children.push(self.children.swap_remove(i));
-            } else if right_bounds.contains_box(&child_bounds) {
-                child.as_mut().transform = self.props.transform_inverse * child.as_ref().transform;
+            } else if right_bounds.contains(&child_bounds) {
+                child.as_mut().transform = self.object.transform_inverse * child.as_ref().transform;
                 right_children.push(self.children.swap_remove(i));
             } else {
                 i += 1;
@@ -119,8 +119,8 @@ impl Group {
         self.push(Shape::Group(subgroup));
     }
 
-    fn bounds(&self) -> Bounds {
-        let mut bounds = Bounds::default();
+    fn bounds(&self) -> BoundingBox {
+        let mut bounds = BoundingBox::default();
 
         for child in &self.children {
             let child_bounds = child.parent_space_bounds();
@@ -134,7 +134,7 @@ impl Group {
 #[cfg(test)]
 mod tests {
     use crate::{
-        shape::{Cylinder, Sphere},
+        shape::{cylinder::CylinderBuilder, Cylinder, ObjectBuilder, Sphere},
         transform::Transform,
         tuple::{Point, Vector},
     };
@@ -158,10 +158,14 @@ mod tests {
     #[test]
     fn intersecting_a_ray_with_a_non_empty_group() {
         let child0 = Shape::Sphere(Default::default());
-        let child1 =
-            Shape::Sphere(Sphere::default().with_transform(Transform::translation(0.0, 0.0, -3.0)));
-        let child2 =
-            Shape::Sphere(Sphere::default().with_transform(Transform::translation(5.0, 0.0, 0.0)));
+        let child1 = Shape::Sphere(Sphere::from(ObjectBuilder {
+            transform: Transform::translation(0.0, 0.0, -3.0),
+            ..Default::default()
+        }));
+        let child2 = Shape::Sphere(Sphere::from(ObjectBuilder {
+            transform: Transform::translation(5.0, 0.0, 0.0),
+            ..Default::default()
+        }));
 
         let mut group = Group::default();
 
@@ -190,8 +194,10 @@ mod tests {
 
     #[test]
     fn intersecting_a_transformed_group() {
-        let child =
-            Shape::Sphere(Sphere::default().with_transform(Transform::translation(5.0, 0.0, 0.0)));
+        let child = Shape::Sphere(Sphere::from(ObjectBuilder {
+            transform: Transform::translation(5.0, 0.0, 0.0),
+            ..Default::default()
+        }));
 
         let mut group = Group::new(Transform::scaling(2.0, 2.0, 2.0).unwrap());
         group.push(child);
@@ -209,17 +215,19 @@ mod tests {
 
     #[test]
     fn a_group_has_a_bouding_box_that_contains_its_children() {
-        let child0 = Shape::Sphere(Sphere::default().with_transform(
-            Transform::translation(2.0, 5.0, -3.0) * Transform::scaling(2.0, 2.0, 2.0).unwrap(),
-        ));
+        let child0 = Shape::Sphere(Sphere::from(ObjectBuilder {
+            transform: Transform::translation(2.0, 5.0, -3.0)
+                * Transform::scaling(2.0, 2.0, 2.0).unwrap(),
+            ..Default::default()
+        }));
 
-        let child1 = Shape::Cylinder(Cylinder::new(
-            Default::default(),
-            Transform::translation(-4.0, -1.0, 4.0) * Transform::scaling(0.5, 1.0, 0.5).unwrap(),
-            -2.0,
-            2.0,
-            false,
-        ));
+        let child1 = Shape::Cylinder(Cylinder::from(CylinderBuilder {
+            transform: Transform::translation(-4.0, -1.0, 4.0)
+                * Transform::scaling(0.5, 1.0, 0.5).unwrap(),
+            min: -2.0,
+            max: 2.0,
+            ..Default::default()
+        }));
 
         let mut group = Group::new(Transform::scaling(2.0, 2.0, 2.0).unwrap());
         group.push(child0);
@@ -233,10 +241,14 @@ mod tests {
 
     #[test]
     fn partitioning_a_groups_children() {
-        let s0 =
-            Shape::Sphere(Sphere::default().with_transform(Transform::translation(-2.0, 0.0, 0.0)));
-        let s1 =
-            Shape::Sphere(Sphere::default().with_transform(Transform::translation(2.0, 0.0, 0.0)));
+        let s0 = Shape::Sphere(Sphere::from(ObjectBuilder {
+            transform: Transform::translation(-2.0, 0.0, 0.0),
+            ..Default::default()
+        }));
+        let s1 = Shape::Sphere(Sphere::from(ObjectBuilder {
+            transform: Transform::translation(2.0, 0.0, 0.0),
+            ..Default::default()
+        }));
         let s2 = Shape::Sphere(Default::default());
 
         let mut group = Group::default();
@@ -272,13 +284,18 @@ mod tests {
 
     #[test]
     fn subdividing_a_group_partitions_its_children() {
-        let s0 =
-            Shape::Sphere(Sphere::default().with_transform(Transform::translation(-2.0, 0.0, 0.0)));
-        let s1 =
-            Shape::Sphere(Sphere::default().with_transform(Transform::translation(2.0, 0.0, 0.0)));
-        let s2 = Shape::Sphere(
-            Sphere::default().with_transform(Transform::scaling(4.0, 4.0, 4.0).unwrap()),
-        );
+        let s0 = Shape::Sphere(Sphere::from(ObjectBuilder {
+            transform: Transform::translation(-2.0, 0.0, 0.0),
+            ..Default::default()
+        }));
+        let s1 = Shape::Sphere(Sphere::from(ObjectBuilder {
+            transform: Transform::translation(2.0, 0.0, 0.0),
+            ..Default::default()
+        }));
+        let s2 = Shape::Sphere(Sphere::from(ObjectBuilder {
+            transform: Transform::scaling(4.0, 4.0, 4.0).unwrap(),
+            ..Default::default()
+        }));
 
         let mut group = Group::default();
 
@@ -290,13 +307,17 @@ mod tests {
 
         assert_eq!(group.children[0], s2);
 
-        // Children that fit into left or right bounds are added to a new subgroup.
-        let subgroup = match &group.children[1] {
+        let left_subgroup = match &group.children[1] {
             Shape::Group(subgroup) => subgroup,
             _ => panic!(),
         };
 
-        assert_eq!(subgroup.children[0], s0);
-        assert_eq!(subgroup.children[1], s1);
+        let right_subgroup = match &group.children[2] {
+            Shape::Group(subgroup) => subgroup,
+            _ => panic!(),
+        };
+
+        assert_eq!(left_subgroup.children, vec![s0]);
+        assert_eq!(right_subgroup.children, vec![s1]);
     }
 }

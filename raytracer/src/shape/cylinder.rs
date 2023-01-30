@@ -7,11 +7,19 @@ use crate::{
     tuple::{Point, Tuple, Vector},
 };
 
-use super::{Bounds, Shape, ShapeProps};
+use super::{BoundingBox, ObjectCache, Shape};
+
+pub struct CylinderBuilder {
+    pub material: Material,
+    pub transform: Transform,
+    pub min: f64,
+    pub max: f64,
+    pub closed: bool,
+}
 
 #[derive(Clone, Debug)]
 pub struct Cylinder {
-    pub(crate) props: ShapeProps,
+    pub(crate) object_cache: ObjectCache,
     pub(crate) min: f64,
     pub(crate) max: f64,
     pub(crate) closed: bool,
@@ -19,43 +27,60 @@ pub struct Cylinder {
 
 impl PartialEq for Cylinder {
     fn eq(&self, other: &Self) -> bool {
-        self.props == other.props
+        self.object_cache == other.object_cache
             && float::approx(self.min, other.min)
             && float::approx(self.max, other.max)
             && self.closed == other.closed
     }
 }
 
-impl Default for Cylinder {
-    fn default() -> Self {
-        Self::new(
-            Default::default(),
-            Default::default(),
-            std::f64::NEG_INFINITY,
-            std::f64::INFINITY,
-            false,
-        )
-    }
-}
+impl From<CylinderBuilder> for Cylinder {
+    fn from(builder: CylinderBuilder) -> Self {
+        let CylinderBuilder {
+            material,
+            transform,
+            min,
+            max,
+            closed,
+        } = builder;
 
-impl Cylinder {
-    pub fn new(material: Material, transform: Transform, min: f64, max: f64, closed: bool) -> Self {
-        Self {
-            props: ShapeProps {
-                material,
-                transform,
-                transform_inverse: transform.inverse(),
-                bounds: Bounds {
-                    min: Point::new(-1.0, min, -1.0),
-                    max: Point::new(1.0, max, 1.0),
-                },
+        let object_cache = ObjectCache::new(
+            material,
+            transform,
+            BoundingBox {
+                min: Point::new(-1.0, min, -1.0),
+                max: Point::new(1.0, max, 1.0),
             },
+        );
+
+        Self {
+            object_cache,
             min,
             max,
             closed,
         }
     }
+}
 
+impl Default for CylinderBuilder {
+    fn default() -> Self {
+        Self {
+            material: Default::default(),
+            transform: Default::default(),
+            min: std::f64::NEG_INFINITY,
+            max: std::f64::INFINITY,
+            closed: false,
+        }
+    }
+}
+
+impl Default for Cylinder {
+    fn default() -> Self {
+        Self::from(CylinderBuilder::default())
+    }
+}
+
+impl Cylinder {
     pub(crate) fn intersect<'a>(&self, object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
         let mut xs = vec![];
 
@@ -506,7 +531,7 @@ mod tests {
     fn an_unbounde_cylinder_has_a_bounding_box() {
         let c = Cylinder::default();
 
-        let bounds = c.props.bounds;
+        let bounds = c.object_cache.bounding_box;
 
         assert_eq!(bounds.max, Point::new(1.0, std::f64::INFINITY, 1.0));
         assert_eq!(bounds.min, Point::new(-1.0, std::f64::NEG_INFINITY, -1.0));
@@ -514,9 +539,14 @@ mod tests {
 
     #[test]
     fn a_bounded_cylinder_has_a_bounding_box() {
-        let c = Cylinder::new(Default::default(), Default::default(), -5.0, 3.0, false);
+        let c = Cylinder::from(CylinderBuilder {
+            min: -5.0,
+            max: 3.0,
+            closed: false,
+            ..Default::default()
+        });
 
-        let bounds = c.props.bounds;
+        let bounds = c.object_cache.bounding_box;
 
         assert_eq!(bounds.min, Point::new(-1.0, -5.0, -1.0));
         assert_eq!(bounds.max, Point::new(1.0, 3.0, 1.0));

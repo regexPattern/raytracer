@@ -1,36 +1,38 @@
 use crate::{
     float,
     intersection::Intersection,
-    material::Material,
     ray::Ray,
-    transform::Transform,
     tuple::{Point, Vector},
 };
 
-use super::{Bounds, Shape, ShapeProps};
+use super::{BoundingBox, ObjectBuilder, ObjectCache, Shape};
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Plane(pub(crate) ShapeProps);
+pub struct Plane(pub(crate) ObjectCache);
+
+impl From<ObjectBuilder> for Plane {
+    fn from(object: ObjectBuilder) -> Self {
+        let ObjectBuilder {
+            material,
+            transform,
+        } = object;
+
+        let bounding_box = BoundingBox {
+            min: Point::new(std::f64::NEG_INFINITY, 0.0, std::f64::NEG_INFINITY),
+            max: Point::new(std::f64::INFINITY, 0.0, std::f64::INFINITY),
+        };
+
+        Self(ObjectCache::new(material, transform, bounding_box))
+    }
+}
 
 impl Default for Plane {
     fn default() -> Self {
-        Self::new(Default::default(), Default::default())
+        Self::from(ObjectBuilder::default())
     }
 }
 
 impl Plane {
-    pub fn new(material: Material, transform: Transform) -> Self {
-        Self(ShapeProps {
-            material,
-            transform,
-            transform_inverse: transform.inverse(),
-            bounds: Bounds {
-                min: Point::new(std::f64::NEG_INFINITY, 0.0, std::f64::NEG_INFINITY),
-                max: Point::new(std::f64::INFINITY, 0.0, std::f64::INFINITY),
-            },
-        })
-    }
-
     pub(crate) fn intersect<'a>(&self, object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
         if !float::approx(ray.direction.0.y, 0.0) {
             let t = -ray.origin.0.y / ray.direction.0.y;
@@ -134,7 +136,7 @@ mod tests {
     #[test]
     fn a_plane_has_a_bounding_box() {
         let p = Plane::default();
-        let bounds = p.0.bounds;
+        let bounds = p.0.bounding_box;
 
         assert_eq!(
             bounds.min,

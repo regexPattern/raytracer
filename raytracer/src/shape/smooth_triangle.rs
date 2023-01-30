@@ -37,15 +37,11 @@ mod tests {
 
     fn test_triangle() -> SmoothTriangle {
         SmoothTriangle {
-            triangle: Triangle::try_new(
-                Default::default(),
-                Default::default(),
-                [
-                    Point::new(0.0, 1.0, 0.0),
-                    Point::new(-1.0, 0.0, 0.0),
-                    Point::new(1.0, 0.0, 0.0),
-                ],
-            )
+            triangle: Triangle::try_default_from_vertices([
+                Point::new(0.0, 1.0, 0.0),
+                Point::new(-1.0, 0.0, 0.0),
+                Point::new(1.0, 0.0, 0.0),
+            ])
             .unwrap(),
             n0: Vector::new(0.0, 1.0, 0.0),
             n1: Vector::new(-1.0, 0.0, 0.0),

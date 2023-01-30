@@ -1,3 +1,5 @@
+use thiserror::Error;
+
 use crate::{
     float,
     intersection::Intersection,
@@ -7,14 +9,23 @@ use crate::{
     tuple::{Point, Vector},
 };
 
-use super::{Bounds, Shape, ShapeProps};
+use super::{BoundingBox, ObjectCache, Shape};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Error)]
+#[error("triangle sides most not be collinear")]
 pub struct CollinearTriangleSidesError;
+
+pub struct TriangleBuilder {
+    material: Material,
+    transform: Transform,
+    v0: Point,
+    v1: Point,
+    v2: Point,
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Triangle {
-    pub(crate) props: ShapeProps,
+    pub(crate) object_cache: ObjectCache,
     pub(crate) v0: Point,
     pub(crate) v1: Point,
     pub(crate) v2: Point,
@@ -23,13 +34,17 @@ pub struct Triangle {
     normal: Vector,
 }
 
-impl Triangle {
-    pub fn try_new(
-        material: Material,
-        transform: Transform,
-        vertices: [Point; 3],
-    ) -> Result<Self, CollinearTriangleSidesError> {
-        let [v0, v1, v2] = vertices;
+impl TryFrom<TriangleBuilder> for Triangle {
+    type Error = CollinearTriangleSidesError;
+
+    fn try_from(builder: TriangleBuilder) -> Result<Self, Self::Error> {
+        let TriangleBuilder {
+            material,
+            transform,
+            v0,
+            v1,
+            v2,
+        } = builder;
 
         let e0 = v1 - v0;
         let e1 = v2 - v0;
@@ -38,13 +53,10 @@ impl Triangle {
             .normalize()
             .map_err(|_| CollinearTriangleSidesError)?;
 
+        let object_cache = ObjectCache::new(material, transform, BoundingBox::from([v0, v1, v2]));
+
         Ok(Self {
-            props: ShapeProps {
-                material,
-                transform,
-                transform_inverse: transform.inverse(),
-                bounds: Bounds::from([v0, v1, v2]),
-            },
+            object_cache,
             v0,
             v1,
             v2,
@@ -53,9 +65,19 @@ impl Triangle {
             normal,
         })
     }
+}
 
-    pub fn try_default(vertices: [Point; 3]) -> Result<Self, CollinearTriangleSidesError> {
-        Self::try_new(Default::default(), Default::default(), vertices)
+impl Triangle {
+    pub fn try_default_from_vertices(
+        vertices: [Point; 3],
+    ) -> Result<Self, CollinearTriangleSidesError> {
+        Self::try_from(TriangleBuilder {
+            material: Default::default(),
+            transform: Default::default(),
+            v0: vertices[0],
+            v1: vertices[1],
+            v2: vertices[2],
+        })
     }
 
     pub(crate) fn intersect<'a>(&self, object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
@@ -106,7 +128,7 @@ mod tests {
         let v1 = Point::new(-1.0, 0.0, 0.0);
         let v2 = Point::new(1.0, 0.0, 0.0);
 
-        let t = Triangle::try_new(Default::default(), Default::default(), [v0, v1, v2]).unwrap();
+        let t = Triangle::try_default_from_vertices([v0, v1, v2]).unwrap();
 
         assert_eq!(t.v0, v0);
         assert_eq!(t.v1, v1);
@@ -122,22 +144,18 @@ mod tests {
         let v1 = Point::new(2.0, 1.0, 0.0);
         let v2 = v0;
 
-        let t = Triangle::try_new(Default::default(), Default::default(), [v0, v1, v2]);
+        let t = Triangle::try_default_from_vertices([v0, v1, v2]);
 
         assert_eq!(t, Err(CollinearTriangleSidesError));
     }
 
     #[test]
     fn finding_the_normal_on_a_triangle() {
-        let t = Triangle::try_new(
-            Default::default(),
-            Default::default(),
-            [
-                Point::new(0.0, 1.0, 0.0),
-                Point::new(-1.0, 0.0, 0.0),
-                Point::new(1.0, 0.0, 0.0),
-            ],
-        )
+        let t = Triangle::try_default_from_vertices([
+            Point::new(0.0, 1.0, 0.0),
+            Point::new(-1.0, 0.0, 0.0),
+            Point::new(1.0, 0.0, 0.0),
+        ])
         .unwrap();
 
         let n0 = t.normal_at(Point::new(0.0, 0.5, 0.0));
@@ -153,15 +171,11 @@ mod tests {
     fn intersecting_a_ray_parallel_to_the_triangle() {
         let o = Shape::Sphere(Default::default());
 
-        let t = Triangle::try_new(
-            Default::default(),
-            Default::default(),
-            [
-                Point::new(0.0, 1.0, 0.0),
-                Point::new(-1.0, 0.0, 0.0),
-                Point::new(1.0, 0.0, 0.0),
-            ],
-        )
+        let t = Triangle::try_default_from_vertices([
+            Point::new(0.0, 1.0, 0.0),
+            Point::new(-1.0, 0.0, 0.0),
+            Point::new(1.0, 0.0, 0.0),
+        ])
         .unwrap();
 
         let r = Ray {
@@ -178,15 +192,11 @@ mod tests {
     fn a_ray_misses_the_p0_p2_edge() {
         let o = Shape::Sphere(Default::default());
 
-        let t = Triangle::try_new(
-            Default::default(),
-            Default::default(),
-            [
-                Point::new(0.0, 1.0, 0.0),
-                Point::new(-1.0, 0.0, 0.0),
-                Point::new(1.0, 0.0, 0.0),
-            ],
-        )
+        let t = Triangle::try_default_from_vertices([
+            Point::new(0.0, 1.0, 0.0),
+            Point::new(-1.0, 0.0, 0.0),
+            Point::new(1.0, 0.0, 0.0),
+        ])
         .unwrap();
 
         let r = Ray {
@@ -203,15 +213,11 @@ mod tests {
     fn a_ray_misses_the_p0_p1_edge() {
         let o = Shape::Sphere(Default::default());
 
-        let t = Triangle::try_new(
-            Default::default(),
-            Default::default(),
-            [
-                Point::new(0.0, 1.0, 0.0),
-                Point::new(-1.0, 0.0, 0.0),
-                Point::new(1.0, 0.0, 0.0),
-            ],
-        )
+        let t = Triangle::try_default_from_vertices([
+            Point::new(0.0, 1.0, 0.0),
+            Point::new(-1.0, 0.0, 0.0),
+            Point::new(1.0, 0.0, 0.0),
+        ])
         .unwrap();
 
         let r = Ray {
@@ -228,15 +234,11 @@ mod tests {
     fn a_ray_misses_the_p1_p2_edge() {
         let o = Shape::Sphere(Default::default());
 
-        let t = Triangle::try_new(
-            Default::default(),
-            Default::default(),
-            [
-                Point::new(0.0, 1.0, 0.0),
-                Point::new(-1.0, 0.0, 0.0),
-                Point::new(1.0, 0.0, 0.0),
-            ],
-        )
+        let t = Triangle::try_default_from_vertices([
+            Point::new(0.0, 1.0, 0.0),
+            Point::new(-1.0, 0.0, 0.0),
+            Point::new(1.0, 0.0, 0.0),
+        ])
         .unwrap();
 
         let r = Ray {
@@ -253,15 +255,11 @@ mod tests {
     fn a_ray_strikes_a_triangle() {
         let o = Shape::Sphere(Default::default());
 
-        let t = Triangle::try_new(
-            Default::default(),
-            Default::default(),
-            [
-                Point::new(0.0, 1.0, 0.0),
-                Point::new(-1.0, 0.0, 0.0),
-                Point::new(1.0, 0.0, 0.0),
-            ],
-        )
+        let t = Triangle::try_default_from_vertices([
+            Point::new(0.0, 1.0, 0.0),
+            Point::new(-1.0, 0.0, 0.0),
+            Point::new(1.0, 0.0, 0.0),
+        ])
         .unwrap();
 
         let r = Ray {
@@ -281,9 +279,9 @@ mod tests {
         let v1 = Point::new(6.0, 2.0, -4.0);
         let v2 = Point::new(2.0, -1.0, -1.0);
 
-        let t = Triangle::try_new(Default::default(), Default::default(), [v0, v1, v2]).unwrap();
+        let t = Triangle::try_default_from_vertices([v0, v1, v2]).unwrap();
 
-        let bbox = t.props.bounds;
+        let bbox = t.object_cache.bounding_box;
 
         assert_eq!(bbox.min, Point::new(-3.0, -1.0, -4.0));
         assert_eq!(bbox.max, Point::new(6.0, 7.0, 2.0));

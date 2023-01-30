@@ -1,40 +1,37 @@
 use crate::{
     intersection::Intersection,
-    material::Material,
     ray::Ray,
-    transform::Transform,
     tuple::{Point, Vector},
 };
 
-use super::{Bounds, Shape, ShapeProps};
+use super::{BoundingBox, ObjectBuilder, ObjectCache, Shape};
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Sphere(pub(crate) ShapeProps);
+pub struct Sphere(pub(crate) ObjectCache);
+
+impl From<ObjectBuilder> for Sphere {
+    fn from(object: ObjectBuilder) -> Self {
+        let ObjectBuilder {
+            material,
+            transform,
+        } = object;
+
+        let bounding_box = BoundingBox {
+            min: Point::new(-1.0, -1.0, -1.0),
+            max: Point::new(1.0, 1.0, 1.0),
+        };
+
+        Self(ObjectCache::new(material, transform, bounding_box))
+    }
+}
 
 impl Default for Sphere {
     fn default() -> Self {
-        Self(ShapeProps {
-            bounds: Bounds {
-                min: Point::new(-1.0, -1.0, -1.0),
-                max: Point::new(1.0, 1.0, 1.0),
-            },
-            ..Default::default()
-        })
+        Self::from(ObjectBuilder::default())
     }
 }
 
 impl Sphere {
-    pub fn with_material(mut self, material: Material) -> Self {
-        self.0.material = material;
-        self
-    }
-
-    pub fn with_transform(mut self, transform: Transform) -> Self {
-        self.0.transform = transform;
-        self.0.transform_inverse = transform.inverse();
-        self
-    }
-
     pub(crate) fn local_intersect<'a>(
         &self,
         object: &'a Shape,
@@ -224,7 +221,7 @@ mod tests {
     #[test]
     fn a_sphere_has_a_bounding_box() {
         let s = Sphere::default();
-        let bounds = s.0.bounds;
+        let bounds = s.0.bounding_box;
 
         assert_eq!(bounds.min, Point::new(-1.0, -1.0, -1.0));
         assert_eq!(bounds.max, Point::new(1.0, 1.0, 1.0));

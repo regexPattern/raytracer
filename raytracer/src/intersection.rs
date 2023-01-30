@@ -143,16 +143,20 @@ impl<'a> Computation<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{assert_approx, material::Material, shape::Sphere, transform::Transform};
+    use crate::{
+        assert_approx,
+        material::Material,
+        shape::{ObjectBuilder, Sphere},
+        transform::Transform,
+    };
 
     use super::*;
 
     fn glass_sphere() -> Shape {
-        Shape::Sphere(
-            Sphere::default()
-                .with_material(glass_material())
-                .with_transform(Default::default()),
-        )
+        Shape::Sphere(Sphere::from(ObjectBuilder {
+            material: glass_material(),
+            ..Default::default()
+        }))
     }
 
     fn glass_material() -> Material {
@@ -413,8 +417,10 @@ mod tests {
 
     #[test]
     fn the_hit_should_offset_the_point() {
-        let o =
-            Shape::Sphere(Sphere::default().with_transform(Transform::translation(0.0, 0.0, 1.0)));
+        let o = Shape::Sphere(Sphere::from(ObjectBuilder {
+            transform: Transform::translation(0.0, 0.0, 1.0),
+            ..Default::default()
+        }));
 
         let r = Ray {
             origin: Point::new(0.0, 0.0, -5.0),
@@ -460,32 +466,29 @@ mod tests {
 
     #[test]
     fn finding_n1_and_n2_at_various_intersections() {
-        let a = Shape::Sphere(
-            Sphere::default()
-                .with_material(Material {
-                    index_of_refraction: 1.5,
-                    ..glass_material()
-                })
-                .with_transform(Transform::scaling(2.0, 2.0, 2.0).unwrap()),
-        );
+        let a = Shape::Sphere(Sphere::from(ObjectBuilder {
+            material: Material {
+                index_of_refraction: 1.5,
+                ..glass_material()
+            },
+            transform: Transform::scaling(2.0, 2.0, 2.0).unwrap(),
+        }));
 
-        let b = Shape::Sphere(
-            Sphere::default()
-                .with_material(Material {
-                    index_of_refraction: 2.0,
-                    ..glass_material()
-                })
-                .with_transform(Transform::translation(0.0, 0.0, -0.25)),
-        );
+        let b = Shape::Sphere(Sphere::from(ObjectBuilder {
+            material: Material {
+                index_of_refraction: 2.0,
+                ..glass_material()
+            },
+            transform: Transform::translation(0.0, 0.0, -0.25),
+        }));
 
-        let c = Shape::Sphere(
-            Sphere::default()
-                .with_material(Material {
-                    index_of_refraction: 2.5,
-                    ..glass_material()
-                })
-                .with_transform(Transform::translation(0.0, 0.0, 0.25)),
-        );
+        let c = Shape::Sphere(Sphere::from(ObjectBuilder {
+            material: Material {
+                index_of_refraction: 2.5,
+                ..glass_material()
+            },
+            transform: Transform::translation(0.0, 0.0, 0.25),
+        }));
 
         let i0 = Intersection {
             t: 2.0,
@@ -558,11 +561,10 @@ mod tests {
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let o = Shape::Sphere(
-            Sphere::default()
-                .with_material(glass_material())
-                .with_transform(Transform::translation(0.0, 0.0, 1.0)),
-        );
+        let o = Shape::Sphere(Sphere::from(ObjectBuilder {
+            material: glass_material(),
+            transform: Transform::translation(0.0, 0.0, 1.0),
+        }));
 
         let i = Intersection {
             t: 5.0,
@@ -579,7 +581,10 @@ mod tests {
 
     #[test]
     fn the_schlick_approximation_under_total_internal_reflection() {
-        let o = Shape::Sphere(Sphere::default().with_material(glass_material()));
+        let o = Shape::Sphere(Sphere::from(ObjectBuilder {
+            material: glass_material(),
+            ..Default::default()
+        }));
 
         let r = Ray {
             origin: Point::new(0.0, 0.0, 2_f64.sqrt() / 2.0),
