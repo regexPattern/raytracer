@@ -196,16 +196,16 @@ mod tests {
     }
 
     #[test]
-    fn querying_a_shapes_bounds_in_its_parents_space() {
+    fn querying_a_shapes_bounding_box_in_its_parents_space() {
         let s = Shape::Sphere(Sphere::from(SphereBuilder {
             transform: Transform::translation(1.0, -3.0, 5.0)
                 * Transform::scaling(0.5, 2.0, 4.0).unwrap(),
             ..Default::default()
         }));
 
-        // let bounds = s.as_ref().world_bounds;
+        let bounding_box = s.as_ref().parent_space_bounding_box;
 
-        // assert_eq!(bounds.min, Point::new(0.5, -5.0, 1.0));
-        // assert_eq!(bounds.max, Point::new(1.5, -1.0, 9.0));
+        assert_eq!(bounding_box.min, Point::new(0.5, -5.0, 1.0));
+        assert_eq!(bounding_box.max, Point::new(1.5, -1.0, 9.0));
     }
 }

@@ -4,7 +4,7 @@ pub fn approx(a: f64, b: f64) -> bool {
     if a.is_infinite() && b.is_infinite() {
         a == b
     } else {
-        (a - b).abs() < EPSILON
+        (a - b).abs() <= EPSILON
     }
 }
 

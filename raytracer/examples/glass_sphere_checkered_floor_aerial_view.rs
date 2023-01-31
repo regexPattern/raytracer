@@ -1,8 +1,8 @@
 use raytracer::{
     camera::{self, consts::ImageResolution, Camera, CameraBuilder},
     color::{self, Color},
-    light::PointLight,
-    material::Material,
+    light::{Light, AreaLightBuilder, AreaLight},
+    material::{self, Material},
     pattern::{Pattern3D, Schema},
     scene::SceneProgress,
     shape::{
@@ -11,11 +11,11 @@ use raytracer::{
         Shape,
     },
     transform::Transform,
-    tuple::Point,
+    tuple::{Point, Vector},
     world::World,
 };
 
-const RESOLUTION: ImageResolution = camera::consts::HD;
+const RESOLUTION: ImageResolution = camera::consts::QHD;
 
 fn main() {
     let floor = Shape::Plane(Plane::from(PlaneBuilder {
@@ -45,10 +45,10 @@ fn main() {
             pattern: Pattern3D::Solid(Color {
                 red: 0.2,
                 green: 0.2,
-                blue: 0.3,
+                blue: 0.25,
             }),
             transparency: 1.0,
-            index_of_refraction: 1.35,
+            index_of_refraction: material::consts::GLASS_INDEX_OF_REFRACTION,
             specular: 0.01,
             reflectivity: 0.2,
             shininess: 400.0,
@@ -91,10 +91,14 @@ fn main() {
         transform: Transform::translation(3.0, 1.0, -3.0),
     }));
 
-    let light = PointLight {
-        position: Point::new(5.0, 5.0, -10.0),
+    let light = Light::Area(AreaLight::from(AreaLightBuilder {
+        corner: Point::new(5.0, 5.0, -10.0),
+        horizontal_vec: Vector::new(4.0, 0.0, 0.0),
+        horizontal_cells: 8,
+        vertical_vec: Vector::new(0.0, 4.0, 0.0),
+        vertical_cells: 8,
         intensity: color::consts::WHITE,
-    };
+    }));
 
     let world = World {
         objects: vec![

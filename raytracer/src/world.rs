@@ -2,7 +2,7 @@ use crate::{
     color::{self, Color},
     float,
     intersection::{Computation, Intersection},
-    light::PointLight,
+    light::Light,
     ray::Ray,
     shape::Shape,
     tuple::Point,
@@ -13,7 +13,7 @@ pub(crate) const RECURSION_DEPTH: u8 = 5;
 #[derive(Debug, Default)]
 pub struct World {
     pub objects: Vec<Shape>,
-    pub lights: Vec<PointLight>,
+    pub lights: Vec<Light>,
 }
 
 impl World {
@@ -39,8 +39,9 @@ impl World {
     fn shade_hit(&self, comps: Computation, recursion_depth: u8) -> Color {
         self.lights.iter().fold(color::consts::BLACK, |acc, light| {
             let object = comps.intersection.object;
-            let in_shadow = self.is_shadowed(comps.over_point, light);
             let material = &object.as_ref().material;
+
+            let light_intensity = light.intensity_at(self, comps.over_point);
 
             let surface_color = material.lighting(
                 object,
@@ -48,7 +49,7 @@ impl World {
                 comps.over_point,
                 comps.eyev,
                 comps.normalv,
-                in_shadow,
+                light_intensity,
             );
 
             let reflected_color = self.reflected_color(&comps, recursion_depth);
@@ -65,8 +66,8 @@ impl World {
         })
     }
 
-    fn is_shadowed(&self, point: Point, light: &PointLight) -> bool {
-        let point_to_light = light.position - point;
+    pub(crate) fn is_shadowed(&self, light_position: Point, point: Point) -> bool {
+        let point_to_light = light_position - point;
         let distance = point_to_light.magnitude();
 
         let point_to_light = if let Ok(vector) = point_to_light.normalize() {
@@ -132,16 +133,17 @@ impl World {
 // This base world is used in other modules for testing purposes.
 pub(crate) fn test_world() -> World {
     use crate::{
+        light::PointLight,
         material::Material,
         pattern::Pattern3D,
         shape::sphere::{Sphere, SphereBuilder},
         transform::Transform,
     };
 
-    let light = PointLight {
+    let light = Light::Point(PointLight {
         position: Point::new(-10.0, 10.0, -10.0),
         intensity: color::consts::WHITE,
-    };
+    });
 
     let s0 = Shape::Sphere(Sphere::from(SphereBuilder {
         material: Material {
@@ -173,6 +175,7 @@ mod tests {
     use crate::{
         assert_approx,
         intersection::Intersection,
+        light::PointLight,
         material::Material,
         pattern::Pattern3D,
         shape::{
@@ -243,10 +246,10 @@ mod tests {
     #[test]
     fn shading_an_intersection_from_the_inside() {
         let w = World {
-            lights: vec![PointLight {
+            lights: vec![Light::Point(PointLight {
                 position: Point::new(0.0, 0.25, 0.0),
                 intensity: color::consts::WHITE,
-            }],
+            })],
             ..test_world()
         };
 
@@ -370,7 +373,7 @@ mod tests {
 
         let p = Point::new(0.0, 10.0, 0.0);
 
-        assert!(!w.is_shadowed(p, &w.lights[0]));
+        assert!(!w.is_shadowed(Point::new(-10.0, 10.0, -10.0), p));
     }
 
     #[test]
@@ -379,7 +382,7 @@ mod tests {
 
         let p = Point::new(10.0, -10.0, 10.0);
 
-        assert!(w.is_shadowed(p, &w.lights[0]));
+        assert!(w.is_shadowed(Point::new(-10.0, 10.0, -10.0), p));
     }
 
     #[test]
@@ -388,7 +391,7 @@ mod tests {
 
         let p = Point::new(-20.0, 20.0, -20.0);
 
-        assert!(!w.is_shadowed(p, &w.lights[0]));
+        assert!(!w.is_shadowed(Point::new(-10.0, 10.0, -10.0), p));
     }
 
     #[test]
@@ -397,24 +400,24 @@ mod tests {
 
         let p = Point::new(-2.0, 2.0, -2.0);
 
-        assert!(!w.is_shadowed(p, &w.lights[0]));
+        assert!(!w.is_shadowed(Point::new(-10.0, 10.0, -10.0), p));
     }
 
     #[test]
     fn there_is_no_shadow_when_the_light_is_on_the_point() {
         let p = Point::new(1.0, 2.0, 3.0);
 
-        let light = PointLight {
+        let light = Light::Point(PointLight {
             position: p,
             intensity: color::consts::WHITE,
-        };
+        });
 
         let w = World {
             objects: vec![],
             lights: vec![light],
         };
 
-        assert!(!w.is_shadowed(p, &w.lights[0]));
+        assert!(!w.is_shadowed(Point::new(-10.0, 10.0, -10.0), p));
     }
 
     #[test]
@@ -426,10 +429,10 @@ mod tests {
             ..Default::default()
         }));
 
-        let light = PointLight {
+        let light = Light::Point(PointLight {
             position: Point::new(0.0, 0.0, -10.0),
             intensity: color::consts::WHITE,
-        };
+        });
 
         let w = World {
             objects: vec![s0, s1.clone()],
@@ -582,10 +585,10 @@ mod tests {
             transform: Transform::translation(0.0, 1.0, 0.0),
         }));
 
-        let light = PointLight {
+        let light = Light::Point(PointLight {
             position: Point::new(0.0, 0.0, 0.0),
             intensity: color::consts::WHITE,
-        };
+        });
 
         let w = World {
             objects: vec![lower, upper],
@@ -841,5 +844,16 @@ mod tests {
                 blue: 0.69243
             }
         );
+    }
+
+    #[test]
+    fn is_shadowed_test_for_occlusion_between_two_points() {
+        let w = test_world();
+        let light_position = Point::new(-10.0, -10.0, -10.0);
+
+        assert!(!w.is_shadowed(light_position, Point::new(-10.0, -10.0, 10.0)));
+        assert!(w.is_shadowed(light_position, Point::new(10.0, 10.0, 10.0)));
+        assert!(!w.is_shadowed(light_position, Point::new(-20.0, -20.0, -20.0)));
+        assert!(!w.is_shadowed(light_position, Point::new(-5.0, -5.0, -5.0)));
     }
 }

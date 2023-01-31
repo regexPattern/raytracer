@@ -1,7 +1,7 @@
 use raytracer::{
     camera::{Camera, CameraBuilder},
     color,
-    light::PointLight,
+    light::{PointLight, Light},
     obj_model::{OBJModel, OBJModelBuilder},
     shape::{group::Group, Shape},
     transform::Transform,
@@ -21,10 +21,10 @@ fn main() {
     let mut model = Group::from(model);
     model.divide(2);
 
-    let light = PointLight {
+    let light = Light::Point(PointLight {
         position: Point::new(0.0, 0.0, 5.0),
         intensity: color::consts::WHITE,
-    };
+    });
 
     let world = World {
         objects: vec![Shape::Group(model)],

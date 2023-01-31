@@ -2,7 +2,7 @@ use rand::{seq::SliceRandom, Rng};
 use raytracer::{
     camera::{self, consts::ImageResolution, Camera, CameraBuilder},
     color::{self, Color},
-    light::PointLight,
+    light::{Light, PointLight},
     material::{self, Material},
     pattern::{Pattern3D, Schema},
     scene::SceneProgress,
@@ -19,6 +19,7 @@ use raytracer::{
 
 const RESOLUTION: ImageResolution = camera::consts::HD;
 
+const SPHERES: i32 = 12;
 const CELL_WIDTH: f64 = 2.2;
 
 const METAL: Material = Material {
@@ -57,8 +58,8 @@ fn main() {
     let mut spheres = Group::default();
     let materials = [METAL, GLASS];
 
-    for x in -64..64 {
-        for z in -64..64 {
+    for x in -SPHERES..SPHERES {
+        for z in -SPHERES..SPHERES {
             let jitter_x = rng.gen_range(-0.2..=0.2);
             let jitter_z = rng.gen_range(-0.2..=0.2);
 
@@ -101,12 +102,12 @@ fn main() {
         ..Default::default()
     }));
 
-    let light = PointLight {
+    let light = Light::Point(PointLight {
         position: Point::new(-40.0, 40.0, 0.0),
         intensity: color::consts::WHITE,
-    };
+    });
 
-    spheres.divide(64);
+    spheres.divide(256);
 
     let world = World {
         objects: vec![floor, Shape::Group(spheres)],

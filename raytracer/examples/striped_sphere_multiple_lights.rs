@@ -1,7 +1,7 @@
 use raytracer::{
     camera::{self, consts::ImageResolution, Camera, CameraBuilder},
     color::{self, Color},
-    light::PointLight,
+    light::{AreaLight, AreaLightBuilder, Light, PointLight},
     material::Material,
     pattern::{Pattern3D, Schema},
     scene::SceneProgress,
@@ -15,7 +15,7 @@ use raytracer::{
     world::World,
 };
 
-const RESOLUTION: ImageResolution = camera::consts::HD;
+const RESOLUTION: ImageResolution = camera::consts::QHD;
 
 fn main() {
     let floor = Shape::Plane(Plane::from(PlaneBuilder {
@@ -45,23 +45,45 @@ fn main() {
         transform: Transform::translation(0.0, 1.0, 0.0),
     }));
 
-    let right_light = PointLight {
+    let right_light_point = Light::Point(PointLight {
         position: Point::new(10.0, 10.0, 10.0),
         intensity: color::consts::RED,
-    };
+    });
 
-    let left_light = PointLight {
+    let left_light_point = Light::Point(PointLight {
         position: Point::new(-10.0, 10.0, 10.0),
         intensity: Color {
             red: 0.3216,
             green: 0.6784,
             blue: 0.03,
         },
-    };
+    });
+
+    let right_light_area = Light::Area(AreaLight::from(AreaLightBuilder {
+        corner: Point::new(10.0, 10.0, 10.0),
+        horizontal_vec: Vector::new(4.0, 0.0, 0.0),
+        horizontal_cells: 4,
+        vertical_vec: Vector::new(0.0, 4.0, 0.0),
+        vertical_cells: 4,
+        intensity: color::consts::RED,
+    }));
+
+    let left_light_area = Light::Area(AreaLight::from(AreaLightBuilder {
+        corner: Point::new(-10.0, 10.0, 10.0),
+        horizontal_vec: Vector::new(4.0, 0.0, 0.0),
+        horizontal_cells: 8,
+        vertical_vec: Vector::new(0.0, 4.0, 0.0),
+        vertical_cells: 8,
+        intensity: Color {
+            red: 0.3216,
+            green: 0.6784,
+            blue: 0.03,
+        },
+    }));
 
     let world = World {
         objects: vec![floor, striped_sphere],
-        lights: vec![left_light, right_light],
+        lights: vec![left_light_area, right_light_area],
     };
 
     let camera = Camera::try_from(CameraBuilder {

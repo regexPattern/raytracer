@@ -1,7 +1,7 @@
 use raytracer::{
     camera::{self, consts::ImageResolution, Camera, CameraBuilder},
     color::{self, Color},
-    light::PointLight,
+    light::{AreaLight, AreaLightBuilder, Light},
     material::Material,
     pattern::{Pattern3D, Schema},
     scene::SceneProgress,
@@ -15,7 +15,7 @@ use raytracer::{
     world::World,
 };
 
-const RESOLUTION: ImageResolution = camera::consts::HD;
+const RESOLUTION: ImageResolution = camera::consts::QHD;
 
 fn main() {
     let floor = Shape::Plane(Plane::default());
@@ -75,10 +75,14 @@ fn main() {
             * Transform::scaling(0.25, 0.25, 0.25).unwrap(),
     }));
 
-    let light = PointLight {
-        position: Point::new(5.0, 5.0, -10.0),
+    let light = Light::Area(AreaLight::from(AreaLightBuilder {
+        corner: Point::new(5.0, 5.0, -10.0),
+        horizontal_vec: Vector::new(4.0, 0.0, 0.0),
+        horizontal_cells: 8,
+        vertical_vec: Vector::new(0.0, 4.0, 0.0),
+        vertical_cells: 8,
         intensity: color::consts::WHITE,
-    };
+    }));
 
     let world = World {
         objects: vec![
