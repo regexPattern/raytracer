@@ -10,19 +10,19 @@ use raytracer::{
 };
 
 fn main() {
-    let file = std::fs::read_to_string("al.obj").unwrap();
+    let file = std::fs::read_to_string("alfull.obj").unwrap();
     let model = OBJModel::try_from(OBJModelBuilder {
         content: &file,
-        transform: Transform::rotation_y(std::f64::consts::FRAC_PI_2)
-            * Transform::scaling(2.0, 2.0, 2.0).unwrap(),
+        transform: Transform::rotation_y(0.0)
+            * Transform::scaling(1.0, 0.5, 1.0).unwrap(),
     })
     .unwrap();
 
     let mut model = Group::from(model);
-    model.divide(300);
+    model.divide(2);
 
     let light = PointLight {
-        position: Point::new(5.0, 5.0, 5.0),
+        position: Point::new(0.0, 0.0, 5.0),
         intensity: color::consts::WHITE,
     };
 
@@ -32,10 +32,10 @@ fn main() {
     };
 
     let camera = Camera::try_from(CameraBuilder {
-        image_width: 200,
-        image_height: 200,
+        image_width: 360,
+        image_height: 640,
         field_of_view: std::f64::consts::FRAC_PI_3,
-        transform: Transform::translation(0.0, 0.0, -20.0),
+        transform: Transform::translation(0.0, 0.0, -6.0),
     })
     .unwrap();
 

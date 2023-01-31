@@ -40,54 +40,26 @@ impl From<CubeBuilder> for Cube {
     }
 }
 
-impl Cube {
-    pub(crate) fn intersect<'a>(&self, object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
-        intersect_box_with_bounds(object, ray, &self.0.bounding_box)
-    }
-
-    pub(crate) fn normal_at(&self, point: Point) -> Vector {
-        let Point(Tuple { x, y, z, .. }) = point;
-
-        let max_coord = [x.abs(), y.abs(), z.abs()]
-            .iter()
-            .max_by(|a, b| a.partial_cmp(b).unwrap())
-            .cloned()
-            .unwrap();
-
-        if float::approx(max_coord, x.abs()) {
-            Vector::new(x, 0.0, 0.0)
-        } else if float::approx(max_coord, y.abs()) {
-            Vector::new(0.0, y, 0.0)
-        } else {
-            Vector::new(0.0, 0.0, z)
-        }
-    }
-}
-
-pub fn intersect_box_with_bounds<'a>(
-    object: &'a Shape,
-    ray: &Ray,
-    bounds: &BoundingBox,
-) -> Vec<Intersection<'a>> {
+pub fn intersect_box_with_bouding_box<'a>(ray: &Ray, bounding_box: &BoundingBox) -> (f64, f64) {
     let (xtmin, xtmax) = check_axis(
         ray.origin.0.x,
         ray.direction.0.x,
-        bounds.min.0.x,
-        bounds.max.0.x,
+        bounding_box.min.0.x,
+        bounding_box.max.0.x,
     );
 
     let (ytmin, ytmax) = check_axis(
         ray.origin.0.y,
         ray.direction.0.y,
-        bounds.min.0.y,
-        bounds.max.0.y,
+        bounding_box.min.0.y,
+        bounding_box.max.0.y,
     );
 
     let (ztmin, ztmax) = check_axis(
         ray.origin.0.z,
         ray.direction.0.z,
-        bounds.min.0.z,
-        bounds.max.0.z,
+        bounding_box.min.0.z,
+        bounding_box.max.0.z,
     );
 
     // There's always going to be a minimum value among these.
@@ -104,24 +76,7 @@ pub fn intersect_box_with_bounds<'a>(
         .min_by(|a, b| a.partial_cmp(b).unwrap())
         .unwrap();
 
-    if tmin > tmax {
-        vec![]
-    } else {
-        vec![
-            Intersection {
-                t: tmin,
-                object,
-                u: None,
-                v: None,
-            },
-            Intersection {
-                t: tmax,
-                object,
-                u: None,
-                v: None,
-            },
-        ]
-    }
+    (tmin, tmax)
 }
 
 fn check_axis(origin: f64, direction: f64, min: f64, max: f64) -> (f64, f64) {
@@ -141,6 +96,49 @@ fn check_axis(origin: f64, direction: f64, min: f64, max: f64) -> (f64, f64) {
         (tmax, tmin)
     } else {
         (tmin, tmax)
+    }
+}
+
+impl Cube {
+    pub(crate) fn intersect<'a>(&self, object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
+        let (tmin, tmax) = intersect_box_with_bouding_box(ray, &self.0.bounding_box);
+
+        if tmin > tmax {
+            vec![]
+        } else {
+            vec![
+                Intersection {
+                    t: tmin,
+                    object,
+                    u: None,
+                    v: None,
+                },
+                Intersection {
+                    t: tmax,
+                    object,
+                    u: None,
+                    v: None,
+                },
+            ]
+        }
+    }
+
+    pub(crate) fn normal_at(&self, point: Point) -> Vector {
+        let Point(Tuple { x, y, z, .. }) = point;
+
+        let max_coord = [x.abs(), y.abs(), z.abs()]
+            .iter()
+            .max_by(|a, b| a.partial_cmp(b).unwrap())
+            .cloned()
+            .unwrap();
+
+        if float::approx(max_coord, x.abs()) {
+            Vector::new(x, 0.0, 0.0)
+        } else if float::approx(max_coord, y.abs()) {
+            Vector::new(0.0, y, 0.0)
+        } else {
+            Vector::new(0.0, 0.0, z)
+        }
     }
 }
 

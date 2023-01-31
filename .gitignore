@@ -1,12 +1,17 @@
-target
+# Cargo
+/target
+/Cargo.lock
 
+# Wavefront OBJ files
 *.obj
 
+# Popular image formtas
 *.bmp
 *.jpeg
 *.png
 *.ppm
 *.webp
 
-/target
-/Cargo.lock
+# Flamegraph profiling
+*.data*
+*.svg

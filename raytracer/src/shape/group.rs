@@ -19,15 +19,7 @@ where
     T: IntoIterator<Item = Shape>,
 {
     fn from(builder: GroupBuilder<T>) -> Self {
-        let mut group = Group {
-            children: vec![],
-            object_cache: ObjectCache::new(
-                Default::default(),
-                builder.transform,
-                Default::default(),
-            ),
-        };
-
+        let mut group = Group::new(builder.transform);
         group.extend(builder.children);
         group
     }
@@ -47,6 +39,10 @@ impl Group {
 
     pub fn push(&mut self, mut child: Shape) {
         Self::apply_transform_to_child(&mut child, self.object_cache.transform);
+        self.object_cache
+            .bounding_box
+            .merge(child.as_ref().parent_space_bounding_box);
+
         self.children.push(child);
     }
 
@@ -131,6 +127,12 @@ impl Group {
             } else {
                 i += 1;
             }
+        }
+
+        let mut adjusted_bounding_box = BoundingBox::default();
+        for child in &self.children {
+            let child_bounds = child.as_ref().parent_space_bounding_box;
+            adjusted_bounding_box.merge(child_bounds);
         }
 
         (left_children, right_children)

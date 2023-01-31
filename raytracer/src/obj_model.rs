@@ -114,15 +114,6 @@ impl TryFrom<OBJModelBuilder<'_>> for OBJModel {
     }
 }
 
-impl TryFrom<OBJModelBuilder<'_>> for Group {
-    type Error = ParsingError;
-
-    fn try_from(builder: OBJModelBuilder<'_>) -> Result<Self, Self::Error> {
-        let model = OBJModel::try_from(builder)?;
-        Ok(Group::from(model))
-    }
-}
-
 impl From<OBJModel> for Group {
     fn from(model: OBJModel) -> Self {
         let group_builder = GroupBuilder {
@@ -134,6 +125,15 @@ impl From<OBJModel> for Group {
         };
 
         Self::from(group_builder)
+    }
+}
+
+impl TryFrom<OBJModelBuilder<'_>> for Group {
+    type Error = ParsingError;
+
+    fn try_from(builder: OBJModelBuilder<'_>) -> Result<Self, Self::Error> {
+        let model = OBJModel::try_from(builder)?;
+        Ok(Group::from(model))
     }
 }
 
