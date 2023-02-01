@@ -3,13 +3,8 @@ use raytracer::{
     color::{self, Color},
     light::{AreaLight, AreaLightBuilder, Light, PointLight},
     material::Material,
-    pattern::{Pattern3D, Schema},
-    scene::SceneProgress,
-    shape::{
-        plane::{Plane, PlaneBuilder},
-        sphere::{Sphere, SphereBuilder},
-        Shape,
-    },
+    pattern::{Pattern3D, Pattern3DSpec},
+    shape::{Plane, Shape, ShapeBuilder, Sphere},
     transform::Transform,
     tuple::{Point, Vector},
     world::World,
@@ -18,7 +13,7 @@ use raytracer::{
 const RESOLUTION: ImageResolution = camera::consts::QHD;
 
 fn main() {
-    let floor = Shape::Plane(Plane::from(PlaneBuilder {
+    let floor = Shape::Plane(Plane::from(ShapeBuilder {
         material: Material {
             pattern: Pattern3D::Solid(color::consts::WHITE),
             ..Default::default()
@@ -26,9 +21,9 @@ fn main() {
         ..Default::default()
     }));
 
-    let striped_sphere = Shape::Sphere(Sphere::from(SphereBuilder {
+    let striped_sphere = Shape::Sphere(Sphere::from(ShapeBuilder {
         material: Material {
-            pattern: Pattern3D::Stripe(Schema::new(
+            pattern: Pattern3D::Stripe(Pattern3DSpec::new(
                 color::consts::WHITE,
                 Color {
                     red: 0.7,
@@ -61,18 +56,18 @@ fn main() {
 
     let right_light_area = Light::Area(AreaLight::from(AreaLightBuilder {
         corner: Point::new(10.0, 10.0, 10.0),
-        horizontal_vec: Vector::new(4.0, 0.0, 0.0),
+        horizontal_dir: Vector::new(4.0, 0.0, 0.0),
         horizontal_cells: 4,
-        vertical_vec: Vector::new(0.0, 4.0, 0.0),
+        vertical_dir: Vector::new(0.0, 4.0, 0.0),
         vertical_cells: 4,
         intensity: color::consts::RED,
     }));
 
     let left_light_area = Light::Area(AreaLight::from(AreaLightBuilder {
         corner: Point::new(-10.0, 10.0, 10.0),
-        horizontal_vec: Vector::new(4.0, 0.0, 0.0),
+        horizontal_dir: Vector::new(4.0, 0.0, 0.0),
         horizontal_cells: 8,
-        vertical_vec: Vector::new(0.0, 4.0, 0.0),
+        vertical_dir: Vector::new(0.0, 4.0, 0.0),
         vertical_cells: 8,
         intensity: Color {
             red: 0.3216,
@@ -87,8 +82,8 @@ fn main() {
     };
 
     let camera = Camera::try_from(CameraBuilder {
-        image_width: RESOLUTION.width,
-        image_height: RESOLUTION.height,
+        width: RESOLUTION.width,
+        height: RESOLUTION.height,
         field_of_view: std::f64::consts::FRAC_PI_3,
         transform: Transform::view(
             Point::new(0.0, 3.0, 5.0),
@@ -99,6 +94,6 @@ fn main() {
     })
     .unwrap();
 
-    let image = camera.render(&world, SceneProgress::Enable).to_image();
+    let image = camera.render(&world).to_image();
     image.save("image.png").unwrap();
 }

@@ -1,32 +1,27 @@
 use crate::{
     float,
     intersection::Intersection,
-    material::Material,
     ray::Ray,
-    transform::Transform,
     tuple::{Point, Tuple, Vector},
 };
 
-use super::{bounding_box::BoundingBox, object::ObjectCache, Shape};
+use super::{bounding_box::BoundingBox, object::ObjectCache, Shape, ShapeBuilder};
 
+/// Representation of a cube.
+///
+/// Must be built from a [ShapeBuilder].
 #[derive(Clone, Debug, PartialEq)]
 pub struct Cube(pub(crate) ObjectCache);
 
-#[derive(Clone, Default)]
-pub struct CubeBuilder {
-    pub material: Material,
-    pub transform: Transform,
-}
-
 impl Default for Cube {
     fn default() -> Self {
-        Self::from(CubeBuilder::default())
+        Self::from(ShapeBuilder::default())
     }
 }
 
-impl From<CubeBuilder> for Cube {
-    fn from(builder: CubeBuilder) -> Self {
-        let CubeBuilder {
+impl From<ShapeBuilder> for Cube {
+    fn from(builder: ShapeBuilder) -> Self {
+        let ShapeBuilder {
             material,
             transform,
         } = builder;
@@ -40,6 +35,7 @@ impl From<CubeBuilder> for Cube {
     }
 }
 
+/// Intersect a ray with a rectangular bounding box.
 pub fn intersect_box_with_bouding_box<'a>(ray: &Ray, bounding_box: &BoundingBox) -> (f64, f64) {
     let (xtmin, xtmax) = check_axis(
         ray.origin.0.x,
@@ -79,6 +75,7 @@ pub fn intersect_box_with_bouding_box<'a>(ray: &Ray, bounding_box: &BoundingBox)
     (tmin, tmax)
 }
 
+/// Check if a point lays between the `min` and `max` values in an axis.
 fn check_axis(origin: f64, direction: f64, min: f64, max: f64) -> (f64, f64) {
     let tmin_numerator = min - origin;
     let tmax_numerator = max - origin;
@@ -100,6 +97,7 @@ fn check_axis(origin: f64, direction: f64, min: f64, max: f64) -> (f64, f64) {
 }
 
 impl Cube {
+    /// Computes a cube's local intersections.
     pub(crate) fn intersect<'a>(&self, object: &'a Shape, ray: &Ray) -> Vec<Intersection<'a>> {
         let (tmin, tmax) = intersect_box_with_bouding_box(ray, &self.0.bounding_box);
 
@@ -123,6 +121,7 @@ impl Cube {
         }
     }
 
+    /// Computes a cube's normal at a given point.
     pub(crate) fn normal_at(&self, point: Point) -> Vector {
         let Point(Tuple { x, y, z, .. }) = point;
 
@@ -150,11 +149,11 @@ mod tests {
 
     #[test]
     fn a_ray_intersects_a_cube_from_the_x_axis() {
-        let c = Cube::default();
-        let o = Shape::Cube(Default::default());
+        let cube = Cube::default();
+        let object = Shape::Cube(Default::default());
 
-        let xs = c.intersect(
-            &o,
+        let xs = cube.intersect(
+            &object,
             &Ray {
                 origin: Point::new(5.0, 0.5, 0.0),
                 direction: Vector::new(-1.0, 0.0, 0.0),
@@ -164,8 +163,8 @@ mod tests {
         assert_approx!(xs[0].t, 4.0);
         assert_approx!(xs[1].t, 6.0);
 
-        let xs = c.intersect(
-            &o,
+        let xs = cube.intersect(
+            &object,
             &Ray {
                 origin: Point::new(-5.0, 0.5, 0.0),
                 direction: Vector::new(1.0, 0.0, 0.0),
@@ -178,11 +177,11 @@ mod tests {
 
     #[test]
     fn a_ray_intersects_a_cube_from_the_y_axis() {
-        let c = Cube::default();
-        let o = Shape::Cube(Default::default());
+        let cube = Cube::default();
+        let object = Shape::Cube(Default::default());
 
-        let xs = c.intersect(
-            &o,
+        let xs = cube.intersect(
+            &object,
             &Ray {
                 origin: Point::new(0.5, 5.0, 0.0),
                 direction: Vector::new(0.0, -1.0, 0.0),
@@ -192,8 +191,8 @@ mod tests {
         assert_approx!(xs[0].t, 4.0);
         assert_approx!(xs[1].t, 6.0);
 
-        let xs = c.intersect(
-            &o,
+        let xs = cube.intersect(
+            &object,
             &Ray {
                 origin: Point::new(0.5, -5.0, 0.0),
                 direction: Vector::new(0.0, 1.0, 0.0),
@@ -206,11 +205,11 @@ mod tests {
 
     #[test]
     fn a_ray_intersects_a_cube_from_the_z_axis() {
-        let c = Cube::default();
-        let o = Shape::Cube(Default::default());
+        let cube = Cube::default();
+        let object = Shape::Cube(Default::default());
 
-        let xs = c.intersect(
-            &o,
+        let xs = cube.intersect(
+            &object,
             &Ray {
                 origin: Point::new(0.5, 0.0, 5.0),
                 direction: Vector::new(0.0, 0.0, -1.0),
@@ -220,8 +219,8 @@ mod tests {
         assert_approx!(xs[0].t, 4.0);
         assert_approx!(xs[1].t, 6.0);
 
-        let xs = c.intersect(
-            &o,
+        let xs = cube.intersect(
+            &object,
             &Ray {
                 origin: Point::new(0.5, 0.0, -5.0),
                 direction: Vector::new(0.0, 0.0, 1.0),
@@ -234,15 +233,15 @@ mod tests {
 
     #[test]
     fn a_ray_intersects_a_cube_from_the_inside() {
-        let c = Cube::default();
-        let o = Shape::Cube(Default::default());
+        let cube = Cube::default();
+        let object = Shape::Cube(Default::default());
 
         let r = &Ray {
             origin: Point::new(0.0, 0.5, 0.0),
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let xs = c.intersect(&o, r);
+        let xs = cube.intersect(&object, r);
 
         assert_approx!(xs[0].t, -1.0);
         assert_approx!(xs[1].t, 1.0);
@@ -250,12 +249,12 @@ mod tests {
 
     #[test]
     fn a_ray_misses_a_cube() {
-        let c = Cube::default();
-        let o = Shape::Cube(Default::default());
+        let cube = Cube::default();
+        let object = Shape::Cube(Default::default());
 
-        assert!(c
+        assert!(cube
             .intersect(
-                &o,
+                &object,
                 &Ray {
                     origin: Point::new(-2.0, 0.0, 0.0),
                     direction: Vector::new(0.2673, 0.5345, 0.8018),
@@ -263,9 +262,9 @@ mod tests {
             )
             .is_empty());
 
-        assert!(c
+        assert!(cube
             .intersect(
-                &o,
+                &object,
                 &Ray {
                     origin: Point::new(0.0, -2.0, 0.0),
                     direction: Vector::new(0.8018, 0.2673, 0.5345),
@@ -273,9 +272,9 @@ mod tests {
             )
             .is_empty());
 
-        assert!(c
+        assert!(cube
             .intersect(
-                &o,
+                &object,
                 &Ray {
                     origin: Point::new(0.0, 0.0, -2.0),
                     direction: Vector::new(0.5345, 0.8018, 0.2673),
@@ -283,9 +282,9 @@ mod tests {
             )
             .is_empty());
 
-        assert!(c
+        assert!(cube
             .intersect(
-                &o,
+                &object,
                 &Ray {
                     origin: Point::new(2.0, 0.0, 2.0),
                     direction: Vector::new(0.0, 0.0, -1.0)
@@ -294,8 +293,8 @@ mod tests {
             .is_empty());
 
         assert_eq!(
-            c.intersect(
-                &o,
+            cube.intersect(
+                &object,
                 &Ray {
                     origin: Point::new(0.0, 2.0, 2.0),
                     direction: Vector::new(0.0, -1.0, 0.0)
@@ -306,8 +305,8 @@ mod tests {
         );
 
         assert_eq!(
-            c.intersect(
-                &o,
+            cube.intersect(
+                &object,
                 &Ray {
                     origin: Point::new(2.0, 2.0, 0.0),
                     direction: Vector::new(-1.0, 0.0, 0.0)
@@ -320,60 +319,60 @@ mod tests {
 
     #[test]
     fn the_normal_on_the_surface_of_a_cube() {
-        let c = Cube::default();
+        let cube = Cube::default();
 
         assert_eq!(
-            c.normal_at(Point::new(1.0, 0.5, -0.8)),
+            cube.normal_at(Point::new(1.0, 0.5, -0.8)),
             Vector::new(1.0, 0.0, 0.0)
         );
 
         assert_eq!(
-            c.normal_at(Point::new(-1.0, -0.2, 0.9)),
+            cube.normal_at(Point::new(-1.0, -0.2, 0.9)),
             Vector::new(-1.0, 0.0, 0.0)
         );
 
         assert_eq!(
-            c.normal_at(Point::new(-0.4, 1.0, -0.1)),
+            cube.normal_at(Point::new(-0.4, 1.0, -0.1)),
             Vector::new(0.0, 1.0, 0.0)
         );
 
         assert_eq!(
-            c.normal_at(Point::new(0.3, -1.0, -0.7)),
+            cube.normal_at(Point::new(0.3, -1.0, -0.7)),
             Vector::new(0.0, -1.0, 0.0)
         );
 
         assert_eq!(
-            c.normal_at(Point::new(-0.6, 0.3, 1.0)),
+            cube.normal_at(Point::new(-0.6, 0.3, 1.0)),
             Vector::new(0.0, 0.0, 1.0)
         );
 
         assert_eq!(
-            c.normal_at(Point::new(0.4, 0.4, -1.0)),
+            cube.normal_at(Point::new(0.4, 0.4, -1.0)),
             Vector::new(0.0, 0.0, -1.0)
         );
     }
 
     #[test]
     fn the_normal_on_the_corners_of_a_cube() {
-        let c = Cube::default();
+        let cube = Cube::default();
 
         assert_eq!(
-            c.normal_at(Point::new(1.0, 1.0, 1.0)),
+            cube.normal_at(Point::new(1.0, 1.0, 1.0)),
             Vector::new(1.0, 0.0, 0.0)
         );
 
         assert_eq!(
-            c.normal_at(Point::new(-1.0, -1.0, -1.0)),
+            cube.normal_at(Point::new(-1.0, -1.0, -1.0)),
             Vector::new(-1.0, 0.0, 0.0)
         );
     }
 
     #[test]
     fn a_cube_has_a_bounding_box() {
-        let c = Cube::default();
-        let bounds = c.0.bounding_box;
+        let cube = Cube::default();
+        let bounding_box = cube.0.bounding_box;
 
-        assert_eq!(bounds.min, Point::new(-1.0, -1.0, -1.0));
-        assert_eq!(bounds.max, Point::new(1.0, 1.0, 1.0));
+        assert_eq!(bounding_box.min, Point::new(-1.0, -1.0, -1.0));
+        assert_eq!(bounding_box.max, Point::new(1.0, 1.0, 1.0));
     }
 }

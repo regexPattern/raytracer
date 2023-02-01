@@ -9,6 +9,35 @@ use crate::{
 
 use super::{bounding_box::BoundingBox, object::ObjectCache, Shape};
 
+/// Representation of a cylinder.
+///
+/// # Examples
+///
+/// A cylinder must be built from a [CylinderBuilder].
+///
+/// Building a closed cylinder.
+/// 
+/// ```
+/// use raytracer::{
+///     material::Material,
+///     shape::{Cylinder, CylinderBuilder, Shape},
+///     transform::Transform,
+/// };
+///
+/// let cylinder = Shape::Cylinder(Cylinder::from(CylinderBuilder {
+///     material: Material {
+///         ambient: 0.5,
+///         diffuse: 0.7,
+///         specular: 0.1,
+///         ..Default::default()
+///     },
+///     transform: Transform::scaling(1.0, 2.0, 3.0).unwrap(),
+///     min: -1.0,
+///     max: 2.5,
+///     closed: true,
+/// }));
+/// ```
+///
 #[derive(Clone, Debug)]
 pub struct Cylinder {
     pub(crate) object_cache: ObjectCache,
@@ -17,12 +46,24 @@ pub struct Cylinder {
     pub(crate) closed: bool,
 }
 
-#[derive(Clone)]
+/// Builder for a cylinder.
+#[derive(Clone, Debug)]
 pub struct CylinderBuilder {
+    /// Material of the cylinder.
     pub material: Material,
+
+    /// Transform of the cylinder.
     pub transform: Transform,
+
+    /// Minimum value for a cylinder relative to it's `y` axis. By default this value is
+    /// [std::f64::NEG_INFINITY].
     pub min: f64,
+
+    /// Maximum value for a cylinder relative to it's `y` axis. By default this value is
+    /// [std::f64::INFINITY].
     pub max: f64,
+
+    /// Determines wheter the cylinder caps should be closed or not.
     pub closed: bool,
 }
 

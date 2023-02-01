@@ -1,3 +1,5 @@
+#![deny(rustdoc::broken_intra_doc_links)]
+
 mod canvas;
 mod float;
 mod intersection;
@@ -8,9 +10,8 @@ pub mod camera;
 pub mod color;
 pub mod light;
 pub mod material;
-pub mod obj_model;
+pub mod model;
 pub mod pattern;
-pub mod scene;
 pub mod shape;
 pub mod transform;
 pub mod tuple;

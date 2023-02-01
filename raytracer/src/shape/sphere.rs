@@ -1,31 +1,26 @@
 use crate::{
     intersection::Intersection,
-    material::Material,
     ray::Ray,
-    transform::Transform,
     tuple::{Point, Vector},
 };
 
-use super::{bounding_box::BoundingBox, object::ObjectCache, Shape};
+use super::{bounding_box::BoundingBox, object::ObjectCache, Shape, ShapeBuilder};
 
+/// Representation of a sphere.
+///
+/// Must be built from a [ShapeBuilder].
 #[derive(Clone, Debug, PartialEq)]
 pub struct Sphere(pub(crate) ObjectCache);
 
-#[derive(Clone, Default)]
-pub struct SphereBuilder {
-    pub material: Material,
-    pub transform: Transform,
-}
-
 impl Default for Sphere {
     fn default() -> Self {
-        Self::from(SphereBuilder::default())
+        Self::from(ShapeBuilder::default())
     }
 }
 
-impl From<SphereBuilder> for Sphere {
-    fn from(builder: SphereBuilder) -> Self {
-        let SphereBuilder {
+impl From<ShapeBuilder> for Sphere {
+    fn from(builder: ShapeBuilder) -> Self {
+        let ShapeBuilder {
             material,
             transform,
         } = builder;

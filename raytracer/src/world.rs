@@ -136,7 +136,7 @@ pub(crate) fn test_world() -> World {
         light::PointLight,
         material::Material,
         pattern::Pattern3D,
-        shape::sphere::{Sphere, SphereBuilder},
+        shape::{ShapeBuilder, Sphere},
         transform::Transform,
     };
 
@@ -145,7 +145,7 @@ pub(crate) fn test_world() -> World {
         intensity: color::consts::WHITE,
     });
 
-    let s0 = Shape::Sphere(Sphere::from(SphereBuilder {
+    let object0 = Shape::Sphere(Sphere::from(ShapeBuilder {
         material: Material {
             pattern: Pattern3D::Solid(color::Color {
                 red: 0.8,
@@ -159,13 +159,13 @@ pub(crate) fn test_world() -> World {
         ..Default::default()
     }));
 
-    let s1 = Shape::Sphere(Sphere::from(SphereBuilder {
+    let object1 = Shape::Sphere(Sphere::from(ShapeBuilder {
         transform: Transform::scaling(0.5, 0.5, 0.5).unwrap(),
         ..Default::default()
     }));
 
     World {
-        objects: vec![s0, s1],
+        objects: vec![object0, object1],
         lights: vec![light],
     }
 }
@@ -178,10 +178,7 @@ mod tests {
         light::PointLight,
         material::Material,
         pattern::Pattern3D,
-        shape::{
-            plane::{Plane, PlaneBuilder},
-            sphere::{Sphere, SphereBuilder},
-        },
+        shape::{Plane, ShapeBuilder, Sphere},
         transform::Transform,
         tuple::Vector,
     };
@@ -190,21 +187,21 @@ mod tests {
 
     #[test]
     fn creating_a_world() {
-        let w = World::default();
+        let world = World::default();
 
-        assert_eq!(w.objects.len(), 0);
-        assert_eq!(w.lights.len(), 0);
+        assert_eq!(world.objects.len(), 0);
+        assert_eq!(world.lights.len(), 0);
     }
 
     #[test]
     fn intersect_a_world_with_a_ray() {
-        let w = test_world();
-        let r = Ray {
+        let world = test_world();
+        let ray = Ray {
             origin: Point::new(0.0, 0.0, -5.0),
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let xs = w.intersect(&r);
+        let xs = world.intersect(&ray);
 
         assert_eq!(xs.len(), 4);
         assert_approx!(xs[0].t, 4.0);
@@ -215,26 +212,26 @@ mod tests {
 
     #[test]
     fn shading_an_intersection() {
-        let w = test_world();
+        let world = test_world();
 
-        let r = Ray {
+        let ray = Ray {
             origin: Point::new(0.0, 0.0, -5.0),
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
         let i = Intersection {
             t: 4.0,
-            object: &w.objects[0],
+            object: &world.objects[0],
             u: None,
             v: None,
         };
 
-        let comps = i.prepare_computation(&r, [i]);
+        let comps = i.prepare_computation(&ray, [i]);
 
-        let c = w.shade_hit(comps, RECURSION_DEPTH);
+        let shade = world.shade_hit(comps, RECURSION_DEPTH);
 
         assert_eq!(
-            c,
+            shade,
             Color {
                 red: 0.38066,
                 green: 0.47583,
@@ -245,7 +242,7 @@ mod tests {
 
     #[test]
     fn shading_an_intersection_from_the_inside() {
-        let w = World {
+        let world = World {
             lights: vec![Light::Point(PointLight {
                 position: Point::new(0.0, 0.25, 0.0),
                 intensity: color::consts::WHITE,
@@ -253,24 +250,24 @@ mod tests {
             ..test_world()
         };
 
-        let r = Ray {
+        let ray = Ray {
             origin: Point::new(0.0, 0.0, 0.0),
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
         let i = Intersection {
             t: 0.5,
-            object: &w.objects[1],
+            object: &world.objects[1],
             u: None,
             v: None,
         };
 
-        let comps = i.prepare_computation(&r, [i]);
+        let comps = i.prepare_computation(&ray, [i]);
 
-        let c = w.shade_hit(comps, RECURSION_DEPTH);
+        let shade = world.shade_hit(comps, RECURSION_DEPTH);
 
         assert_eq!(
-            c,
+            shade,
             Color {
                 red: 0.90498,
                 green: 0.90498,
@@ -281,57 +278,57 @@ mod tests {
 
     #[test]
     fn shade_hit_when_there_is_no_light() {
-        let w = World {
+        let world = World {
             lights: vec![],
             ..test_world()
         };
 
-        let r = Ray {
+        let ray = Ray {
             origin: Point::new(0.0, 0.0, 0.0),
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
         let i = Intersection {
             t: 0.5,
-            object: &w.objects[1],
+            object: &world.objects[1],
             u: None,
             v: None,
         };
 
-        let comps = i.prepare_computation(&r, [i]);
+        let comps = i.prepare_computation(&ray, [i]);
 
-        let c = w.shade_hit(comps, RECURSION_DEPTH);
+        let shade = world.shade_hit(comps, RECURSION_DEPTH);
 
-        assert_eq!(c, color::consts::BLACK);
+        assert_eq!(shade, color::consts::BLACK);
     }
 
     #[test]
     fn the_color_when_a_ray_misses() {
-        let w = test_world();
+        let world = test_world();
 
-        let r = Ray {
+        let ray = Ray {
             origin: Point::new(0.0, 0.0, -5.0),
             direction: Vector::new(0.0, 1.0, 0.0),
         };
 
-        let c = w.color_at(&r, RECURSION_DEPTH);
+        let color_at = world.color_at(&ray, RECURSION_DEPTH);
 
-        assert_eq!(c, color::consts::BLACK);
+        assert_eq!(color_at, color::consts::BLACK);
     }
 
     #[test]
     fn the_color_when_a_ray_hits() {
-        let w = test_world();
+        let world = test_world();
 
-        let r = Ray {
+        let ray = Ray {
             origin: Point::new(0.0, 0.0, -5.0),
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let c = w.color_at(&r, RECURSION_DEPTH);
+        let color_at = world.color_at(&ray, RECURSION_DEPTH);
 
         assert_eq!(
-            c,
+            color_at,
             Color {
                 red: 0.38066,
                 green: 0.47583,
@@ -342,89 +339,89 @@ mod tests {
 
     #[test]
     fn the_color_when_an_intersection_behind_the_ray() {
-        let mut w = test_world();
+        let mut world = test_world();
 
-        let outer = &mut w.objects[0];
-        outer.as_mut().material = Material {
+        let outer_object = &mut world.objects[0];
+        outer_object.as_mut().material = Material {
             ambient: 1.0,
-            ..outer.as_ref().material.clone()
+            ..outer_object.as_ref().material.clone()
         };
 
-        let inner = &mut w.objects[1];
-        inner.as_mut().material = Material {
+        let inner_object = &mut world.objects[1];
+        inner_object.as_mut().material = Material {
             ambient: 1.0,
-            ..inner.as_ref().material.clone()
+            ..inner_object.as_ref().material.clone()
         };
 
-        let r = Ray {
+        let ray = Ray {
             origin: Point::new(0.0, 0.0, 0.75),
             direction: Vector::new(0.0, 0.0, -1.0),
         };
 
-        let c = w.color_at(&r, RECURSION_DEPTH);
-        let inner = &w.objects[1];
+        let color_at = world.color_at(&ray, RECURSION_DEPTH);
+        let inner = &world.objects[1];
 
-        assert_eq!(Pattern3D::Solid(c), inner.as_ref().material.pattern);
+        assert_eq!(Pattern3D::Solid(color_at), inner.as_ref().material.pattern);
     }
 
     #[test]
     fn there_is_no_shadow_when_nothing_is_collinear_with_point_and_light() {
-        let w = test_world();
+        let world = test_world();
 
-        let p = Point::new(0.0, 10.0, 0.0);
+        let point = Point::new(0.0, 10.0, 0.0);
 
-        assert!(!w.is_shadowed(Point::new(-10.0, 10.0, -10.0), p));
+        assert!(!world.is_shadowed(Point::new(-10.0, 10.0, -10.0), point));
     }
 
     #[test]
     fn the_shadow_when_an_object_is_between_the_point_and_the_light() {
-        let w = test_world();
+        let world = test_world();
 
-        let p = Point::new(10.0, -10.0, 10.0);
+        let point = Point::new(10.0, -10.0, 10.0);
 
-        assert!(w.is_shadowed(Point::new(-10.0, 10.0, -10.0), p));
+        assert!(world.is_shadowed(Point::new(-10.0, 10.0, -10.0), point));
     }
 
     #[test]
     fn there_is_no_shadow_when_an_object_is_behind_the_light() {
-        let w = test_world();
+        let world = test_world();
 
-        let p = Point::new(-20.0, 20.0, -20.0);
+        let point = Point::new(-20.0, 20.0, -20.0);
 
-        assert!(!w.is_shadowed(Point::new(-10.0, 10.0, -10.0), p));
+        assert!(!world.is_shadowed(Point::new(-10.0, 10.0, -10.0), point));
     }
 
     #[test]
     fn there_is_no_shadow_when_an_object_is_behind_the_point() {
-        let w = test_world();
+        let world = test_world();
 
-        let p = Point::new(-2.0, 2.0, -2.0);
+        let point = Point::new(-2.0, 2.0, -2.0);
 
-        assert!(!w.is_shadowed(Point::new(-10.0, 10.0, -10.0), p));
+        assert!(!world.is_shadowed(Point::new(-10.0, 10.0, -10.0), point));
     }
 
     #[test]
     fn there_is_no_shadow_when_the_light_is_on_the_point() {
-        let p = Point::new(1.0, 2.0, 3.0);
+        let point = Point::new(1.0, 2.0, 3.0);
 
         let light = Light::Point(PointLight {
-            position: p,
+            position: point,
             intensity: color::consts::WHITE,
         });
 
-        let w = World {
+        let world = World {
             objects: vec![],
             lights: vec![light],
         };
 
-        assert!(!w.is_shadowed(Point::new(-10.0, 10.0, -10.0), p));
+        assert!(!world.is_shadowed(Point::new(-10.0, 10.0, -10.0), point));
     }
 
     #[test]
     fn shade_hit_is_given_an_intersection_in_shadow() {
-        let s0 = Shape::Sphere(Default::default());
+        let object0 = Shape::Sphere(Default::default());
 
-        let s1 = Shape::Sphere(Sphere::from(SphereBuilder {
+        let object1 = Shape::Sphere(Sphere::from(ShapeBuilder {
             transform: Transform::translation(0.0, 0.0, 10.0),
             ..Default::default()
         }));
@@ -434,29 +431,29 @@ mod tests {
             intensity: color::consts::WHITE,
         });
 
-        let w = World {
-            objects: vec![s0, s1.clone()],
+        let world = World {
+            objects: vec![object0, object1.clone()],
             lights: vec![light],
         };
 
-        let r = Ray {
+        let ray = Ray {
             origin: Point::new(0.0, 0.0, 5.0),
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
         let i = Intersection {
             t: 4.0,
-            object: &s1,
+            object: &object1,
             u: None,
             v: None,
         };
 
-        let comps = i.prepare_computation(&r, [i]);
+        let comps = i.prepare_computation(&ray, [i]);
 
-        let c = w.shade_hit(comps, RECURSION_DEPTH);
+        let shade = world.shade_hit(comps, RECURSION_DEPTH);
 
         assert_eq!(
-            c,
+            shade,
             Color {
                 red: 0.1,
                 green: 0.1,
@@ -467,38 +464,38 @@ mod tests {
 
     #[test]
     fn the_reflected_color_for_a_non_reflective_material() {
-        let mut w = test_world();
+        let mut world = test_world();
 
-        let r = Ray {
+        let ray = Ray {
             origin: Point::new(0.0, 0.0, 0.0),
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let s = &mut w.objects[1];
-        s.as_mut().material = Material {
+        let object = &mut world.objects[1];
+        object.as_mut().material = Material {
             ambient: 1.0,
-            ..s.as_ref().material.clone()
+            ..object.as_ref().material.clone()
         };
 
         let i = Intersection {
             t: 1.0,
-            object: &w.objects[1],
+            object: &world.objects[1],
             u: None,
             v: None,
         };
 
-        let comps = i.prepare_computation(&r, [i]);
+        let comps = i.prepare_computation(&ray, [i]);
 
-        let c = w.reflected_color(&comps, RECURSION_DEPTH);
+        let shade = world.reflected_color(&comps, RECURSION_DEPTH);
 
-        assert_eq!(c, color::consts::BLACK);
+        assert_eq!(shade, color::consts::BLACK);
     }
 
     #[test]
     fn the_reflected_color_for_a_reflective_material() {
-        let w = test_world();
+        let world = test_world();
 
-        let o = Shape::Plane(Plane::from(PlaneBuilder {
+        let object = Shape::Plane(Plane::from(ShapeBuilder {
             material: Material {
                 reflectivity: 0.5,
                 ..Default::default()
@@ -506,24 +503,24 @@ mod tests {
             transform: Transform::translation(0.0, -1.0, 0.0),
         }));
 
-        let r = Ray {
+        let ray = Ray {
             origin: Point::new(0.0, 0.0, -3.0),
             direction: Vector::new(0.0, -2_f64.sqrt() / 2.0, 2_f64.sqrt() / 2.0),
         };
 
         let i = Intersection {
             t: 2_f64.sqrt(),
-            object: &o,
+            object: &object,
             u: None,
             v: None,
         };
 
-        let comps = i.prepare_computation(&r, [i]);
+        let comps = i.prepare_computation(&ray, [i]);
 
-        let c = w.reflected_color(&comps, RECURSION_DEPTH);
+        let shade = world.reflected_color(&comps, RECURSION_DEPTH);
 
         assert_eq!(
-            c,
+            shade,
             Color {
                 red: 0.19033,
                 green: 0.23791,
@@ -534,9 +531,9 @@ mod tests {
 
     #[test]
     fn shade_hit_with_a_reflective_material() {
-        let w = test_world();
+        let world = test_world();
 
-        let s = Shape::Plane(Plane::from(PlaneBuilder {
+        let object = Shape::Plane(Plane::from(ShapeBuilder {
             material: Material {
                 reflectivity: 0.5,
                 ..Default::default()
@@ -544,24 +541,24 @@ mod tests {
             transform: Transform::translation(0.0, -1.0, 0.0),
         }));
 
-        let r = Ray {
+        let ray = Ray {
             origin: Point::new(0.0, 0.0, -3.0),
             direction: Vector::new(0.0, -2_f64.sqrt() / 2.0, 2_f64.sqrt() / 2.0),
         };
 
         let i = Intersection {
             t: 2_f64.sqrt(),
-            object: &s,
+            object: &object,
             u: None,
             v: None,
         };
 
-        let comps = i.prepare_computation(&r, [i]);
+        let comps = i.prepare_computation(&ray, [i]);
 
-        let c = w.shade_hit(comps, RECURSION_DEPTH);
+        let shade = world.shade_hit(comps, RECURSION_DEPTH);
 
         assert_eq!(
-            c,
+            shade,
             Color {
                 red: 0.87676,
                 green: 0.92435,
@@ -572,7 +569,7 @@ mod tests {
 
     #[test]
     fn color_at_with_mutually_reflective_surfaces() {
-        let lower = Shape::Sphere(Sphere::from(SphereBuilder {
+        let lower_object = Shape::Sphere(Sphere::from(ShapeBuilder {
             material: Material {
                 reflectivity: 1.0,
                 ..Default::default()
@@ -580,8 +577,8 @@ mod tests {
             transform: Transform::translation(0.0, -1.0, 0.0),
         }));
 
-        let upper = Shape::Sphere(Sphere::from(SphereBuilder {
-            material: lower.as_ref().material.clone(),
+        let upper_object = Shape::Sphere(Sphere::from(ShapeBuilder {
+            material: lower_object.as_ref().material.clone(),
             transform: Transform::translation(0.0, 1.0, 0.0),
         }));
 
@@ -590,23 +587,23 @@ mod tests {
             intensity: color::consts::WHITE,
         });
 
-        let w = World {
-            objects: vec![lower, upper],
+        let world = World {
+            objects: vec![lower_object, upper_object],
             lights: vec![light],
         };
 
-        let r = Ray {
+        let ray = Ray {
             origin: Point::new(0.0, 0.0, 0.0),
             direction: Vector::new(0.0, 1.0, 0.0),
         };
 
         // This should not stack overflow, so it should not panic.
-        w.color_at(&r, RECURSION_DEPTH);
+        world.color_at(&ray, RECURSION_DEPTH);
     }
 
     #[test]
     fn the_reflected_color_at_the_maximum_recursive_depth() {
-        let s = Shape::Sphere(Sphere::from(SphereBuilder {
+        let object = Shape::Sphere(Sphere::from(ShapeBuilder {
             material: Material {
                 reflectivity: 0.5,
                 ..Default::default()
@@ -615,9 +612,9 @@ mod tests {
         }));
 
         let mut w = test_world();
-        w.objects.push(s);
+        w.objects.push(object);
 
-        let r = Ray {
+        let ray = Ray {
             origin: Point::new(0.0, 0.0, -3.0),
             direction: Vector::new(0.0, -2_f64.sqrt() / 2.0, 2_f64.sqrt() / 2.0),
         };
@@ -629,18 +626,18 @@ mod tests {
             v: None,
         };
 
-        let comps = i.prepare_computation(&r, [i]);
+        let comps = i.prepare_computation(&ray, [i]);
 
-        let c = w.reflected_color(&comps, 0);
+        let shade = w.reflected_color(&comps, 0);
 
-        assert_eq!(c, color::consts::BLACK);
+        assert_eq!(shade, color::consts::BLACK);
     }
 
     #[test]
     fn the_refracted_color_with_an_opaque_surface() {
-        let w = test_world();
+        let world = test_world();
 
-        let r = Ray {
+        let ray = Ray {
             origin: Point::new(0.0, 0.0, -5.0),
             direction: Vector::new(0.0, 0.0, 1.0),
         };
@@ -648,37 +645,37 @@ mod tests {
         let xs = [
             Intersection {
                 t: 4.0,
-                object: &w.objects[0],
+                object: &world.objects[0],
                 u: None,
                 v: None,
             },
             Intersection {
                 t: 6.0,
-                object: &w.objects[0],
+                object: &world.objects[0],
                 u: None,
                 v: None,
             },
         ];
 
-        let comps = xs[0].prepare_computation(&r, xs);
+        let comps = xs[0].prepare_computation(&ray, xs);
 
-        let c = w.refracted_color(&comps, RECURSION_DEPTH);
+        let shade = world.refracted_color(&comps, RECURSION_DEPTH);
 
-        assert_eq!(c, color::consts::BLACK);
+        assert_eq!(shade, color::consts::BLACK);
     }
 
     #[test]
     fn the_refracted_color_at_the_maximum_recursive_depth() {
-        let mut w = test_world();
+        let mut world = test_world();
 
-        let s = &mut w.objects[0];
-        s.as_mut().material = Material {
+        let object = &mut world.objects[0];
+        object.as_mut().material = Material {
             index_of_refraction: 1.5,
             transparency: 1.0,
-            ..s.as_ref().material.clone()
+            ..object.as_ref().material.clone()
         };
 
-        let r = Ray {
+        let ray = Ray {
             origin: Point::new(0.0, 0.0, -5.0),
             direction: Vector::new(0.0, 0.0, 1.0),
         };
@@ -686,37 +683,37 @@ mod tests {
         let xs = [
             Intersection {
                 t: 4.0,
-                object: &w.objects[0],
+                object: &world.objects[0],
                 u: None,
                 v: None,
             },
             Intersection {
                 t: 6.0,
-                object: &w.objects[0],
+                object: &world.objects[0],
                 u: None,
                 v: None,
             },
         ];
 
-        let comps = xs[0].prepare_computation(&r, xs);
+        let comps = xs[0].prepare_computation(&ray, xs);
 
-        let c = w.refracted_color(&comps, 0);
+        let shade = world.refracted_color(&comps, 0);
 
-        assert_eq!(c, color::consts::BLACK);
+        assert_eq!(shade, color::consts::BLACK);
     }
 
     #[test]
     fn the_refracted_color_under_total_internal_reflection() {
-        let mut w = test_world();
+        let mut world = test_world();
 
-        let s = &mut w.objects[0];
-        s.as_mut().material = Material {
+        let object = &mut world.objects[0];
+        object.as_mut().material = Material {
             index_of_refraction: 1.5,
             transparency: 1.0,
-            ..s.as_ref().material.clone()
+            ..object.as_ref().material.clone()
         };
 
-        let r = Ray {
+        let ray = Ray {
             origin: Point::new(0.0, 0.0, 2_f64.sqrt() / 2.0),
             direction: Vector::new(0.0, 1.0, 0.0),
         };
@@ -724,30 +721,30 @@ mod tests {
         let xs = [
             Intersection {
                 t: -2_f64.sqrt() / 2.0,
-                object: &w.objects[0],
+                object: &world.objects[0],
                 u: None,
                 v: None,
             },
             Intersection {
                 t: 2_f64.sqrt() / 2.0,
-                object: &w.objects[0],
+                object: &world.objects[0],
                 u: None,
                 v: None,
             },
         ];
 
-        let comps = xs[1].prepare_computation(&r, xs);
+        let comps = xs[1].prepare_computation(&ray, xs);
 
-        let c = w.refracted_color(&comps, RECURSION_DEPTH);
+        let shade = world.refracted_color(&comps, RECURSION_DEPTH);
 
-        assert_eq!(c, color::consts::BLACK);
+        assert_eq!(shade, color::consts::BLACK);
     }
 
     #[test]
     fn shade_hit_with_a_transparent_material() {
-        let mut w = test_world();
+        let mut world = test_world();
 
-        let floor = Shape::Plane(Plane::from(PlaneBuilder {
+        let floor = Shape::Plane(Plane::from(ShapeBuilder {
             material: Material {
                 index_of_refraction: 1.5,
                 transparency: 0.5,
@@ -756,7 +753,7 @@ mod tests {
             transform: Transform::translation(0.0, -1.0, 0.0),
         }));
 
-        let ball = Shape::Sphere(Sphere::from(SphereBuilder {
+        let ball = Shape::Sphere(Sphere::from(ShapeBuilder {
             material: Material {
                 ambient: 0.5,
                 pattern: Pattern3D::Solid(color::consts::RED),
@@ -765,27 +762,27 @@ mod tests {
             transform: Transform::translation(0.0, -3.5, -0.5),
         }));
 
-        w.objects.push(floor);
-        w.objects.push(ball);
+        world.objects.push(floor);
+        world.objects.push(ball);
 
-        let r = Ray {
+        let ray = Ray {
             origin: Point::new(0.0, 0.0, -3.0),
             direction: Vector::new(0.0, -2_f64.sqrt() / 2.0, 2_f64.sqrt() / 2.0),
         };
 
         let xs = [Intersection {
             t: 2_f64.sqrt(),
-            object: &w.objects[2],
+            object: &world.objects[2],
             u: None,
             v: None,
         }];
 
-        let comps = xs[0].prepare_computation(&r, xs);
+        let comps = xs[0].prepare_computation(&ray, xs);
 
-        let c = w.shade_hit(comps, RECURSION_DEPTH);
+        let shade = world.shade_hit(comps, RECURSION_DEPTH);
 
         assert_eq!(
-            c,
+            shade,
             Color {
                 red: 0.93642,
                 green: 0.68642,
@@ -796,14 +793,14 @@ mod tests {
 
     #[test]
     fn shade_hit_with_a_reflective_and_transparent_material() {
-        let mut w = test_world();
+        let mut world = test_world();
 
-        let r = Ray {
+        let ray = Ray {
             origin: Point::new(0.0, 0.0, -3.0),
             direction: Vector::new(0.0, -2_f64.sqrt() / 2.0, 2_f64.sqrt() / 2.0),
         };
 
-        let floor = Shape::Plane(Plane::from(PlaneBuilder {
+        let floor = Shape::Plane(Plane::from(ShapeBuilder {
             material: Material {
                 index_of_refraction: 1.5,
                 reflectivity: 0.5,
@@ -813,7 +810,7 @@ mod tests {
             transform: Transform::translation(0.0, -1.0, 0.0),
         }));
 
-        let ball = Shape::Sphere(Sphere::from(SphereBuilder {
+        let ball = Shape::Sphere(Sphere::from(ShapeBuilder {
             material: Material {
                 ambient: 0.5,
                 pattern: Pattern3D::Solid(color::consts::RED),
@@ -822,22 +819,22 @@ mod tests {
             transform: Transform::translation(0.0, -3.5, -0.5),
         }));
 
-        w.objects.push(floor);
-        w.objects.push(ball);
+        world.objects.push(floor);
+        world.objects.push(ball);
 
         let xs = [Intersection {
             t: 2_f64.sqrt(),
-            object: &w.objects[2],
+            object: &world.objects[2],
             u: None,
             v: None,
         }];
 
-        let comps = xs[0].prepare_computation(&r, xs);
+        let comps = xs[0].prepare_computation(&ray, xs);
 
-        let c = w.shade_hit(comps, RECURSION_DEPTH);
+        let shade = world.shade_hit(comps, RECURSION_DEPTH);
 
         assert_eq!(
-            c,
+            shade,
             Color {
                 red: 0.93391,
                 green: 0.69643,
@@ -848,12 +845,12 @@ mod tests {
 
     #[test]
     fn is_shadowed_test_for_occlusion_between_two_points() {
-        let w = test_world();
+        let world = test_world();
         let light_position = Point::new(-10.0, -10.0, -10.0);
 
-        assert!(!w.is_shadowed(light_position, Point::new(-10.0, -10.0, 10.0)));
-        assert!(w.is_shadowed(light_position, Point::new(10.0, 10.0, 10.0)));
-        assert!(!w.is_shadowed(light_position, Point::new(-20.0, -20.0, -20.0)));
-        assert!(!w.is_shadowed(light_position, Point::new(-5.0, -5.0, -5.0)));
+        assert!(!world.is_shadowed(light_position, Point::new(-10.0, -10.0, 10.0)));
+        assert!(world.is_shadowed(light_position, Point::new(10.0, 10.0, 10.0)));
+        assert!(!world.is_shadowed(light_position, Point::new(-20.0, -20.0, -20.0)));
+        assert!(!world.is_shadowed(light_position, Point::new(-5.0, -5.0, -5.0)));
     }
 }

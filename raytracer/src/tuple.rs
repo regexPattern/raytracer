@@ -8,14 +8,22 @@ use crate::float;
 const POINT_W: f64 = 1.0;
 const VECTOR_W: f64 = 0.0;
 
+/// The error type for various tuple operations.
 #[derive(Debug, PartialEq, Eq, Error)]
-#[error("tried to normalize a null vector")]
-pub struct NormalizeNullVectorError;
+pub enum Error {
+    /// The error type when trying to normalize a null vector.
+    #[error("tried to normalize a null vector")]
+    NormalizeNullVector,
 
-#[derive(Debug, PartialEq, Eq, Error)]
-#[error("division by zero")]
-pub struct DivisionByZeroError;
+    /// The error type when trying to divide a tuple by zero.
+    #[error("tried to divide a tuple by zero")]
+    DivisionByZero,
+}
 
+/// Base 4-component tuple data type that composes the entirety of the raytracer's vector space.
+/// Mathematically it represents [quaternions](https://en.wikipedia.org/wiki/Quaternion), which
+/// extend the complex number numeric system and allow to represent 3-dimensional rotations.
+///
 #[derive(Copy, Clone, Debug)]
 pub(crate) struct Tuple {
     pub x: f64,
@@ -24,14 +32,17 @@ pub(crate) struct Tuple {
     pub w: f64,
 }
 
+/// Point in 3-dimensional space.
 #[derive(Copy, Clone, Debug, PartialEq, Deserialize)]
 #[serde(from = "CoordinateDeserializer")]
 pub struct Point(pub(crate) Tuple);
 
+/// Vector in 3-dimensional space.
 #[derive(Copy, Clone, Debug, PartialEq, Deserialize)]
 #[serde(from = "CoordinateDeserializer")]
 pub struct Vector(pub(crate) Tuple);
 
+#[warn(missing_docs)]
 #[derive(Debug, PartialEq, Deserialize)]
 struct CoordinateDeserializer {
     x: f64,
@@ -61,6 +72,7 @@ impl PartialEq for Tuple {
 }
 
 impl Point {
+    /// Constructs a new 3-dimensional point.
     pub const fn new(x: f64, y: f64, z: f64) -> Self {
         let w = POINT_W;
 
@@ -69,24 +81,33 @@ impl Point {
 }
 
 impl Vector {
+    /// Constructs a new 3-dimensional vector.
     pub const fn new(x: f64, y: f64, z: f64) -> Self {
         let w = VECTOR_W;
 
         Self(Tuple { x, y, z, w })
     }
 
+    /// Computes the magnitude of a vector.
     pub fn magnitude(self) -> f64 {
         (self.0.x.powi(2) + self.0.y.powi(2) + self.0.z.powi(2)).sqrt()
     }
 
-    pub fn normalize(self) -> Result<Self, NormalizeNullVectorError> {
-        (self / self.magnitude()).map_err(|_| NormalizeNullVectorError)
+    /// Tries to normalize a vector.
+    ///
+    /// # Errors
+    /// Fails if the vector is null.
+    ///
+    pub fn normalize(self) -> Result<Self, Error> {
+        (self / self.magnitude()).map_err(|_| Error::NormalizeNullVector)
     }
 
+    /// Computes the dot product between two vectors.
     pub fn dot(self, rhs: Self) -> f64 {
         self.0.x * rhs.0.x + self.0.y * rhs.0.y + self.0.z * rhs.0.z
     }
 
+    /// Computes the cross product between two vectors.
     pub fn cross(self, rhs: Self) -> Self {
         let x = self.0.y * rhs.0.z - self.0.z * rhs.0.y;
         let y = self.0.z * rhs.0.x - self.0.x * rhs.0.z;
@@ -95,6 +116,7 @@ impl Vector {
         Self::new(x, y, z)
     }
 
+    /// Computes the reflected vector with respect to a surface normal.
     pub fn reflect(self, normal: Self) -> Self {
         self - normal * 2.0 * self.dot(normal)
     }
@@ -203,12 +225,12 @@ impl Mul<Vector> for f64 {
 }
 
 impl Div<f64> for Vector {
-    type Output = Result<Self, DivisionByZeroError>;
+    type Output = Result<Self, Error>;
 
     fn div(self, rhs: f64) -> Self::Output {
         (!float::approx(rhs, 0.0))
             .then_some(self * (1.0 / rhs))
-            .ok_or(DivisionByZeroError)
+            .ok_or(Error::DivisionByZero)
     }
 }
 
@@ -220,11 +242,11 @@ mod tests {
 
     use super::*;
 
-    fn is_a_point(t: Tuple) -> bool {
+    fn test_is_a_point(t: Tuple) -> bool {
         float::approx(t.w, 1.0)
     }
 
-    fn is_a_vector(t: Tuple) -> bool {
+    fn test_is_a_vector(t: Tuple) -> bool {
         float::approx(t.w, 0.0)
     }
 
@@ -242,8 +264,8 @@ mod tests {
         assert_approx!(p.z, 3.1);
         assert_approx!(p.w, 1.0);
 
-        assert!(is_a_point(p));
-        assert!(!is_a_vector(p));
+        assert!(test_is_a_point(p));
+        assert!(!test_is_a_vector(p));
     }
 
     #[test]
@@ -260,8 +282,8 @@ mod tests {
         assert_approx!(v.z, 3.1);
         assert_approx!(v.w, 0.0);
 
-        assert!(is_a_vector(v));
-        assert!(!is_a_point(v));
+        assert!(test_is_a_vector(v));
+        assert!(!test_is_a_point(v));
     }
 
     #[test]
@@ -453,7 +475,7 @@ mod tests {
     fn trying_to_divide_a_vector_by_zero() {
         let v = Vector::new(1.0, -2.0, 3.0);
 
-        assert_eq!(v / 0.0, Err(DivisionByZeroError));
+        assert_eq!(v / 0.0, Err(Error::DivisionByZero));
     }
 
     #[test]
@@ -496,7 +518,7 @@ mod tests {
     fn trying_to_normalize_a_null_vector() {
         let null = Vector::new(0.0, 0.0, 0.0);
 
-        assert_eq!(null.normalize(), Err(NormalizeNullVectorError));
+        assert_eq!(null.normalize(), Err(Error::NormalizeNullVector));
     }
 
     #[test]

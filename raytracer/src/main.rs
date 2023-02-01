@@ -1,46 +1,60 @@
 use raytracer::{
     camera::{Camera, CameraBuilder},
     color,
-    light::{PointLight, Light},
-    obj_model::{OBJModel, OBJModelBuilder},
-    shape::{group::Group, Shape},
+    light::{Light, PointLight},
+    material::Material,
+    pattern::Pattern3DSpec,
+    shape::{Cube, Plane, Shape, ShapeBuilder},
     transform::Transform,
-    tuple::Point,
+    tuple::{Point, Vector},
     world::World,
 };
 
 fn main() {
-    let file = std::fs::read_to_string("alfull.obj").unwrap();
-    let model = OBJModel::try_from(OBJModelBuilder {
-        content: &file,
-        transform: Transform::rotation_y(0.0)
-            * Transform::scaling(1.0, 0.5, 1.0).unwrap(),
-    })
-    .unwrap();
-
-    let mut model = Group::from(model);
-    model.divide(2);
-
     let light = Light::Point(PointLight {
-        position: Point::new(0.0, 0.0, 5.0),
+        position: Point::new(5.0, 5.0, 5.0),
         intensity: color::consts::WHITE,
     });
 
+    let cube = Shape::Cube(Cube::from(ShapeBuilder {
+        material: Material {
+            pattern: raytracer::pattern::Pattern3D::Solid(color::consts::RED),
+            transparency: 0.0,
+            ..Default::default()
+        },
+        transform: Transform::translation(0.0, 1.0, 0.0),
+    }));
+
+    let plane = Shape::Plane(Plane::from(ShapeBuilder {
+        material: Material {
+            pattern: raytracer::pattern::Pattern3D::Checker(Pattern3DSpec::new(
+                color::consts::WHITE,
+                color::consts::BLACK,
+                Default::default(),
+            )),
+            ..Default::default()
+        },
+        ..Default::default()
+    }));
+
     let world = World {
-        objects: vec![Shape::Group(model)],
+        objects: vec![cube, plane],
         lights: vec![light],
     };
 
     let camera = Camera::try_from(CameraBuilder {
-        image_width: 360,
-        image_height: 640,
+        width: 200,
+        height: 200,
         field_of_view: std::f64::consts::FRAC_PI_3,
-        transform: Transform::translation(0.0, 0.0, -6.0),
+        transform: Transform::view(
+            Point::new(5.0, 5.0, 5.0),
+            Point::new(0.0, 0.0, 0.0),
+            Vector::new(0.0, 1.0, 0.0),
+        )
+        .unwrap(),
     })
     .unwrap();
 
-    let image = camera
-        .render(&world, raytracer::scene::SceneProgress::Enable)
-        .to_image();
+    let image = camera.render(&world).to_image();
     image.save("image.png").unwrap();
 }

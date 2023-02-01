@@ -1,32 +1,79 @@
 use crate::{
     intersection::Intersection,
+    material::Material,
     ray::Ray,
     transform::Transform,
     tuple::{Point, Vector},
 };
 
-pub mod bounding_box;
-pub mod cube;
-pub mod cylinder;
-pub mod group;
-pub mod plane;
-pub mod smooth_triangle;
-pub mod sphere;
-pub mod triangle;
+mod bounding_box;
+mod cube;
+mod cylinder;
+mod group;
+mod object;
+mod plane;
+mod smooth_triangle;
+mod sphere;
+mod triangle;
 
-pub(crate) mod object;
+pub use self::{
+    cube::Cube,
+    cylinder::{Cylinder, CylinderBuilder},
+    group::{Group, GroupBuilder},
+    plane::Plane,
+    smooth_triangle::SmoothTriangle,
+    sphere::Sphere,
+    triangle::{Error as TriangleError, Triangle, TriangleBuilder},
+};
 
-use bounding_box::BoundingBox;
+pub(crate) use self::bounding_box::BoundingBox;
 
+/// Available types of shapes.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Shape {
     Cube(cube::Cube),
     Cylinder(cylinder::Cylinder),
+    Group(group::Group),
     Plane(plane::Plane),
+    SmoothTriangle(smooth_triangle::SmoothTriangle),
     Sphere(sphere::Sphere),
     Triangle(triangle::Triangle),
-    SmoothTriangle(smooth_triangle::SmoothTriangle),
-    Group(group::Group),
+}
+
+/// Builder for a simple shape.
+///
+/// This includes the shapes such as: [Cube](cube::Cube), [Plane](plane::Plane) and
+/// [Sphere](sphere::Sphere).
+///
+/// # Examples
+///
+/// Building a shape.
+///
+/// ```
+/// use raytracer::{
+///     material::Material,
+///     shape::{Sphere, Shape, ShapeBuilder},
+///     transform::Transform,
+/// };
+///
+/// let shape = Shape::Sphere(Sphere::from(ShapeBuilder {
+///     material: Material {
+///         ambient: 0.5,
+///         diffuse: 0.7,
+///         specular: 0.1,
+///         ..Default::default()
+///     },
+///     transform: Transform::scaling(1.0, 2.0, 3.0).unwrap(),
+/// }));
+/// ```
+///
+#[derive(Clone, Default)]
+pub struct ShapeBuilder {
+    /// Material of the shape.
+    pub material: Material,
+
+    /// Transform of the shape.
+    pub transform: Transform,
 }
 
 fn object_ray(ray: &Ray, transform_inverse: Transform) -> Ray {
@@ -49,7 +96,7 @@ where
 }
 
 impl Shape {
-    pub fn intersect(&self, ray: &Ray) -> Vec<Intersection<'_>> {
+    pub(crate) fn intersect(&self, ray: &Ray) -> Vec<Intersection<'_>> {
         let object_ray = object_ray(ray, self.as_ref().transform_inverse);
 
         match self {
@@ -68,7 +115,7 @@ impl Shape {
         }
     }
 
-    pub fn normal_at(&self, point: Point, hit: &Intersection<'_>) -> Vector {
+    pub(crate) fn normal_at(&self, point: Point, hit: &Intersection<'_>) -> Vector {
         world_normal(
             point,
             self.as_ref().transform_inverse,
@@ -92,10 +139,7 @@ impl Shape {
 
 #[cfg(test)]
 mod tests {
-    use crate::shape::{
-        group::Group,
-        sphere::{Sphere, SphereBuilder},
-    };
+    use crate::shape::{group::Group, sphere::Sphere};
 
     use super::*;
 
@@ -119,15 +163,15 @@ mod tests {
 
     #[test]
     fn intersecting_a_translated_object_with_a_ray() {
-        let r = Ray {
+        let ray = Ray {
             origin: Point::new(0.0, 0.0, -5.0),
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let t = Transform::translation(5.0, 0.0, 0.0);
+        let transform = Transform::translation(5.0, 0.0, 0.0);
 
         assert_eq!(
-            object_ray(&r, t.inverse()),
+            object_ray(&ray, transform.inverse()),
             Ray {
                 origin: Point::new(-5.0, 0.0, -5.0),
                 direction: Vector::new(0.0, 0.0, 1.0),
@@ -137,40 +181,46 @@ mod tests {
 
     #[test]
     fn computing_the_normal_on_a_translated_object() {
-        let p = Point::new(0.0, 1.70711, -0.70711);
-        let t = Transform::translation(0.0, 1.0, 0.0);
+        let point = Point::new(0.0, 1.70711, -0.70711);
+        let transform = Transform::translation(0.0, 1.0, 0.0);
 
-        let n = world_normal(p, t.inverse(), |object_point| {
+        let normal = world_normal(point, transform.inverse(), |object_point| {
             Vector::new(object_point.0.x, object_point.0.y, object_point.0.z)
         });
 
-        assert_eq!(n, Vector::new(0.0, 0.70711, -0.70711));
+        assert_eq!(normal, Vector::new(0.0, 0.70711, -0.70711));
     }
 
     #[test]
     fn computing_the_normal_on_a_transformed_object() {
-        let p = Point::new(0.0, 2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0);
-        let t = Transform::scaling(1.0, 0.5, 1.0).unwrap()
+        let point = Point::new(0.0, 2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0);
+        let transform = Transform::scaling(1.0, 0.5, 1.0).unwrap()
             * Transform::rotation_z(std::f64::consts::PI / 5.0);
 
-        let n = world_normal(p, t.inverse(), |object_point| {
+        let normal = world_normal(point, transform.inverse(), |object_point| {
             Vector::new(object_point.0.x, object_point.0.y, object_point.0.z)
         });
 
-        assert_eq!(n, Vector::new(0.0, 0.97014, -0.24254));
+        assert_eq!(normal, Vector::new(0.0, 0.97014, -0.24254));
     }
 
     #[test]
     fn finding_the_normal_on_a_child_object() {
-        let child = Shape::Sphere(Sphere::from(SphereBuilder {
+        let child = Shape::Sphere(Sphere::from(ShapeBuilder {
             transform: Transform::translation(5.0, 0.0, 0.0),
             ..Default::default()
         }));
 
-        let mut inner_group = Group::new(Transform::scaling(1.0, 2.0, 3.0).unwrap());
+        let mut inner_group = Group::from(GroupBuilder {
+            children: [],
+            transform: Transform::scaling(1.0, 2.0, 3.0).unwrap(),
+        });
         inner_group.push(child);
 
-        let mut outer_group = Group::new(Transform::rotation_y(std::f64::consts::FRAC_PI_2));
+        let mut outer_group = Group::from(GroupBuilder {
+            children: [],
+            transform: Transform::rotation_y(std::f64::consts::FRAC_PI_2),
+        });
         outer_group.push(Shape::Group(inner_group));
 
         // Retreiving the `inner_group`'s child. Clone would not work here since after adding the
@@ -197,7 +247,7 @@ mod tests {
 
     #[test]
     fn querying_a_shapes_bounding_box_in_its_parents_space() {
-        let s = Shape::Sphere(Sphere::from(SphereBuilder {
+        let s = Shape::Sphere(Sphere::from(ShapeBuilder {
             transform: Transform::translation(1.0, -3.0, 5.0)
                 * Transform::scaling(0.5, 2.0, 4.0).unwrap(),
             ..Default::default()

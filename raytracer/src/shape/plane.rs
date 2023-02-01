@@ -1,32 +1,27 @@
 use crate::{
     float,
     intersection::Intersection,
-    material::Material,
     ray::Ray,
-    transform::Transform,
     tuple::{Point, Vector},
 };
 
-use super::{bounding_box::BoundingBox, object::ObjectCache, Shape};
+use super::{bounding_box::BoundingBox, object::ObjectCache, Shape, ShapeBuilder};
 
+/// Representation of a plane.
+///
+/// Must be built from a [ShapeBuilder].
 #[derive(Clone, Debug, PartialEq)]
 pub struct Plane(pub(crate) ObjectCache);
 
-#[derive(Clone, Default)]
-pub struct PlaneBuilder {
-    pub material: Material,
-    pub transform: Transform,
-}
-
 impl Default for Plane {
     fn default() -> Self {
-        Self::from(PlaneBuilder::default())
+        Self::from(ShapeBuilder::default())
     }
 }
 
-impl From<PlaneBuilder> for Plane {
-    fn from(builder: PlaneBuilder) -> Self {
-        let PlaneBuilder {
+impl From<ShapeBuilder> for Plane {
+    fn from(builder: ShapeBuilder) -> Self {
+        let ShapeBuilder {
             material,
             transform,
         } = builder;

@@ -4,8 +4,13 @@ use serde::Deserialize;
 
 use crate::float;
 
+/// Module constants.
 pub mod consts;
 
+/// 8-bit/RGB color represented by floating points ranging from `0.0` to `1.0`. A component getting
+/// out of this range is still a valid value but will have effects in the intensity of other colors
+/// when combining them.
+///
 #[derive(Copy, Clone, Debug, Deserialize)]
 #[serde(from = "ColorDeserializer")]
 pub struct Color {
@@ -14,6 +19,7 @@ pub struct Color {
     pub blue: f64,
 }
 
+#[warn(missing_docs)]
 #[derive(Debug, Deserialize)]
 pub struct ColorDeserializer {
     red: u8,
@@ -205,6 +211,7 @@ mod tests {
                 blue: 0.04,
             }
         );
+
         assert_eq!(c0 * c1, c1 * c0);
     }
 

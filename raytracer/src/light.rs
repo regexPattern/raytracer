@@ -6,19 +6,78 @@ use crate::{
     world::World,
 };
 
-#[derive(Debug)]
+/// A world's light source.
+///
+/// Light are used to illumite objects in the world.
+///
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Light {
+    /// An area light.
     Area(AreaLight),
+
+    /// A point light.
     Point(PointLight),
 }
 
-#[derive(Copy, Clone, Debug)]
+/// An infinitely-small light.
+///
+/// Point lights are used to create harsh shadows.
+///
+/// # Examples
+///
+/// ```
+/// use raytracer::{
+///     color,
+///     light::{Light, PointLight},
+///     tuple::Point
+/// };
+///
+/// let light = Light::Point(PointLight {
+///     position: Point::new(1.0, 1.0, 1.0),
+///     intensity: color::consts::WHITE,
+/// });
+/// ```
+///
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct PointLight {
+    /// Position of the light.
     pub position: Point,
+
+    /// Color of the light.
     pub intensity: Color,
 }
 
-#[derive(Debug)]
+/// A rectangular grid of lights.
+///
+/// Area lights are used to create soft shadows.
+///
+/// Keep in mind that rendering soft shadows requires much more compute power than rendering
+/// regular harsh shadows, specially as the number of cells in the grid grows.
+///
+/// # Examples
+///
+/// An area-light must be built from an [AreaLightBuilder].
+///
+/// ```
+/// use raytracer::{
+///     color,
+///     light::{AreaLight, AreaLightBuilder, Light},
+///     tuple::{Point, Vector}
+/// };
+///
+/// // White area light with a 5x4 cells grid and the following corners:
+/// // (5, 5, 5) -> (9, 5, 5) -> (9, 9, 5) -> (5, 9, 5) -> (5, 5, 5)
+/// let light = Light::Area(AreaLight::from(AreaLightBuilder {
+///     corner: Point::new(5.0, 5.0, 5.0),
+///     horizontal_dir: Vector::new(4.0, 0.0, 0.0),
+///     horizontal_cells: 5,
+///     vertical_dir: Vector::new(0.0, 4.0, 0.0),
+///     vertical_cells: 4,
+///     intensity: color::consts::WHITE,
+/// }));
+/// ```
+///
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct AreaLight {
     corner: Point,
     uvec: Vector,
@@ -29,12 +88,29 @@ pub struct AreaLight {
     intensity: Color,
 }
 
+/// Builder for an area light.
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct AreaLightBuilder {
+    /// Position of the bottom-left corner of the rectangular area light.
     pub corner: Point,
-    pub horizontal_vec: Vector,
+
+    /// Horizontal direction vector from the given corner to the second corner of the rectangular
+    /// area's base.
+    ///
+    pub horizontal_dir: Vector,
+
+    /// Number of horizontal cells in the light grid.
     pub horizontal_cells: usize,
-    pub vertical_vec: Vector,
+
+    /// Vertical direction vector from the given corner to the second corner of the rectangular
+    /// area's height.
+    ///
+    pub vertical_dir: Vector,
+
+    /// Number of vertical cells in the light grid.
     pub vertical_cells: usize,
+
+    /// Color of the light.
     pub intensity: Color,
 }
 
@@ -42,16 +118,18 @@ impl From<AreaLightBuilder> for AreaLight {
     fn from(builder: AreaLightBuilder) -> Self {
         let AreaLightBuilder {
             corner,
-            horizontal_vec,
+            horizontal_dir,
             horizontal_cells: usteps,
-            vertical_vec,
+            vertical_dir,
             vertical_cells: vsteps,
             intensity,
         } = builder;
 
-        // TODO: Handle this unwrap.
-        let uvec = (horizontal_vec / usteps as f64).unwrap();
-        let vvec = (vertical_vec / vsteps as f64).unwrap();
+        // TODO: Handle this unwrap that happens when I get null direction vectors. Also I should
+        // handle the case when I receive collinear direction vectors.
+        //
+        let uvec = (horizontal_dir / usteps as f64).unwrap();
+        let vvec = (vertical_dir / vsteps as f64).unwrap();
 
         Self {
             corner,
@@ -66,6 +144,7 @@ impl From<AreaLightBuilder> for AreaLight {
 }
 
 impl Light {
+    /// Returns the intensity of a light at a given point.
     pub(crate) fn intensity_at(&self, world: &World, point: Point) -> f64 {
         match self {
             Self::Area(area_light) => area_light.intensity_at(world, point, || {
@@ -76,22 +155,25 @@ impl Light {
         }
     }
 
-    pub(crate) fn samples(&self) -> Vec<Point> {
+    /// Returns the positions of the light cells, or the whole light if the light is a
+    /// [PointLight].
+    pub(crate) fn cells(&self) -> Vec<Point> {
         match self {
             Self::Area(area_light) => {
-                let mut samples = vec![];
+                let mut cells = vec![];
                 for v in 0..area_light.vsteps {
                     for u in 0..area_light.usteps {
-                        samples.push(area_light.point_on_light(u, v, || 0.5));
+                        cells.push(area_light.point_on_light(u, v, || 0.5));
                     }
                 }
 
-                samples
+                cells
             }
             Self::Point(point_light) => vec![point_light.position],
         }
     }
 
+    /// Returns the effective color of a light.
     pub(crate) fn intensity(&self) -> Color {
         match self {
             Self::Area(area_light) => area_light.intensity,
@@ -101,6 +183,7 @@ impl Light {
 }
 
 impl PointLight {
+    /// Returns `0.0` if the point is in shadow. Otherwise it returns `1.0`.
     fn intensity_at(&self, world: &World, point: Point) -> f64 {
         if world.is_shadowed(self.position, point) {
             0.0
@@ -111,6 +194,9 @@ impl PointLight {
 }
 
 impl AreaLight {
+    /// Returns a value between `0.0`, if the value is in
+    /// [umbra](https://en.wikipedia.org/wiki/Umbra,_penumbra_and_antumbra#Umbra), and `1.0` if the
+    /// value if in [antumbra](https://en.wikipedia.org/wiki/Umbra,_penumbra_and_antumbra#Umbra).
     fn intensity_at<F>(&self, world: &World, point: Point, jitter: F) -> f64
     where
         F: Fn() -> f64,
@@ -130,6 +216,9 @@ impl AreaLight {
         total / self.samples as f64
     }
 
+    /// Returns a jittered position between the bounds of the corresponding light cell located at
+    /// `u` width and `v` height with respect to the light corner.
+    ///
     fn point_on_light<F>(&self, u: usize, v: usize, jitter: F) -> Point
     where
         F: Fn() -> f64,
@@ -192,9 +281,9 @@ mod tests {
 
         let light = AreaLight::from(AreaLightBuilder {
             corner,
-            horizontal_vec,
+            horizontal_dir: horizontal_vec,
             horizontal_cells: 4,
-            vertical_vec,
+            vertical_dir: vertical_vec,
             vertical_cells: 2,
             intensity: color::consts::WHITE,
         });
@@ -215,9 +304,9 @@ mod tests {
 
         let light = AreaLight::from(AreaLightBuilder {
             corner,
-            horizontal_vec,
+            horizontal_dir: horizontal_vec,
             horizontal_cells: 4,
-            vertical_vec,
+            vertical_dir: vertical_vec,
             vertical_cells: 2,
             intensity: color::consts::WHITE,
         });
@@ -229,18 +318,22 @@ mod tests {
             light.point_on_light(0, 0, jitter),
             Point::new(0.25, 0.0, 0.25)
         );
+
         assert_eq!(
             light.point_on_light(1, 0, jitter),
             Point::new(0.75, 0.0, 0.25)
         );
+
         assert_eq!(
             light.point_on_light(0, 1, jitter),
             Point::new(0.25, 0.0, 0.75)
         );
+
         assert_eq!(
             light.point_on_light(2, 0, jitter),
             Point::new(1.25, 0.0, 0.25)
         );
+
         assert_eq!(
             light.point_on_light(3, 1, jitter),
             Point::new(1.75, 0.0, 0.75)
@@ -257,9 +350,9 @@ mod tests {
 
         let light = AreaLight::from(AreaLightBuilder {
             corner,
-            horizontal_vec,
+            horizontal_dir: horizontal_vec,
             horizontal_cells: 2,
-            vertical_vec,
+            vertical_dir: vertical_vec,
             vertical_cells: 2,
             intensity: color::consts::WHITE,
         });
@@ -271,18 +364,22 @@ mod tests {
             light.intensity_at(&w, Point::new(0.0, 0.0, 2.0), jitter),
             0.0
         );
+
         assert_approx!(
             light.intensity_at(&w, Point::new(1.0, -1.0, 2.0), jitter),
             0.25
         );
+
         assert_approx!(
             light.intensity_at(&w, Point::new(1.5, 0.0, 2.0), jitter),
             0.5
         );
+
         assert_approx!(
             light.intensity_at(&w, Point::new(1.25, 1.25, 3.0), jitter),
             0.75
         );
+
         assert_approx!(
             light.intensity_at(&w, Point::new(0.0, 0.0, -2.0), jitter),
             1.0
@@ -307,9 +404,9 @@ mod tests {
 
         let light = AreaLight::from(AreaLightBuilder {
             corner,
-            horizontal_vec,
+            horizontal_dir: horizontal_vec,
             horizontal_cells: 4,
-            vertical_vec,
+            vertical_dir: vertical_vec,
             vertical_cells: 2,
             intensity: color::consts::WHITE,
         });
@@ -321,18 +418,22 @@ mod tests {
             light.point_on_light(0, 0, jitter),
             Point::new(0.15, 0.0, 0.35)
         );
+
         assert_eq!(
             light.point_on_light(1, 0, jitter),
             Point::new(0.65, 0.0, 0.35)
         );
+
         assert_eq!(
             light.point_on_light(0, 1, jitter),
             Point::new(0.15, 0.0, 0.85)
         );
+
         assert_eq!(
             light.point_on_light(2, 0, jitter),
             Point::new(1.15, 0.0, 0.35)
         );
+
         assert_eq!(
             light.point_on_light(3, 1, jitter),
             Point::new(1.65, 0.0, 0.85)

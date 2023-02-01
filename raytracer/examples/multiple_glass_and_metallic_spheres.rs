@@ -4,14 +4,8 @@ use raytracer::{
     color::{self, Color},
     light::{Light, PointLight},
     material::{self, Material},
-    pattern::{Pattern3D, Schema},
-    scene::SceneProgress,
-    shape::{
-        group::Group,
-        plane::{Plane, PlaneBuilder},
-        sphere::{Sphere, SphereBuilder},
-        Shape,
-    },
+    pattern::{Pattern3D, Pattern3DSpec},
+    shape::{Group, Plane, Shape, ShapeBuilder, Sphere},
     transform::Transform,
     tuple::{Point, Vector},
     world::World,
@@ -73,7 +67,7 @@ fn main() {
 
             let material = materials.choose(&mut rng).unwrap().clone();
 
-            let sphere = Shape::Sphere(Sphere::from(SphereBuilder {
+            let sphere = Shape::Sphere(Sphere::from(ShapeBuilder {
                 material,
                 transform,
             }));
@@ -81,9 +75,9 @@ fn main() {
         }
     }
 
-    let floor = Shape::Plane(Plane::from(PlaneBuilder {
+    let floor = Shape::Plane(Plane::from(ShapeBuilder {
         material: Material {
-            pattern: Pattern3D::Checker(Schema::new(
+            pattern: Pattern3D::Checker(Pattern3DSpec::new(
                 Color {
                     red: 0.9264,
                     green: 0.902,
@@ -115,8 +109,8 @@ fn main() {
     };
 
     let camera = Camera::try_from(CameraBuilder {
-        image_width: RESOLUTION.width,
-        image_height: RESOLUTION.height,
+        width: RESOLUTION.width,
+        height: RESOLUTION.height,
         field_of_view: std::f64::consts::FRAC_PI_3,
         transform: Transform::view(
             Point::new(5.0, 7.0, -10.0),
@@ -127,6 +121,6 @@ fn main() {
     })
     .unwrap();
 
-    let image = camera.render(&world, SceneProgress::Enable).to_image();
+    let image = camera.render(&world).to_image();
     image.save("image.png").unwrap();
 }

@@ -3,13 +3,8 @@ use raytracer::{
     color::{self, Color},
     light::{AreaLight, AreaLightBuilder, Light},
     material::Material,
-    pattern::{Pattern3D, Schema},
-    scene::SceneProgress,
-    shape::{
-        plane::{Plane, PlaneBuilder},
-        sphere::{Sphere, SphereBuilder},
-        Shape,
-    },
+    pattern::{Pattern3D, Pattern3DSpec},
+    shape::{Plane, Shape, ShapeBuilder, Sphere},
     transform::Transform,
     tuple::{Point, Vector},
     world::World,
@@ -21,7 +16,7 @@ fn main() {
     let floor = Shape::Plane(Plane::default());
 
     let wall_material = Material {
-        pattern: Pattern3D::Checker(Schema::new(
+        pattern: Pattern3D::Checker(Pattern3DSpec::new(
             color::consts::WHITE,
             color::consts::BLACK,
             Default::default(),
@@ -29,18 +24,18 @@ fn main() {
         ..Default::default()
     };
 
-    let left_wall = Shape::Plane(Plane::from(PlaneBuilder {
+    let left_wall = Shape::Plane(Plane::from(ShapeBuilder {
         material: wall_material.clone(),
         transform: Transform::translation(0.0, 1.0, 0.0)
             * Transform::rotation_z(std::f64::consts::FRAC_PI_2),
     }));
 
-    let right_wall = Shape::Plane(Plane::from(PlaneBuilder {
+    let right_wall = Shape::Plane(Plane::from(ShapeBuilder {
         material: wall_material.clone(),
         transform: Transform::rotation_x(std::f64::consts::FRAC_PI_2),
     }));
 
-    let metallic_sphere = Shape::Sphere(Sphere::from(SphereBuilder {
+    let metallic_sphere = Shape::Sphere(Sphere::from(ShapeBuilder {
         material: Material {
             reflectivity: 0.25,
             pattern: Pattern3D::Solid(Color {
@@ -53,7 +48,7 @@ fn main() {
         transform: Transform::translation(4.0, 1.0, -4.0),
     }));
 
-    let red_sphere = Shape::Sphere(Sphere::from(SphereBuilder {
+    let red_sphere = Shape::Sphere(Sphere::from(ShapeBuilder {
         material: Material {
             pattern: Pattern3D::Solid(color::consts::RED),
             ..Default::default()
@@ -62,7 +57,7 @@ fn main() {
             * Transform::scaling(0.5, 0.5, 0.5).unwrap(),
     }));
 
-    let blue_sphere = Shape::Sphere(Sphere::from(SphereBuilder {
+    let blue_sphere = Shape::Sphere(Sphere::from(ShapeBuilder {
         material: Material {
             pattern: Pattern3D::Solid(Color {
                 red: 0.5,
@@ -77,9 +72,9 @@ fn main() {
 
     let light = Light::Area(AreaLight::from(AreaLightBuilder {
         corner: Point::new(5.0, 5.0, -10.0),
-        horizontal_vec: Vector::new(4.0, 0.0, 0.0),
+        horizontal_dir: Vector::new(4.0, 0.0, 0.0),
         horizontal_cells: 8,
-        vertical_vec: Vector::new(0.0, 4.0, 0.0),
+        vertical_dir: Vector::new(0.0, 4.0, 0.0),
         vertical_cells: 8,
         intensity: color::consts::WHITE,
     }));
@@ -97,8 +92,8 @@ fn main() {
     };
 
     let camera = Camera::try_from(CameraBuilder {
-        image_width: RESOLUTION.width,
-        image_height: RESOLUTION.height,
+        width: RESOLUTION.width,
+        height: RESOLUTION.height,
         field_of_view: std::f64::consts::FRAC_PI_3,
         transform: Transform::view(
             Point::new(10.0, 3.0, -10.0),
@@ -109,6 +104,6 @@ fn main() {
     })
     .unwrap();
 
-    let image = camera.render(&world, SceneProgress::Enable).to_image();
+    let image = camera.render(&world).to_image();
     image.save("image.png").unwrap();
 }
