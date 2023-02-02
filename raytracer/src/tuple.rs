@@ -93,9 +93,10 @@ impl Vector {
         (self.0.x.powi(2) + self.0.y.powi(2) + self.0.z.powi(2)).sqrt()
     }
 
-    /// Tries to normalize a vector.
+    /// Attempts to normalize a vector.
     ///
     /// # Errors
+    ///
     /// Fails if the vector is null.
     ///
     pub fn normalize(self) -> Result<Self, Error> {

@@ -202,7 +202,6 @@ impl Camera {
         image
     }
 
-    /// Returns a ray in world-space coordinates for the given pixel on the image.
     fn ray_for_pixel(&self, x: usize, y: usize) -> Ray {
         let xoffset = (x as f64 + 0.5) * self.pixel_size;
         let yoffset = (y as f64 + 0.5) * self.pixel_size;

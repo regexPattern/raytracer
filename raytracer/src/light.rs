@@ -144,7 +144,6 @@ impl From<AreaLightBuilder> for AreaLight {
 }
 
 impl Light {
-    /// Returns the intensity of a light at a given point.
     pub(crate) fn intensity_at(&self, world: &World, point: Point) -> f64 {
         match self {
             Self::Area(area_light) => area_light.intensity_at(world, point, || {
@@ -155,8 +154,6 @@ impl Light {
         }
     }
 
-    /// Returns the positions of the light cells, or the whole light if the light is a
-    /// [PointLight].
     pub(crate) fn cells(&self) -> Vec<Point> {
         match self {
             Self::Area(area_light) => {
@@ -173,8 +170,7 @@ impl Light {
         }
     }
 
-    /// Returns the effective color of a light.
-    pub(crate) fn intensity(&self) -> Color {
+    pub(crate) fn effective_color(&self) -> Color {
         match self {
             Self::Area(area_light) => area_light.intensity,
             Self::Point(point_light) => point_light.intensity,
@@ -183,7 +179,6 @@ impl Light {
 }
 
 impl PointLight {
-    /// Returns `0.0` if the point is in shadow. Otherwise it returns `1.0`.
     fn intensity_at(&self, world: &World, point: Point) -> f64 {
         if world.is_shadowed(self.position, point) {
             0.0
@@ -194,9 +189,6 @@ impl PointLight {
 }
 
 impl AreaLight {
-    /// Returns a value between `0.0`, if the value is in
-    /// [umbra](https://en.wikipedia.org/wiki/Umbra,_penumbra_and_antumbra#Umbra), and `1.0` if the
-    /// value if in [antumbra](https://en.wikipedia.org/wiki/Umbra,_penumbra_and_antumbra#Umbra).
     fn intensity_at<F>(&self, world: &World, point: Point, jitter: F) -> f64
     where
         F: Fn() -> f64,
@@ -216,9 +208,6 @@ impl AreaLight {
         total / self.samples as f64
     }
 
-    /// Returns a jittered position between the bounds of the corresponding light cell located at
-    /// `u` width and `v` height with respect to the light corner.
-    ///
     fn point_on_light<F>(&self, u: usize, v: usize, jitter: F) -> Point
     where
         F: Fn() -> f64,

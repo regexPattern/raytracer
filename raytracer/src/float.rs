@@ -25,6 +25,7 @@ pub fn le(a: f64, b: f64) -> bool {
 }
 
 #[macro_export]
+/// Assert floating point equality within a margin of error.
 macro_rules! assert_approx {
     ($a:expr, $b:expr) => {{
         assert!(

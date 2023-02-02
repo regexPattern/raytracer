@@ -9,11 +9,20 @@ use crate::{
     tuple::{Point, Vector},
 };
 
+/// The error type when trying to create an anti-isomorphic transformation
+///
+/// A transformation is [isomorphic](https://en.wikipedia.org/wiki/Isomorphism) if and only if it
+/// is invertible. A transformation is anti-isomorphic if and only if it is not isomorphic.
+///
 #[derive(Debug, PartialEq, Error)]
-pub enum AntiIsomorphicTransformError {
+pub enum Error {
+    /// The error type when trying to create a scaling transformation that scaled a component to
+    /// zero.
     #[error("components cannot be scaled to zero")]
     ComponentScaledToZero { x: f64, y: f64, z: f64 },
 
+    /// The error type when trying to create a shaering transformation that would produce an
+    /// anti-isomorphic transformation.
     #[error(
         "result of `xz * yx * zy + xy * yz * zx - xy * yx - xz * zx - yz * zy` cannot equal `-1`"
     )]
@@ -26,20 +35,34 @@ pub enum AntiIsomorphicTransformError {
         zy: f64,
     },
 
-    #[error("up direction cannot be null")]
-    NullUpVector,
-
+    /// The error type when trying to create a view transformation with equal `from` and `to`
+    /// vectors.
+    ///
+    /// This would mean that the camera it's looking at itself.
+    ///
     #[error("`from` and `to` points cannot be equal")]
     EqualFromAndToVectors,
 
+    /// The error type when trying to create a view transformation where the result of subtracting
+    /// the given `from` and `to` vector is collinear to the given `up` vector.
+    ///
+    /// This would mean that the camera cannot orient itself, there would be a conflict
+    /// between the direction it's looking at and the direction it should consider as "up".
+    ///
     #[error("`from` and `up` vectors cannot be collinear")]
     CollinearToFromAndUpVectors { to_from: Vector, up: Vector },
+
+    /// The error type when trying to crate a view transformation with a null `up` vector.
+    #[error("up direction cannot be null")]
+    NullUpVector,
 }
 
+/// An isomorphic linear transformation.
 #[derive(Copy, Clone, Debug, PartialEq, Deserialize)]
 #[serde(try_from = "TransformDeserializer")]
 pub struct Transform(Matrix<4, 4>);
 
+#[warn(missing_docs)]
 #[derive(Debug, PartialEq, Deserialize)]
 #[serde(rename_all(deserialize = "snake_case"))]
 #[serde(tag = "type")]
@@ -85,7 +108,7 @@ enum TransformDeserializer {
 }
 
 impl TryFrom<TransformDeserializer> for Transform {
-    type Error = AntiIsomorphicTransformError;
+    type Error = Error;
 
     fn try_from(value: TransformDeserializer) -> Result<Self, Self::Error> {
         Ok(match value {
@@ -114,6 +137,7 @@ impl Default for Transform {
 }
 
 impl Transform {
+    /// Constructs a translation transformation.
     pub fn translation(x: f64, y: f64, z: f64) -> Self {
         Self(Matrix([
             [1.0, 0.0, 0.0, x],
@@ -123,7 +147,14 @@ impl Transform {
         ]))
     }
 
-    pub fn scaling(x: f64, y: f64, z: f64) -> Result<Self, AntiIsomorphicTransformError> {
+    /// Constructs a scaling transformation.
+    ///
+    /// # Errors
+    ///
+    /// Fails when a component is scaled to zero. This is because scaling a component to zero would
+    /// make that components' original value irrecoverable, producing an anti-isomorphic matrix.
+    ///
+    pub fn scaling(x: f64, y: f64, z: f64) -> Result<Self, Error> {
         (!float::approx(x * y * z, 0.0))
             .then_some(Self(Matrix([
                 [x, 0.0, 0.0, 0.0],
@@ -131,9 +162,10 @@ impl Transform {
                 [0.0, 0.0, z, 0.0],
                 [0.0, 0.0, 0.0, 1.0],
             ])))
-            .ok_or(AntiIsomorphicTransformError::ComponentScaledToZero { x, y, z })
+            .ok_or(Error::ComponentScaledToZero { x, y, z })
     }
 
+    /// Constructs a rotation transformation with respect to the `x` axis.
     pub fn rotation_x(radians: f64) -> Self {
         Self(Matrix([
             [1.0, 0.0, 0.0, 0.0],
@@ -143,6 +175,7 @@ impl Transform {
         ]))
     }
 
+    /// Constructs a rotation transformation with respect to the `y` axis.
     pub fn rotation_y(radians: f64) -> Self {
         Self(Matrix([
             [radians.cos(), 0.0, radians.sin(), 0.0],
@@ -152,6 +185,7 @@ impl Transform {
         ]))
     }
 
+    /// Constructs a rotation transformation with respect to the `z` axis.
     pub fn rotation_z(radians: f64) -> Self {
         Self(Matrix([
             [radians.cos(), -radians.sin(), 0.0, 0.0],
@@ -161,14 +195,17 @@ impl Transform {
         ]))
     }
 
-    pub fn shearing(
-        xy: f64,
-        xz: f64,
-        yx: f64,
-        yz: f64,
-        zx: f64,
-        zy: f64,
-    ) -> Result<Self, AntiIsomorphicTransformError> {
+    /// Constructs a [shearing](https://en.wikipedia.org/wiki/Shear_matrix) transformation.
+    ///
+    /// This transformation basically translates a component based on the value of the some of the
+    /// other components.
+    ///
+    /// # Errors
+    /// Fails if the passed values fulfill the equation: `xz * yx * zy + xy * yz * zx - xy * yx -
+    /// xz * zx - yz * zy = -1`. As with the scaling transformation, this would create an
+    /// anti-isomorphic transformation.
+    ///
+    pub fn shearing(xy: f64, xz: f64, yx: f64, yz: f64, zx: f64, zy: f64) -> Result<Self, Error> {
         (!float::approx(
             xz * yx * zy + xy * yz * zx - xy * yx - xz * zx - yz * zy + 1.0,
             0.0,
@@ -179,30 +216,47 @@ impl Transform {
             [zx, zy, 1.0, 0.0],
             [0.0, 0.0, 0.0, 1.0],
         ])))
-        .ok_or(
-            AntiIsomorphicTransformError::InvalidRelationBetweenComponents {
-                xy,
-                xz,
-                yx,
-                yz,
-                zx,
-                zy,
-            },
-        )
+        .ok_or(Error::InvalidRelationBetweenComponents {
+            xy,
+            xz,
+            yx,
+            yz,
+            zx,
+            zy,
+        })
     }
 
-    pub fn view(from: Point, to: Point, up: Vector) -> Result<Self, AntiIsomorphicTransformError> {
+    /// Constructs a view transformation.
+    ///
+    /// This transformation is mainly used for positioning the camera relative to a world's origin.
+    ///
+    /// # Arguments
+    ///
+    /// * `from` - Point where the camera is going to be positioned.
+    /// * `to` - Point where the center of camera is going to be looking at.
+    /// * `up` - Vector that indicated the direction considered at "up". This orientates the camera
+    /// so that your image is not upside-down.
+    ///
+    /// # Errors
+    ///
+    /// * Fails when the `from` and `to` vectors are the same vectors. This would mean that the
+    /// camera it's looking at itself.
+    ///
+    /// * Fails when the resulting vector of subtracting `to - from` is collinear with the `up`
+    /// vector. This would mean that the camera cannot orient itself, there would be a conflict
+    /// between the direction it's looking at and the direction it should consider as "up".
+    ///
+    /// * Fails when the `up` vector is null.
+    ///
+    pub fn view(from: Point, to: Point, up: Vector) -> Result<Self, Error> {
         let forward = (to - from)
             .normalize()
-            .map_err(|_| AntiIsomorphicTransformError::EqualFromAndToVectors)?;
+            .map_err(|_| Error::EqualFromAndToVectors)?;
 
-        let left = forward.cross(
-            up.normalize()
-                .map_err(|_| AntiIsomorphicTransformError::NullUpVector)?,
-        );
+        let left = forward.cross(up.normalize().map_err(|_| Error::NullUpVector)?);
 
         if left == Vector::new(0.0, 0.0, 0.0) {
-            return Err(AntiIsomorphicTransformError::CollinearToFromAndUpVectors {
+            return Err(Error::CollinearToFromAndUpVectors {
                 to_from: to - from,
                 up,
             });
@@ -268,61 +322,61 @@ mod tests {
 
     #[test]
     fn multiplying_by_a_translation_matrix() {
-        let t = Transform::translation(5.0, -3.0, 2.0);
-        let p = Point::new(-3.0, 4.0, 5.0);
+        let transform = Transform::translation(5.0, -3.0, 2.0);
+        let point = Point::new(-3.0, 4.0, 5.0);
 
-        assert_eq!(t * p, Point::new(2.0, 1.0, 7.0));
+        assert_eq!(transform * point, Point::new(2.0, 1.0, 7.0));
     }
 
     #[test]
     fn multiplying_by_the_inverse_of_a_translation_matrix() {
-        let t = Transform::translation(5.0, -3.0, 2.0);
-        let inv = t.inverse();
-        let p = Point::new(-3.0, 4.0, 5.0);
+        let transform = Transform::translation(5.0, -3.0, 2.0);
+        let inverse = transform.inverse();
+        let point = Point::new(-3.0, 4.0, 5.0);
 
-        assert_eq!(inv * p, Point::new(-8.0, 7.0, 3.0));
+        assert_eq!(inverse * point, Point::new(-8.0, 7.0, 3.0));
     }
 
     #[test]
     fn translation_does_not_affect_vectors() {
-        let t = Transform::translation(5.0, -3.0, 2.0);
-        let v = Vector::new(-3.0, 4.0, 5.0);
+        let transform = Transform::translation(5.0, -3.0, 2.0);
+        let vector = Vector::new(-3.0, 4.0, 5.0);
 
-        assert_eq!(t * v, v);
+        assert_eq!(transform * vector, vector);
     }
 
     #[test]
     fn a_scaling_matrix_applied_to_a_point() {
-        let t = Transform::scaling(2.0, 3.0, 4.0).unwrap();
-        let p = Point::new(-4.0, 6.0, 8.0);
+        let transform = Transform::scaling(2.0, 3.0, 4.0).unwrap();
+        let point = Point::new(-4.0, 6.0, 8.0);
 
-        assert_eq!(t * p, Point::new(-8.0, 18.0, 32.0));
+        assert_eq!(transform * point, Point::new(-8.0, 18.0, 32.0));
     }
 
     #[test]
     fn a_scaling_matrix_applied_to_a_vector() {
-        let t = Transform::scaling(2.0, 3.0, 4.0).unwrap();
-        let v = Vector::new(-4.0, 6.0, 8.0);
+        let transform = Transform::scaling(2.0, 3.0, 4.0).unwrap();
+        let vector = Vector::new(-4.0, 6.0, 8.0);
 
-        assert_eq!(t * v, Vector::new(-8.0, 18.0, 32.0));
+        assert_eq!(transform * vector, Vector::new(-8.0, 18.0, 32.0));
     }
 
     #[test]
     fn multiplying_by_the_inverse_of_a_scaling_matrix() {
-        let t = Transform::scaling(2.0, 3.0, 4.0).unwrap();
-        let inv = t.inverse();
-        let v = Vector::new(-4.0, 6.0, 8.0);
+        let transform = Transform::scaling(2.0, 3.0, 4.0).unwrap();
+        let inverse = transform.inverse();
+        let vector = Vector::new(-4.0, 6.0, 8.0);
 
-        assert_eq!(inv * v, Vector::new(-2.0, 2.0, 2.0));
+        assert_eq!(inverse * vector, Vector::new(-2.0, 2.0, 2.0));
     }
 
     #[test]
     fn trying_to_create_an_anti_isomorphic_scaling_transformation() {
-        let t = Transform::scaling(0.0, 1.0, 0.0);
+        let transform = Transform::scaling(0.0, 1.0, 0.0);
 
         assert_eq!(
-            t,
-            Err(AntiIsomorphicTransformError::ComponentScaledToZero {
+            transform,
+            Err(Error::ComponentScaledToZero {
                 x: 0.0,
                 y: 1.0,
                 z: 0.0
@@ -332,10 +386,10 @@ mod tests {
 
     #[test]
     fn reflection_is_scaling_by_a_negative_value() {
-        let t = Transform::scaling(-1.0, 1.0, 1.0).unwrap();
-        let p = Point::new(2.0, 3.0, 4.0);
+        let transform = Transform::scaling(-1.0, 1.0, 1.0).unwrap();
+        let point = Point::new(2.0, 3.0, 4.0);
 
-        assert_eq!(t * p, Point::new(-2.0, 3.0, 4.0));
+        assert_eq!(transform * point, Point::new(-2.0, 3.0, 4.0));
     }
 
     #[test]
@@ -350,105 +404,105 @@ mod tests {
 
     #[test]
     fn rotating_a_point_around_the_x_axis() {
-        let p = Point::new(0.0, 1.0, 0.0);
+        let point = Point::new(0.0, 1.0, 0.0);
 
         let half_quarter = Transform::rotation_x(std::f64::consts::FRAC_PI_4);
         let full_quarter = Transform::rotation_x(std::f64::consts::FRAC_PI_2);
 
         assert_eq!(
-            half_quarter * p,
+            half_quarter * point,
             Point::new(0.0, 2_f64.sqrt() / 2.0, 2_f64.sqrt() / 2.0)
         );
-        assert_eq!(full_quarter * p, Point::new(0.0, 0.0, 1.0));
+        assert_eq!(full_quarter * point, Point::new(0.0, 0.0, 1.0));
     }
 
     #[test]
     fn the_inverse_of_an_x_rotation_rotates_in_the_opposite_direction() {
-        let p = Point::new(0.0, 1.0, 0.0);
+        let point = Point::new(0.0, 1.0, 0.0);
 
         let half_quarter = Transform::rotation_x(std::f64::consts::FRAC_PI_4);
-        let inv = half_quarter.inverse();
+        let inverse = half_quarter.inverse();
 
         assert_eq!(
-            inv * p,
+            inverse * point,
             Point::new(0.0, 2_f64.sqrt() / 2.0, -2_f64.sqrt() / 2.0)
         );
     }
 
     #[test]
     fn rotating_a_point_around_the_y_axis() {
-        let p = Point::new(0.0, 0.0, 1.0);
+        let point = Point::new(0.0, 0.0, 1.0);
 
         let half_quarter = Transform::rotation_y(std::f64::consts::FRAC_PI_4);
         let full_quarter = Transform::rotation_y(std::f64::consts::FRAC_PI_2);
 
         assert_eq!(
-            half_quarter * p,
+            half_quarter * point,
             Point::new(2_f64.sqrt() / 2.0, 0.0, 2_f64.sqrt() / 2.0)
         );
-        assert_eq!(full_quarter * p, Point::new(1.0, 0.0, 0.0));
+        assert_eq!(full_quarter * point, Point::new(1.0, 0.0, 0.0));
     }
 
     #[test]
     fn rotating_a_point_around_the_z_axis() {
-        let p = Point::new(0.0, 1.0, 0.0);
+        let point = Point::new(0.0, 1.0, 0.0);
 
         let half_quarter = Transform::rotation_z(std::f64::consts::FRAC_PI_4);
         let full_quarter = Transform::rotation_z(std::f64::consts::FRAC_PI_2);
 
         assert_eq!(
-            half_quarter * p,
+            half_quarter * point,
             Point::new(-2_f64.sqrt() / 2.0, 2_f64.sqrt() / 2.0, 0.0)
         );
-        assert_eq!(full_quarter * p, Point::new(-1.0, 0.0, 0.0));
+        assert_eq!(full_quarter * point, Point::new(-1.0, 0.0, 0.0));
     }
 
     #[test]
     fn a_shearing_transformation_moves_x_in_proportion_to_y() {
-        let t = Transform::shearing(1.0, 0.0, 0.0, 0.0, 0.0, 0.0).unwrap();
-        let p = Point::new(2.0, 3.0, 4.0);
+        let transform = Transform::shearing(1.0, 0.0, 0.0, 0.0, 0.0, 0.0).unwrap();
+        let point = Point::new(2.0, 3.0, 4.0);
 
-        assert_eq!(t * p, Point::new(5.0, 3.0, 4.0));
+        assert_eq!(transform * point, Point::new(5.0, 3.0, 4.0));
     }
 
     #[test]
     fn a_shearing_transformation_moves_x_in_proportion_to_z() {
-        let t = Transform::shearing(0.0, 1.0, 0.0, 0.0, 0.0, 0.0).unwrap();
-        let p = Point::new(2.0, 3.0, 4.0);
+        let transform = Transform::shearing(0.0, 1.0, 0.0, 0.0, 0.0, 0.0).unwrap();
+        let point = Point::new(2.0, 3.0, 4.0);
 
-        assert_eq!(t * p, Point::new(6.0, 3.0, 4.0));
+        assert_eq!(transform * point, Point::new(6.0, 3.0, 4.0));
     }
 
     #[test]
     fn a_shearing_transformation_moves_y_in_proportion_to_x() {
-        let t = Transform::shearing(0.0, 0.0, 1.0, 0.0, 0.0, 0.0).unwrap();
-        let p = Point::new(2.0, 3.0, 4.0);
+        let transform = Transform::shearing(0.0, 0.0, 1.0, 0.0, 0.0, 0.0).unwrap();
+        let point = Point::new(2.0, 3.0, 4.0);
 
-        assert_eq!(t * p, Point::new(2.0, 5.0, 4.0));
+        assert_eq!(transform * point, Point::new(2.0, 5.0, 4.0));
     }
 
     #[test]
     fn a_shearing_transformation_moves_y_in_proportion_to_z() {
-        let t = Transform::shearing(0.0, 0.0, 0.0, 1.0, 0.0, 0.0).unwrap();
-        let p = Point::new(2.0, 3.0, 4.0);
+        let transform = Transform::shearing(0.0, 0.0, 0.0, 1.0, 0.0, 0.0).unwrap();
+        let point = Point::new(2.0, 3.0, 4.0);
 
-        assert_eq!(t * p, Point::new(2.0, 7.0, 4.0));
+        assert_eq!(transform * point, Point::new(2.0, 7.0, 4.0));
     }
 
     #[test]
     fn a_shearing_transformation_moves_z_in_proportion_to_x() {
-        let t = Transform::shearing(0.0, 0.0, 0.0, 0.0, 1.0, 0.0).unwrap();
-        let p = Point::new(2.0, 3.0, 4.0);
+        let transform = Transform::shearing(0.0, 0.0, 0.0, 0.0, 1.0, 0.0).unwrap();
+        let point = Point::new(2.0, 3.0, 4.0);
 
-        assert_eq!(t * p, Point::new(2.0, 3.0, 6.0));
+        assert_eq!(transform * point, Point::new(2.0, 3.0, 6.0));
     }
 
     #[test]
     fn a_shearing_transformation_moves_z_in_proportion_to_y() {
-        let t = Transform::shearing(0.0, 0.0, 0.0, 0.0, 0.0, 1.0).unwrap();
-        let p = Point::new(2.0, 3.0, 4.0);
+        let transform = Transform::shearing(0.0, 0.0, 0.0, 0.0, 0.0, 1.0).unwrap();
+        let point = Point::new(2.0, 3.0, 4.0);
 
-        assert_eq!(t * p, Point::new(2.0, 3.0, 7.0));
+        assert_eq!(transform * point, Point::new(2.0, 3.0, 7.0));
     }
 
     #[test]
@@ -462,16 +516,14 @@ mod tests {
 
         assert_eq!(
             t,
-            Err(
-                AntiIsomorphicTransformError::InvalidRelationBetweenComponents {
-                    xy,
-                    xz,
-                    yx,
-                    yz,
-                    zx: 0.0,
-                    zy: 0.0,
-                }
-            )
+            Err(Error::InvalidRelationBetweenComponents {
+                xy,
+                xz,
+                yx,
+                yz,
+                zx: 0.0,
+                zy: 0.0,
+            })
         );
     }
 
@@ -494,30 +546,30 @@ mod tests {
 
     #[test]
     fn chained_transformations_must_be_applied_in_reverse_order() {
-        let p = Point::new(1.0, 0.0, 1.0);
+        let point = Point::new(1.0, 0.0, 1.0);
 
         let t0 = Transform::rotation_x(std::f64::consts::FRAC_PI_2);
         let t1 = Transform::scaling(5.0, 5.0, 5.0).unwrap();
         let t2 = Transform::translation(10.0, 5.0, 7.0);
 
-        let t = t2 * t1 * t0;
+        let transform = t2 * t1 * t0;
 
-        assert_eq!(t * p, Point::new(15.0, 0.0, 7.0));
+        assert_eq!(transform * point, Point::new(15.0, 0.0, 7.0));
     }
 
     #[test]
     fn the_default_transformation() {
-        let t = Transform::default();
+        let transform = Transform::default();
 
-        assert_eq!(t, Transform(matrix::consts::IDENTITY_4X4));
+        assert_eq!(transform, Transform(matrix::consts::IDENTITY_4X4));
     }
 
     #[test]
     fn getting_the_transpose_transformation() {
-        let t = Transform::translation(1.0, 2.0, 3.0);
+        let transform = Transform::translation(1.0, 2.0, 3.0);
 
         assert_eq!(
-            t.transpose(),
+            transform.transpose(),
             Transform(Matrix([
                 [1.0, 0.0, 0.0, 0.0],
                 [0.0, 1.0, 0.0, 0.0],
@@ -533,9 +585,9 @@ mod tests {
         let to = Point::new(0.0, 0.0, -1.0);
         let up = Vector::new(0.0, 1.0, 0.0);
 
-        let t = Transform::view(from, to, up);
+        let transform = Transform::view(from, to, up);
 
-        assert_eq!(t, Ok(Transform::default()));
+        assert_eq!(transform, Ok(Transform::default()));
     }
 
     #[test]
@@ -544,9 +596,9 @@ mod tests {
         let to = Point::new(0.0, 0.0, 1.0);
         let up = Vector::new(0.0, 1.0, 0.0);
 
-        let t = Transform::view(from, to, up);
+        let transform = Transform::view(from, to, up);
 
-        assert_eq!(t, Ok(Transform::scaling(-1.0, 1.0, -1.0).unwrap()));
+        assert_eq!(transform, Ok(Transform::scaling(-1.0, 1.0, -1.0).unwrap()));
     }
 
     #[test]
@@ -555,9 +607,9 @@ mod tests {
         let to = Point::new(0.0, 0.0, 0.0);
         let up = Vector::new(0.0, 1.0, 0.0);
 
-        let t = Transform::view(from, to, up);
+        let transform = Transform::view(from, to, up);
 
-        assert_eq!(t, Ok(Transform::translation(0.0, 0.0, -8.0)));
+        assert_eq!(transform, Ok(Transform::translation(0.0, 0.0, -8.0)));
     }
 
     #[test]
@@ -566,10 +618,10 @@ mod tests {
         let to = Point::new(4.0, -2.0, 8.0);
         let up = Vector::new(1.0, 1.0, 0.0);
 
-        let t = Transform::view(from, to, up).unwrap();
+        let transform = Transform::view(from, to, up).unwrap();
 
         assert_eq!(
-            t,
+            transform,
             Transform(Matrix([
                 [-0.50709, 0.50709, 0.67612, -2.36643],
                 [0.76772, 0.60609, 0.12122, -2.82843],
@@ -585,9 +637,9 @@ mod tests {
         let to = from;
         let up = Vector::new(1.0, 2.0, 3.0);
 
-        let t = Transform::view(from, to, up);
+        let transform = Transform::view(from, to, up);
 
-        assert_eq!(t, Err(AntiIsomorphicTransformError::EqualFromAndToVectors));
+        assert_eq!(transform, Err(Error::EqualFromAndToVectors));
     }
 
     #[test]
@@ -596,9 +648,9 @@ mod tests {
         let to = Point::new(1.0, 2.0, 3.0);
         let up = Vector::new(0.0, 0.0, 0.0);
 
-        let t = Transform::view(from, to, up);
+        let transform = Transform::view(from, to, up);
 
-        assert_eq!(t, Err(AntiIsomorphicTransformError::NullUpVector));
+        assert_eq!(transform, Err(Error::NullUpVector));
     }
 
     #[test]
@@ -607,11 +659,11 @@ mod tests {
         let to = Point::new(0.0, 1.0, 0.0);
         let up = Vector::new(0.0, -1.0, 0.0);
 
-        let t = Transform::view(from, to, up);
+        let transform = Transform::view(from, to, up);
 
         assert_eq!(
-            t,
-            Err(AntiIsomorphicTransformError::CollinearToFromAndUpVectors {
+            transform,
+            Err(Error::CollinearToFromAndUpVectors {
                 to_from: to - from,
                 up,
             })

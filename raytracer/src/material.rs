@@ -115,17 +115,6 @@ impl PartialEq for Material {
 }
 
 impl Material {
-    /// Returns the shading color at a given point.
-    ///
-    /// # Arguments
-    ///
-    /// * `object` - Shape to which this material belongs to.
-    /// * `light` - Light source used to compute the shading.
-    /// * `point` - Point to shade, in world space coordinates.
-    /// * `eyev` - Vector from the given point to the camera, in world space coordinates.
-    /// * `normalv` - Normal vector on the object's surface at the given point, in world space coordinates.
-    /// * `light_intensity` - Intensity of the light taking into account other objects in the world.
-    ///
     pub(crate) fn lighting(
         &self,
         object: &Shape,
@@ -135,7 +124,7 @@ impl Material {
         normalv: Vector,
         light_intensity: f64,
     ) -> Color {
-        let effective_color = self.pattern.color_at_object(object, point) * light.intensity();
+        let effective_color = self.pattern.color_at_object(object, point) * light.effective_color();
 
         let ambient = effective_color * self.ambient;
 
@@ -163,7 +152,7 @@ impl Material {
                 if reflect_dot_eye > 0.0 {
                     let factor = reflect_dot_eye.powf(self.shininess);
 
-                    let specular_contrib = light.intensity() * self.specular * factor;
+                    let specular_contrib = light.effective_color() * self.specular * factor;
                     light_shade = light_shade + specular_contrib;
                 };
             }

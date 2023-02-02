@@ -7,9 +7,11 @@ use crate::float;
 /// Module constants.
 pub mod consts;
 
-/// 8-bit/RGB color represented by floating points ranging from `0.0` to `1.0`. A component getting
-/// out of this range is still a valid value but will have effects in the intensity of other colors
-/// when combining them.
+/// 8-bit/RGB color
+///
+/// It's components are represented by floating points ranging from `0.0` to `1.0`. A component
+/// getting out of this range is still a valid value but will have effects in the intensity of
+/// other colors when combining them.
 ///
 #[derive(Copy, Clone, Debug, Deserialize)]
 #[serde(from = "ColorDeserializer")]

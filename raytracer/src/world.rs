@@ -10,9 +10,13 @@ use crate::{
 
 pub(crate) const RECURSION_DEPTH: u8 = 5;
 
-#[derive(Debug, Default)]
+/// A collection of shapes and light sources.
+#[derive(Clone, Debug, Default)]
 pub struct World {
+    /// Vector of shapes that live in the world.
     pub objects: Vec<Shape>,
+
+    /// Vector of lights that live in the world.
     pub lights: Vec<Light>,
 }
 
