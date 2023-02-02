@@ -1,5 +1,7 @@
 #![deny(rustdoc::broken_intra_doc_links)]
 
+//! Stochastic ray tracer based on The Ray Tracer Challenge book by Jamis Buck.
+
 mod canvas;
 mod float;
 mod intersection;

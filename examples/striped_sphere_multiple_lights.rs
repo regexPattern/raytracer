@@ -1,7 +1,7 @@
 use raytracer::{
     camera::{self, consts::ImageResolution, Camera, CameraBuilder},
     color::{self, Color},
-    light::{AreaLight, AreaLightBuilder, Light, PointLight},
+    light::{AreaLight, AreaLightBuilder, Light},
     material::Material,
     pattern::{Pattern3D, Pattern3DSpec},
     shape::{Plane, Shape, ShapeBuilder, Sphere},

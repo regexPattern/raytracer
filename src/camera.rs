@@ -157,8 +157,8 @@ impl Camera {
     ///
     /// # Panics:
     ///
-    /// * If [ThreadPoolBuilder::build](rayon::ThreadPoolBuilder::build) fails.
-    /// * If [Mutex::lock](std::sync::Mutex::lock) fails.
+    /// * If [ThreadPoolBuilder::build](https://docs.rs/rayon/latest/rayon/struct.ThreadPoolBuilder.html#method.build) fails.
+    /// * If [Mutex::lock](https://doc.rust-lang.org/std/sync/struct.Mutex.html#method.lock) fails.
     ///
     pub fn render(&self, world: &World) -> Canvas {
         let mut image = Canvas::new(self.hsize, self.vsize);

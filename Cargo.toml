@@ -1,10 +1,18 @@
-[workspace]
-members = ["raytracer"]
-default-members = ["raytracer"]
-
-[workspace.package]
+[package]
+name = "raytracer"
 authors = ["Carlos Castillo"]
 description = "Stochastic ray tracer"
 edition = "2021"
-homepage = "https://github.com/regexPattern/raytracer"
+repository = "https://github.com/regexPattern/raytracer"
 version = "0.1.0"
+
+[dependencies]
+image = "0.24.5"
+indicatif = "0.17.2"
+rand = "0.8.5"
+rayon = "1.6.1"
+serde = { version = "1.0.152", features = ["derive"] }
+thiserror = "1.0.38"
+
+[dev-dependencies]
+serde_test = "1.0.152"
