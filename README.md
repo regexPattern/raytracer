@@ -2,6 +2,8 @@
 
 Stochastic ray tracer based on [The Ray Tracer Challenge](http://raytracerchallenge.com/) book by Jamis Buck.
 
+![image](https://user-images.githubusercontent.com/47466248/216463087-b68ebef4-c426-4a11-a01f-cd8fae2635d0.png)
+
 * [API Documentation](https://regexpattern.github.io/raytracer/)
 
 ## Motivation

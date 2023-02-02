@@ -33,7 +33,7 @@ pub mod consts {
 /// Materials use the [Phong's reflection model](https://learnopengl.com/Lighting/Basic-Lighting)
 /// to compute shading.
 ///
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct Material {
     /// The pattern of the material.
     pub pattern: Pattern3D,

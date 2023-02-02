@@ -12,7 +12,7 @@ use crate::{
 /// pattern to the coordinate system adecuate to that shape. Pattern and texture mapping might be
 /// added in the future.
 ///
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Pattern3D {
     /// A solid color.
     Solid(Color),
