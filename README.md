@@ -8,11 +8,11 @@ Stochastic ray tracer based on [The Ray Tracer Challenge](http://raytracerchalle
 
 Initially, this was a project to learn the [Rust programming language](https://rust-lang.org), but during the process,
 it became a full project on its own. It includes most of the features present in the original book, but implemented in
-my way, in a new language for me, with my style of code and performance tweaks I learned on the way.
+my way, learning a new language, with my style of code and performance tweaks I learned on the way.
 
 The ray tracer has gone through a lot of refactors to get to this point, mostly because of my college schedule didn't
 allow me to be consistent with this project. I ended up rewriting it a couple of times before settling with an
-implementation I liked.
+implementation I liked, and will probably change it in a future release.
 
 ## What is ray tracing?
 
@@ -49,7 +49,7 @@ trying to build the project.
 ### Examples
 
 These are simple examples to get you started. Refer to the
-[examples](https://github.com/regexPattern/raytracer/tree/main/raytracer/examples) directory to find more complex scene
+[examples](https://github.com/regexPattern/raytracer/tree/main/examples) directory to find more complex scene
 examples.
 
 #### Creating a scene
@@ -210,6 +210,8 @@ fn main() {
         objects: vec![Shape::Group(group)],
         lights: vec![light],
     };
+
+    // Then create a camera and render the image...
 }
 ```
 
@@ -236,8 +238,7 @@ following reasons:
 
 * Increased number of objects in the scene. The more objects there are in a scene, the more intersections have to be
   checked each time a ray is casted, even if that object is nowhere near the ray.  In scenes with too many objects,
-  adding the objects to a group and then dividing that group might allow you to take advantage of bounding volumes
-  [bounding](https://en.wikipedia.org/wiki/Bounding_volume_hierarchy) volume
+  adding the objects to a group and then dividing that group might allow you to take advantage of [bounding volumes
   hierarchy](https://en.wikipedia.org/wiki/Bounding_volume_hierarchy) and speed up your rendering time by reducing the
   number of unnecessary checks for intersections. Check the [documentation](https://regexpattern.github.io/raytracer/)
   for more information about this.
@@ -271,12 +272,12 @@ cargo run --release -- --progress
 
 * A room with white and black checkered walls, a silver metallic sphere in the middle with smaller matte red and blue
   spheres to the side. Shaded with an area-light that creates soft shadows
-  ([scene](https://github.com/regexPattern/raytracer/blob/main/raytracer/examples/checkered_walls_metallic_sphere.rs)):
+  ([scene](https://github.com/regexPattern/raytracer/blob/main/examples/checkered_walls_metallic_sphere.rs)):
   ![image](https://user-images.githubusercontent.com/47466248/215909726-3cce527e-0099-4a12-ba1e-9dd43e9c49ab.png)
 
 * Multiple randomly generated glass and metallic spheres lay on the sand. This showcases the refractive and reflective
   properties of glass and metal
-  ([scene](https://github.com/regexPattern/raytracer/blob/main/raytracer/examples/multiple_glass_and_metallic_spheres.rs)):
+  ([scene](https://github.com/regexPattern/raytracer/blob/main/examples/multiple_glass_and_metallic_spheres.rs)):
   ![image](https://user-images.githubusercontent.com/47466248/215909160-94573446-b190-463f-ab7b-c5e153980720.png)
 
   > ⚠️ If you try to render this scene, beware that reflection, and specially
@@ -286,12 +287,12 @@ cargo run --release -- --progress
   intersection.
 
 * Aerial view of a glass sphere and multiple matted spheres over a white and black checkered floor
-  ([scene](https://github.com/regexPattern/raytracer/blob/main/raytracer/examples/glass_sphere_checkered_floor_aerial_view.rs)):
+  ([scene](https://github.com/regexPattern/raytracer/blob/main/examples/glass_sphere_checkered_floor_aerial_view.rs)):
   ![image](https://user-images.githubusercontent.com/47466248/215910472-6fb5d0d8-6e0b-41ce-bdc8-de898fc731b2.png)
 
 * A sphere with red stripes under the lighting of multiple area-light sources of different colors, which create red and
   green soft shadows
-  ([scene](https://github.com/regexPattern/raytracer/blob/main/raytracer/examples/striped_sphere_multiple_lights.rs)):
+  ([scene](https://github.com/regexPattern/raytracer/blob/main/examples/striped_sphere_multiple_lights.rs)):
   ![image](https://user-images.githubusercontent.com/47466248/215910704-7cd5e01c-0906-42ee-8bfe-1e2fe19d282f.png)
 
 * 3D model of the Daft Punk helmets.
@@ -316,7 +317,7 @@ cargo run --release -- --progress
   around, there are also algorithms that give you a good cost-benefit, etc.
   [Example](https://www.mattkeeter.com/projects/rayray/renders/rtiow@2x.png).
 
-* **Web and CLI client:** This first iteration of the ray tracer allows users to consume its Rust API only, but it would
+* **Web and CLI clients:** This first iteration of the ray tracer allows users to consume its Rust API only, but it would
   also be possible to extend this and create an external application that consumes this API and makes it more easily
   accessible to users that don't know how to use Rust or code at all. An example of this would be a web client that
   takes a scene declared in JSON for example. I'll probably dig into this when I learn Web Assembly.
