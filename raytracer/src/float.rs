@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 pub const EPSILON: f64 = 1e-5;
 
 pub fn approx(a: f64, b: f64) -> bool {
@@ -22,6 +24,16 @@ pub fn ge(a: f64, b: f64) -> bool {
 
 pub fn le(a: f64, b: f64) -> bool {
     approx(a, b) || a < b
+}
+
+pub fn partial_cmp(a: f64, b: f64) -> Ordering {
+    if approx(a, b) {
+        Ordering::Equal
+    } else if a < b {
+        Ordering::Less
+    } else {
+        Ordering::Greater
+    }
 }
 
 #[macro_export]

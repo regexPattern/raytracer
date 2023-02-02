@@ -25,7 +25,7 @@ use super::{bounding_box::BoundingBox, object::ObjectCache, Shape};
 /// // You can also add individual childs afterwards.
 /// group.push(Shape::Cube(Default::default()));
 ///
-/// // Or you can add multiple child at once.
+/// // Or you can add multiple children at once.
 /// group.extend([
 ///     Shape::Plane(Default::default()),
 ///     Shape::Sphere(Default::default()),
@@ -68,6 +68,7 @@ where
 }
 
 impl Group {
+    /// Add a child to the group.
     pub fn push(&mut self, mut child: Shape) {
         Self::apply_transform_to_child(&mut child, self.object_cache.transform);
         self.object_cache
@@ -92,6 +93,7 @@ impl Group {
             child.as_ref().bounding_box.transform(new_transform);
     }
 
+    /// Add multiple children at once.
     pub fn extend<T>(&mut self, children: T)
     where
         T: IntoIterator<Item = Shape>,
@@ -102,7 +104,7 @@ impl Group {
     }
 
     pub(crate) fn local_intersect(&self, ray: &Ray) -> Vec<Intersection<'_>> {
-        if !self.bounds().intersect(ray) {
+        if !self.bounding_box().intersect(ray) {
             return vec![];
         }
 
@@ -116,6 +118,53 @@ impl Group {
         intersections
     }
 
+    /// Divide the group into multiple subgroups.
+    ///
+    /// This can significantly improve the performance of scenes with a large number of objects,
+    /// for example, 3D models, by using [bounding volumes
+    /// hierarchy](https://en.wikipedia.org/wiki/Bounding_volume_hierarchy) optimization, which
+    /// prevents unnecesarry collition checks for each casted ray.
+    ///
+    /// Try with different threshold values to see what division level works best for your group.
+    ///
+    /// # Arguments
+    ///
+    /// * `threshold` - The maximum number of children that a subgroup will have after dividing
+    /// their parent group.
+    ///
+    /// # Examples
+    ///
+    /// Dividing a group of `3000` spheres into `10` groups of `300` spheres. This allows each
+    /// group of `300` spheres to be checked for collition individually instead of always testing
+    /// all `3000` spheres. If the ray doesn't intersect a group iteself, it doesn't have to also
+    /// check for all of that group's children, thus, optimizing rendering times.
+    ///
+    /// ```
+    /// use raytracer::{
+    ///     model::{Model, OBJModelBuilder},
+    ///     shape::{Group, GroupBuilder, Shape, ShapeBuilder, Sphere},
+    ///     transform::Transform,
+    /// };
+    ///
+    /// let mut group = Group::from(GroupBuilder {
+    ///     children: [],
+    ///     transform: Default::default(),
+    /// });
+    ///
+    /// // Create a discrete row of 3000 spheres.
+    /// for i in 0..3000 {
+    ///     let move_sphere = Transform::translation(f64::from(i) * 3.0, 0.0, 0.0);
+    ///     group.push(Shape::Sphere(Sphere::from(ShapeBuilder {
+    ///         transform: move_sphere,
+    ///         ..Default::default()
+    ///     })));
+    /// }
+    ///
+    /// // Now every time a ray is casted, the spheres will be checked in groups of 300 instead of
+    /// // always checking all the spheres.
+    /// group.divide(300);
+    /// ```
+    ///
     pub fn divide(&mut self, threshold: usize) {
         if threshold <= self.children.len() {
             let (left_children, right_children) = self.partition_children();
@@ -137,7 +186,7 @@ impl Group {
     }
 
     fn partition_children(&mut self) -> (Vec<Shape>, Vec<Shape>) {
-        let (left_bounds, right_bounds) = self.bounds().split();
+        let (left_box, right_box) = self.bounding_box().split();
 
         let mut left_children = Vec::with_capacity(self.children.len());
         let mut right_children = Vec::with_capacity(self.children.len());
@@ -145,13 +194,13 @@ impl Group {
         let mut i = 0;
         while i < self.children.len() {
             let child = &mut self.children[i];
-            let child_bounds = child.as_ref().parent_space_bounding_box;
+            let child_bounding_box = child.as_ref().parent_space_bounding_box;
 
-            if left_bounds.contains(&child_bounds) {
+            if left_box.contains(&child_bounding_box) {
                 child.as_mut().transform =
                     self.object_cache.transform_inverse * child.as_ref().transform;
                 left_children.push(self.children.swap_remove(i));
-            } else if right_bounds.contains(&child_bounds) {
+            } else if right_box.contains(&child_bounding_box) {
                 child.as_mut().transform =
                     self.object_cache.transform_inverse * child.as_ref().transform;
                 right_children.push(self.children.swap_remove(i));
@@ -162,8 +211,8 @@ impl Group {
 
         let mut adjusted_bounding_box = BoundingBox::default();
         for child in &self.children {
-            let child_bounds = child.as_ref().parent_space_bounding_box;
-            adjusted_bounding_box.merge(child_bounds);
+            let child_bounding_box = child.as_ref().parent_space_bounding_box;
+            adjusted_bounding_box.merge(child_bounding_box);
         }
 
         (left_children, right_children)
@@ -181,15 +230,15 @@ impl Group {
         self.push(Shape::Group(subgroup));
     }
 
-    fn bounds(&self) -> BoundingBox {
-        let mut bounds = BoundingBox::default();
+    fn bounding_box(&self) -> BoundingBox {
+        let mut bounding_box = BoundingBox::default();
 
         for child in &self.children {
-            let child_bounds = child.as_ref().parent_space_bounding_box;
-            bounds.merge(child_bounds);
+            let child_bounding_box = child.as_ref().parent_space_bounding_box;
+            bounding_box.merge(child_bounding_box);
         }
 
-        bounds
+        bounding_box
     }
 }
 
@@ -302,10 +351,10 @@ mod tests {
             transform: Transform::scaling(2.0, 2.0, 2.0).unwrap(),
         });
 
-        let bounds = group.bounds();
+        let bounding_box = group.bounding_box();
 
-        assert_eq!(bounds.min, Point::new(-9.0, -6.0, -10.0));
-        assert_eq!(bounds.max, Point::new(8.0, 14.0, 9.0));
+        assert_eq!(bounding_box.min, Point::new(-9.0, -6.0, -10.0));
+        assert_eq!(bounding_box.max, Point::new(8.0, 14.0, 9.0));
     }
 
     #[test]

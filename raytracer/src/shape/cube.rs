@@ -36,7 +36,7 @@ impl From<ShapeBuilder> for Cube {
 }
 
 /// Intersect a ray with a rectangular bounding box.
-pub fn intersect_box_with_bouding_box<'a>(ray: &Ray, bounding_box: &BoundingBox) -> (f64, f64) {
+pub fn intersect_box_with_bouding_box(ray: &Ray, bounding_box: &BoundingBox) -> (f64, f64) {
     let (xtmin, xtmax) = check_axis(
         ray.origin.0.x,
         ray.direction.0.x,
@@ -62,14 +62,14 @@ pub fn intersect_box_with_bouding_box<'a>(ray: &Ray, bounding_box: &BoundingBox)
     #[allow(clippy::unwrap_used)]
     let tmin = [xtmin, ytmin, ztmin]
         .into_iter()
-        .max_by(|a, b| a.partial_cmp(b).unwrap())
+        .max_by(|a, b| float::partial_cmp(*a, *b))
         .unwrap();
 
     // Similarly there's always going to be a maximum value among these.
     #[allow(clippy::unwrap_used)]
     let tmax = [xtmax, ytmax, ztmax]
         .into_iter()
-        .min_by(|a, b| a.partial_cmp(b).unwrap())
+        .min_by(|a, b| float::partial_cmp(*a, *b))
         .unwrap();
 
     (tmin, tmax)

@@ -1,3 +1,10 @@
 [workspace]
 members = ["raytracer"]
 default-members = ["raytracer"]
+
+[workspace.package]
+authors = ["Carlos Castillo"]
+description = "Stochastic ray tracer"
+edition = "2021"
+homepage = "https://github.com/regexPattern/raytracer"
+version = "0.1.0"

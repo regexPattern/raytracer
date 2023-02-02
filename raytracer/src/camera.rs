@@ -13,7 +13,7 @@ use crate::{canvas::Canvas, float, ray::Ray, transform::Transform, tuple::Point,
 pub mod consts;
 
 /// Default number of threads using during the world-rendering process.
-const RENDER_THREADS: usize = 8;
+const DEFAULT_RENDER_THREADS: usize = 8;
 
 /// The error type when trying to create a camera.
 ///
@@ -164,21 +164,26 @@ impl Camera {
         let mut image = Canvas::new(self.hsize, self.vsize);
         let mutex = Arc::new(Mutex::new(&mut image));
 
-        let threads: usize = std::env::var("RENDER_THREADS").map_or(RENDER_THREADS, |value| {
-            value.parse().unwrap_or(RENDER_THREADS)
-        });
+        let threads: usize = std::env::var("RENDER_THREADS")
+            .map_or(DEFAULT_RENDER_THREADS, |value| {
+                value.parse().unwrap_or(DEFAULT_RENDER_THREADS)
+            });
 
         let pool = ThreadPoolBuilder::new()
             .num_threads(threads)
             .build()
             .unwrap();
 
-        let progress_bar = ProgressBar::new((self.hsize * self.vsize) as u64);
+        let progress_bar = if std::env::args().any(|arg| arg == "--progress") {
+            ProgressBar::new((self.hsize * self.vsize) as u64)
+        } else {
+            ProgressBar::hidden()
+        };
 
         pool.scope(|s| {
             for y in 0..self.vsize {
                 let image = Arc::clone(&mutex);
-                let progress_bar = progress_bar.clone();
+                let progress_bar = ProgressBar::clone(&progress_bar);
 
                 s.spawn(move |_| {
                     let mut buffer = Vec::with_capacity(self.hsize);

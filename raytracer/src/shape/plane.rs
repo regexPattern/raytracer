@@ -63,11 +63,11 @@ mod tests {
 
     #[test]
     fn the_normal_of_a_plane_is_constant_everywhere() {
-        let p = Plane::default();
+        let plane = Plane::default();
 
-        let n0 = p.normal_at(Point::new(0.0, 0.0, 0.0));
-        let n1 = p.normal_at(Point::new(10.0, 0.0, -10.0));
-        let n2 = p.normal_at(Point::new(-5.0, 0.0, 150.0));
+        let n0 = plane.normal_at(Point::new(0.0, 0.0, 0.0));
+        let n1 = plane.normal_at(Point::new(10.0, 0.0, -10.0));
+        let n2 = plane.normal_at(Point::new(-5.0, 0.0, 150.0));
 
         assert_eq!(n0, Vector::new(0.0, 1.0, 0.0));
         assert_eq!(n1, Vector::new(0.0, 1.0, 0.0));
@@ -76,45 +76,45 @@ mod tests {
 
     #[test]
     fn intersect_with_a_ray_parallel_to_the_plane() {
-        let p = Plane::default();
-        let o = Shape::Plane(Default::default());
+        let plane = Plane::default();
+        let object = Shape::Plane(Default::default());
 
-        let r = Ray {
+        let ray = Ray {
             origin: Point::new(0.0, 10.0, 0.0),
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let xs = p.intersect(&o, &r);
+        let xs = plane.intersect(&object, &ray);
 
         assert_eq!(xs.len(), 0);
     }
 
     #[test]
     fn intersect_with_a_coplanar_ray() {
-        let p = Plane::default();
-        let o = Shape::Plane(Default::default());
+        let plane = Plane::default();
+        let object = Shape::Plane(Default::default());
 
-        let r = Ray {
+        let ray = Ray {
             origin: Point::new(0.0, 0.0, 0.0),
             direction: Vector::new(0.0, 0.0, 1.0),
         };
 
-        let xs = p.intersect(&o, &r);
+        let xs = plane.intersect(&object, &ray);
 
         assert_eq!(xs.len(), 0);
     }
 
     #[test]
     fn a_ray_intersecting_a_plane_from_above() {
-        let p = Plane::default();
-        let o = Shape::Plane(Default::default());
+        let plane = Plane::default();
+        let object = Shape::Plane(Default::default());
 
-        let r = Ray {
+        let ray = Ray {
             origin: Point::new(0.0, 1.0, 0.0),
             direction: Vector::new(0.0, -1.0, 0.0),
         };
 
-        let xs = p.intersect(&o, &r);
+        let xs = plane.intersect(&object, &ray);
 
         assert_eq!(xs.len(), 1);
         assert_approx!(xs[0].t, 1.0);
@@ -122,15 +122,15 @@ mod tests {
 
     #[test]
     fn a_ray_intersecting_a_plane_from_below() {
-        let p = Plane::default();
-        let o = Shape::Plane(Default::default());
+        let plane = Plane::default();
+        let object = Shape::Plane(Default::default());
 
-        let r = Ray {
+        let ray = Ray {
             origin: Point::new(0.0, -1.0, 0.0),
             direction: Vector::new(0.0, 1.0, 0.0),
         };
 
-        let xs = p.intersect(&o, &r);
+        let xs = plane.intersect(&object, &ray);
 
         assert_eq!(xs.len(), 1);
         assert_approx!(xs[0].t, 1.0);
@@ -138,15 +138,15 @@ mod tests {
 
     #[test]
     fn a_plane_has_a_bounding_box() {
-        let p = Plane::default();
-        let bounds = p.0.bounding_box;
+        let plane = Plane::default();
+        let bounding_box = plane.0.bounding_box;
 
         assert_eq!(
-            bounds.min,
+            bounding_box.min,
             Point::new(std::f64::NEG_INFINITY, 0.0, std::f64::NEG_INFINITY)
         );
         assert_eq!(
-            bounds.max,
+            bounding_box.max,
             Point::new(std::f64::INFINITY, 0.0, std::f64::INFINITY)
         );
     }

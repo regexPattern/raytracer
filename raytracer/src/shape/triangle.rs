@@ -189,13 +189,13 @@ mod tests {
         })
         .unwrap();
 
-        let normal0 = triangle.normal_at(Point::new(0.0, 0.5, 0.0));
-        let normal1 = triangle.normal_at(Point::new(-0.5, 0.75, 0.0));
-        let normal2 = triangle.normal_at(Point::new(0.5, 0.25, 0.0));
+        let n0 = triangle.normal_at(Point::new(0.0, 0.5, 0.0));
+        let n1 = triangle.normal_at(Point::new(-0.5, 0.75, 0.0));
+        let n2 = triangle.normal_at(Point::new(0.5, 0.25, 0.0));
 
-        assert_eq!(normal0, triangle.normal);
-        assert_eq!(normal1, triangle.normal);
-        assert_eq!(normal2, triangle.normal);
+        assert_eq!(n0, triangle.normal);
+        assert_eq!(n1, triangle.normal);
+        assert_eq!(n2, triangle.normal);
     }
 
     #[test]

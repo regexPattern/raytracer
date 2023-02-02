@@ -10,7 +10,7 @@ use raytracer::{
     world::World,
 };
 
-const RESOLUTION: ImageResolution = camera::consts::QHD;
+const RESOLUTION: ImageResolution = camera::consts::HD;
 
 fn main() {
     let floor = Shape::Plane(Plane::default());

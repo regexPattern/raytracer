@@ -118,5 +118,5 @@ fn main() {
     .unwrap();
 
     let image = camera.render(&world).to_image();
-    // image.save("image.png").unwrap();
+    image.save("image.png").unwrap();
 }

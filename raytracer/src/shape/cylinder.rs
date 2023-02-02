@@ -573,10 +573,10 @@ mod tests {
     fn an_unbounde_cylinder_has_a_bounding_box() {
         let c = Cylinder::default();
 
-        let bounds = c.object_cache.bounding_box;
+        let bounding_box = c.object_cache.bounding_box;
 
-        assert_eq!(bounds.max, Point::new(1.0, std::f64::INFINITY, 1.0));
-        assert_eq!(bounds.min, Point::new(-1.0, std::f64::NEG_INFINITY, -1.0));
+        assert_eq!(bounding_box.max, Point::new(1.0, std::f64::INFINITY, 1.0));
+        assert_eq!(bounding_box.min, Point::new(-1.0, std::f64::NEG_INFINITY, -1.0));
     }
 
     #[test]
@@ -588,9 +588,9 @@ mod tests {
             ..Default::default()
         });
 
-        let bounds = c.object_cache.bounding_box;
+        let bounding_box = c.object_cache.bounding_box;
 
-        assert_eq!(bounds.min, Point::new(-1.0, -5.0, -1.0));
-        assert_eq!(bounds.max, Point::new(1.0, 3.0, 1.0));
+        assert_eq!(bounding_box.min, Point::new(-1.0, -5.0, -1.0));
+        assert_eq!(bounding_box.max, Point::new(1.0, 3.0, 1.0));
     }
 }

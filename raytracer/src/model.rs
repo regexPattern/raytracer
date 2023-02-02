@@ -1,5 +1,6 @@
 use std::num::NonZeroUsize;
 
+use indicatif::ProgressBar;
 use thiserror::Error;
 
 use crate::{
@@ -76,8 +77,10 @@ pub enum ErrorKind {
 ///     transform::Transform,
 /// };
 ///
-/// let model_spec = std::fs::read_to_string("filename.obj").unwrap();
+/// // Save the file content to a string.
+/// let model_spec = std::fs::read_to_string("my_model.obj").unwrap();
 ///
+/// // Load the model into memory and make it 2 times bigger.
 /// let model = Model::try_from(OBJModelBuilder {
 ///     model_spec: &model_spec,
 ///     transform: Transform::scaling(2.0, 2.0, 2.0).unwrap(),
@@ -86,7 +89,6 @@ pub enum ErrorKind {
 /// // Models are only useful when converted to a `Shape::Group`,
 /// // which can later be added to a world.
 /// let group = Group::from(model);
-///
 /// ```
 ///
 #[derive(Debug, PartialEq)]
@@ -138,6 +140,12 @@ impl TryFrom<OBJModelBuilder<'_>> for Model {
         let mut normals = vec![];
         let mut vertices = vec![];
 
+        let progress_bar = if std::env::args().any(|arg| arg == "--progress") {
+            ProgressBar::new_spinner()
+        } else {
+            ProgressBar::hidden()
+        };
+
         for (line_nr, line) in content.lines().enumerate() {
             let propagate_line_err = |kind| Error { kind, line_nr };
             let mut fields = line.split_whitespace();
@@ -168,6 +176,8 @@ impl TryFrom<OBJModelBuilder<'_>> for Model {
                 }
                 _ => (),
             }
+
+            progress_bar.inc(1);
         }
 
         Ok(Model {

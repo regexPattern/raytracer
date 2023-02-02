@@ -10,7 +10,7 @@ use raytracer::{
     world::World,
 };
 
-const RESOLUTION: ImageResolution = camera::consts::QHD;
+const RESOLUTION: ImageResolution = camera::consts::HD;
 
 fn main() {
     let floor = Shape::Plane(Plane::from(ShapeBuilder {
@@ -40,21 +40,7 @@ fn main() {
         transform: Transform::translation(0.0, 1.0, 0.0),
     }));
 
-    let right_light_point = Light::Point(PointLight {
-        position: Point::new(10.0, 10.0, 10.0),
-        intensity: color::consts::RED,
-    });
-
-    let left_light_point = Light::Point(PointLight {
-        position: Point::new(-10.0, 10.0, 10.0),
-        intensity: Color {
-            red: 0.3216,
-            green: 0.6784,
-            blue: 0.03,
-        },
-    });
-
-    let right_light_area = Light::Area(AreaLight::from(AreaLightBuilder {
+    let right_light = Light::Area(AreaLight::from(AreaLightBuilder {
         corner: Point::new(10.0, 10.0, 10.0),
         horizontal_dir: Vector::new(4.0, 0.0, 0.0),
         horizontal_cells: 4,
@@ -63,7 +49,7 @@ fn main() {
         intensity: color::consts::RED,
     }));
 
-    let left_light_area = Light::Area(AreaLight::from(AreaLightBuilder {
+    let left_light = Light::Area(AreaLight::from(AreaLightBuilder {
         corner: Point::new(-10.0, 10.0, 10.0),
         horizontal_dir: Vector::new(4.0, 0.0, 0.0),
         horizontal_cells: 8,
@@ -78,7 +64,7 @@ fn main() {
 
     let world = World {
         objects: vec![floor, striped_sphere],
-        lights: vec![left_light_area, right_light_area],
+        lights: vec![left_light, right_light],
     };
 
     let camera = Camera::try_from(CameraBuilder {

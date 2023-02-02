@@ -21,7 +21,6 @@ pub struct Color {
     pub blue: f64,
 }
 
-#[warn(missing_docs)]
 #[derive(Debug, Deserialize)]
 pub struct ColorDeserializer {
     red: u8,
