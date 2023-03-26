@@ -1,4 +1,4 @@
-name: Deploy static content to Pages
+name: Deploy API documentation to Github Pages
 
 on:
   push:
@@ -20,7 +20,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Rust toolchain
+      - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -36,12 +36,11 @@ jobs:
             ~/.cargo/git/db/
             target/            
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - name: Cargo doc
+      - name: Build docs
         uses: actions-rs/cargo@v1
         with:
           command: doc
           args: --no-deps
-      - run: echo "<meta http-equiv='refresh' content='0; url=raytracer'>" > target/doc/index.html
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
