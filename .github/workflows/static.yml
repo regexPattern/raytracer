@@ -41,6 +41,7 @@ jobs:
         with:
           command: doc
           args: --no-deps
+      - run: echo "<meta http-equiv='refresh' content='0; url=raytracer'>" > target/doc/index.html
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
