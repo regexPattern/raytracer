@@ -16,6 +16,7 @@ concurrency:
 
 jobs:
   build:
+    name: Build docs
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -47,6 +48,7 @@ jobs:
           path: "./target/doc"
           
   deploy:
+    name: Deploy docs
     needs: build
     environment:
       name: github-pages
