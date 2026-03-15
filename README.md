@@ -2,7 +2,7 @@
 
 Stochastic ray tracer based on [The Ray Tracer Challenge](http://raytracerchallenge.com/) book by Jamis Buck.
 
-![image](https://user-images.githubusercontent.com/47466248/216463087-b68ebef4-c426-4a11-a01f-cd8fae2635d0.png)
+![image](https://github-production-user-asset-6210df.s3.amazonaws.com/47466248/563716784-bcbd08bb-956b-422e-af20-e4dd4a74ea64.webp?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20260315%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260315T133836Z&X-Amz-Expires=300&X-Amz-Signature=d1bed2966b68f6dc04814c598a258434984e7428f48cfb3801f8f943fa7c96e6&X-Amz-SignedHeaders=host)
 
 It includes most of the features present in the book. The book only gives you the unit tests that your code must pass and some math formulas (apart from the theoretical explanation of how a raytracer works of course), so the actual implementation really reflects my own style of coding. It was also my choice to add some optimizations to this project, such as multi-threaded rendering.
 
@@ -50,12 +50,12 @@ cargo run --release -- --progress
 
 ## Showcase
 
-![image](https://user-images.githubusercontent.com/47466248/215909726-3cce527e-0099-4a12-ba1e-9dd43e9c49ab.png)
+![image](https://github-production-user-asset-6210df.s3.amazonaws.com/47466248/563717220-922e961f-c882-42cf-bf1d-3c683a38f61c.webp?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20260315%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260315T133925Z&X-Amz-Expires=300&X-Amz-Signature=01e69b81bd9cf7b9e88a29709b4b0be461b2945248233b6896c2704849303440&X-Amz-SignedHeaders=host)
 
-![image](https://user-images.githubusercontent.com/47466248/215909160-94573446-b190-463f-ab7b-c5e153980720.png)
+![image](https://github-production-user-asset-6210df.s3.amazonaws.com/47466248/563717216-a5a1cd16-3e5c-4768-b603-8d390548480c.webp?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20260315%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260315T133953Z&X-Amz-Expires=300&X-Amz-Signature=777eb170bf3cbff82004507323579bf78b3649965e31b36fd8c88b54d6477c2a&X-Amz-SignedHeaders=host)
 
-![image](https://user-images.githubusercontent.com/47466248/215910472-6fb5d0d8-6e0b-41ce-bdc8-de898fc731b2.png)
+![image](https://github-production-user-asset-6210df.s3.amazonaws.com/47466248/563717217-9d7ba09a-d1f9-4f60-b8ef-d394feb3bd44.webp?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20260315%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260315T134014Z&X-Amz-Expires=300&X-Amz-Signature=b01f651db9c76aa8b4d8e7697d2ad2663b7a6a44109b30c8d566a3079e566b7a&X-Amz-SignedHeaders=host)
 
-![image](https://user-images.githubusercontent.com/47466248/215910704-7cd5e01c-0906-42ee-8bfe-1e2fe19d282f.png)
+![image](https://github-production-user-asset-6210df.s3.amazonaws.com/47466248/563717218-79357c10-1e71-4b69-898d-d57f36461dea.webp?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20260315%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260315T134034Z&X-Amz-Expires=300&X-Amz-Signature=d3b37c9c597bf6298b118c2f7f421511acf227dfe9018cf03a46b3227ddfed5c&X-Amz-SignedHeaders=host)
 
-![image](https://user-images.githubusercontent.com/47466248/216421620-3e8165a4-5aa9-47a8-8975-26dfaff4a338.png)
+![image](https://github-production-user-asset-6210df.s3.amazonaws.com/47466248/563717219-8afd4b67-bd6a-4289-bde0-85f1590c014b.webp?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20260315%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260315T134048Z&X-Amz-Expires=300&X-Amz-Signature=299f100fe62701eee32eba2709971a961eb5015a10c9853e4ee46636c1243467&X-Amz-SignedHeaders=host)
